@@ -30,7 +30,7 @@ import type { ApplicationGraph, RiskHint, SurfaceContract } from "./model.ts";
 
 interface ActionWord { word: string; op: string; risk: RiskHint }
 
-/** Button action words (priority order: send/delete-class first so a label like "Send to archive" never binds to move). */
+/** Button action words (priority order: send/delete-class first so a label like "Send to archive" never binds to move). D-222 evolution: receive/refresh/sync join the vocabulary for the email pack's sixth contract. */
 const BUTTON_ACTION_WORDS: ActionWord[] = [
   { word: "send", op: "message.send", risk: "EXTERNAL_MUTATION" },
   { word: "delete", op: "message.delete", risk: "EXTERNAL_MUTATION" },
@@ -43,6 +43,9 @@ const BUTTON_ACTION_WORDS: ActionWord[] = [
   { word: "open", op: "message.read", risk: "READ" },
   { word: "read", op: "message.read", risk: "READ" },
   { word: "view", op: "message.read", risk: "READ" },
+  { word: "receive", op: "message.receive", risk: "READ" },
+  { word: "refresh", op: "message.receive", risk: "READ" },
+  { word: "sync", op: "message.receive", risk: "READ" },
 ];
 
 /** Field labels → typing contracts. The search field prepares a READ query; compose fields mutate a draft. */

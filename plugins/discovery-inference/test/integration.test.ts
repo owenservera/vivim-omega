@@ -40,7 +40,7 @@ const LAW_CONTRACTS = ["law.check@1", "law.registry@1", "law.consent.grant@1", "
 const VAULT_CONTRACTS = ["vault.append@1", "vault.get@1", "vault.query@1", "vault.search@1", "vault.verify@1", "vault.compact@1", "vault.roundtrip@1"];
 const BLUEPRINT_OPS = ["message.send@1", "message.list@1", "message.search@1", "message.read@1", "message.move@1"];
 const DISCOVERY_NS = "discovery";
-const WEBMAIL_NODES = 12; // the inline webmail surface (deterministic full-pipeline fixture)
+const WEBMAIL_NODES = 13; // the inline webmail surface (deterministic full-pipeline fixture; D-222 adds btn-receive)
 
 interface Case { host: BootedHost; root: string; vaultDir: string; dataDir: string }
 
@@ -192,17 +192,17 @@ describe("GATE-Ω8 — the discovery-mind pipeline (compositions/discovery-mind.
     mapResult = r;
     expect(r.satisfied).toBe(true);
     expect(r.gaps).toEqual([]);
-    expect(r.bindings).toHaveLength(5); // send / list / search / read / move — each bound to EXACTLY ONE candidate
+    expect(r.bindings).toHaveLength(6); // send / list / search / read / move / receive — each bound to EXACTLY ONE candidate
     const send = r.bindings.find((b) => b.blueprintOp === "message.send@1")!;
     expect(send).toMatchObject({ riskHint: "EXTERNAL_MUTATION", selector: "form.compose button[type=submit]" });
     expect(send.candidateId).toBe(inferResult.candidates.find((cand) => cand.op === "message.send")!.id);
     // surplus: compose/reply/delete + the four typing contracts — recorded, NOT an error
     expect(r.surplus.map((s) => s.op).sort()).toEqual([
       "message.compose", "message.delete", "message.field.body", "message.field.search", "message.field.subject", "message.field.to", "message.reply",
-    ]);
+    ]); // receive now BINDS (D-222); the surplus set is unchanged otherwise
     // persisted with provenance: the candidates object + the five bound capture spans
     const got = await rootCall<VaultGetResult>(c.host, "vault.get@1", { ns: DISCOVERY_NS, id: "mapping:gate-1" });
-    expect(got.refs).toHaveLength(6);
+    expect(got.refs).toHaveLength(7); // candidates ref + 6 bound capture spans
     expect(got.refs).toContainEqual(inferResult.vaultRef);
     expect(got.meta).toMatchObject({ type: "mapping", runId: "gate-1" });
     const engine = journalLines(c.vaultDir).find((l) => l.op === "vault.append@1" && l.decision === "allow" && l.principal === "discovery.mapping");
@@ -221,7 +221,7 @@ describe("GATE-Ω8 — the discovery-mind pipeline (compositions/discovery-mind.
     }
     // the caller simulates executing each mapped op against the fixture and checks the postcondition
     const probes: Probe[] = buildProbes(mapResult.bindings, replayEvidenceFor);
-    expect(probes).toHaveLength(15); // 3 probes × 5 bindings
+    expect(probes).toHaveLength(18); // 3 probes × 6 bindings
 
     const r = await rootCall<VerifyResult>(c.host, "discovery.verify@1", {
       mapping: mapResult, probes, runId: "gate-1-ok",
@@ -233,7 +233,7 @@ describe("GATE-Ω8 — the discovery-mind pipeline (compositions/discovery-mind.
       threshold: 0.95, requiredProbes: 3, evidenceRequired: true,
       source: "manifest:discovery.promotion-policy@1",
     });
-    expect(r.promoted).toHaveLength(5);
+    expect(r.promoted).toHaveLength(6);
     expect(r.stillDraft).toEqual([]);
     for (const res of r.results) {
       expect(res.status).toBe("PROMOTED");
@@ -250,9 +250,9 @@ describe("GATE-Ω8 — the discovery-mind pipeline (compositions/discovery-mind.
     // the promotion event carries the full proof chain: 5 replay spans + candidates + mapping
     const got = await rootCall<VaultGetResult>(c.host, "vault.get@1", { ns: DISCOVERY_NS, id: "promotion:gate-1-ok" });
     const data = got.data as { promoted: string[]; policy: { threshold: number } };
-    expect(data.promoted).toHaveLength(5);
+    expect(data.promoted).toHaveLength(6);
     expect(data.policy.threshold).toBe(0.95);
-    expect(got.refs).toHaveLength(7); // 5 replay spans + candidates:gate-1 + mapping:gate-1
+    expect(got.refs).toHaveLength(8); // 6 replay spans + candidates:gate-1 + mapping:gate-1
     expect(got.meta).toMatchObject({ type: "promotion", runId: "gate-1-ok" });
     const engine = journalLines(c.vaultDir).find((l) => l.op === "vault.append@1" && l.decision === "allow" && l.principal === "discovery.verification");
     expect(engine).toBeTruthy();
@@ -275,7 +275,7 @@ describe("GATE-Ω8 — the discovery-mind pipeline (compositions/discovery-mind.
       mapping: mapResult, probes, runId: "gate-1-broken",
       candidates: inferResult.candidates, candidatesRef: inferResult.vaultRef, mappingRef: mapResult.vaultRef,
     });
-    expect(r.promoted).toHaveLength(4); // everything except send promotes
+    expect(r.promoted).toHaveLength(5); // everything except send promotes (6 bindings now)
     expect(r.stillDraft).toEqual([sendCandidate]);
     const send = r.results.find((res) => res.candidateId === sendCandidate)!;
     expect(send.status).toBe("DRAFT");
@@ -333,7 +333,7 @@ describe("GATE-Ω8 — the discovery-mind pipeline (compositions/discovery-mind.
         candidates: inferred.candidates, runId: "shipped-1", candidatesRef: inferred.vaultRef,
       });
       expect(mapped.satisfied).toBe(true);
-      expect(mapped.bindings).toHaveLength(5);
+      expect(mapped.bindings).toHaveLength(6);
       expect(mapped.blueprintSource).toContain("domain-email");
     } finally {
       const i = hosts.indexOf(host);

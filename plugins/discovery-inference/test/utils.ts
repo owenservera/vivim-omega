@@ -43,6 +43,7 @@ export function webmailGraphFixture(evidenceFor: (nodeId: string) => EvidenceRef
       node("btn-search", "button", "Search", "button.search"),
       node("btn-archive", "button", "Move to archive", "button.archive"),
       node("btn-open", "button", "Open", "button.open"),
+      node("btn-receive", "button", "Receive", "button.receive"),
       node("field-search", "field", "Search", "input.search"),
       node("field-subject", "field", "Subject", "input.subject"),
       node("field-to", "field", "To", "input.to"),
@@ -54,6 +55,7 @@ export function webmailGraphFixture(evidenceFor: (nodeId: string) => EvidenceRef
       { from: "btn-search", to: "list-inbox", trigger: "click", latencyMs: 90, evidence: [evidenceFor("btn-search")] },
       { from: "btn-send", to: "list-inbox", trigger: "click", latencyMs: 250, evidence: [evidenceFor("btn-send")] },
       { from: "btn-open", to: "btn-reply", trigger: "click", latencyMs: 60, evidence: [evidenceFor("btn-open")] },
+      { from: "btn-receive", to: "list-inbox", trigger: "click", latencyMs: 140, evidence: [evidenceFor("btn-receive")] },
     ],
   };
 }
@@ -204,6 +206,13 @@ export function applyAction(
     post = { ...post, seen: [...post.seen, id] };
     passed = post.seen.includes(id);
     reason = `read {id: ${id}} → the message is marked seen`;
+  } else if (op === "message.receive") {
+    const from = args.from ?? "peter.miller@omega.local";
+    const subject = args.subject ?? "a freshly received missive";
+    post = { ...post, inbox: [...post.inbox, { id: `in-${post.inbox.length + 1}`, to: "me@omega.local", subject, folder: "inbox" }], };
+    void from;
+    passed = post.inbox.length === pre.inbox.length + 1;
+    reason = "click receive/refresh → a new message appears in the inbox";
   } else if (op === "message.move") {
     const id = args.id ?? pre.inbox[1]!.id;
     post = { ...post, inbox: post.inbox.filter((m) => m.id !== id), archive: [...post.archive, { ...pre.inbox.find((m) => m.id === id)!, folder: "archive" }] };

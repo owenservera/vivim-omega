@@ -39,6 +39,7 @@ function webmailCandidates(): CandidateLike[] {
     { id: "sc-8", op: "message.list", selector: "ul.message-list", riskHint: "READ", evidence: ev("capture:list-inbox"), confidence: 0.9 },
     { id: "sc-9", op: "message.field.search", selector: "input.search", riskHint: "READ", evidence: ev("capture:field-search"), confidence: 0.9 },
     { id: "sc-10", op: "message.field.subject", selector: "input.subject", riskHint: "MUTATION", evidence: ev("capture:field-subject"), confidence: 0.9 },
+    { id: "sc-11", op: "message.receive", selector: "button.receive", riskHint: "READ", evidence: ev("capture:btn-receive"), confidence: 0.9 },
   ];
 }
 
@@ -47,33 +48,33 @@ function emailPackManifest(): Record<string, unknown> {
   return JSON.parse(readFileSync(join(OMEGA_ROOT, "packs/domain-email/plugin.json"), "utf-8"));
 }
 
-const BINDING_OPS = ["message.send@1", "message.list@1", "message.search@1", "message.read@1", "message.move@1"];
+const BINDING_OPS = ["message.send@1", "message.list@1", "message.search@1", "message.read@1", "message.move@1", "message.receive@1"];
 
 // ---- the pure solver ----------------------------------------------------------
 
 describe("Ω8 discovery.mapping — solveMapping (pure constraint solving)", () => {
-  test("FULL BIND: all five blueprint ops bind exactly one candidate; surplus recorded, satisfied", () => {
+  test("FULL BIND: all six blueprint ops bind exactly one candidate; surplus recorded, satisfied", () => {
     const blueprint = normalizeBlueprint(emailPackManifest(), "test-pack");
     expect(blueprint.ops.map((o) => o.op).sort()).toEqual([...BINDING_OPS].sort());
     const report = solveMapping(webmailCandidates(), blueprint);
     expect(report.satisfied).toBe(true);
     expect(report.gaps).toEqual([]);
-    expect(report.bindings).toHaveLength(5);
+    expect(report.bindings).toHaveLength(6);
     const boundOps = report.bindings.map((b) => b.blueprintOp).sort();
     expect(boundOps).toEqual(BINDING_OPS.sort());
     const send = report.bindings.find((b) => b.blueprintOp === "message.send@1")!;
     expect(send).toMatchObject({ candidateId: "sc-1", selector: "form.compose button[type=submit]", riskHint: "EXTERNAL_MUTATION", confidence: 0.9 });
     // surplus: compose/reply/delete + the two typing contracts — recorded, NOT an error
     expect(report.surplus.map((s) => s.candidateId).sort()).toEqual(["sc-10", "sc-2", "sc-3", "sc-4", "sc-9"]);
-    expect(report.stats).toMatchObject({ blueprintOps: 5, candidates: 10, bound: 5, gaps: 0, surplus: 5 });
+    expect(report.stats).toMatchObject({ blueprintOps: 6, candidates: 11, bound: 6, gaps: 0, surplus: 5 });
   });
 
   test("MISSING send-candidate → UNSAT with gap {missingOp, reason names the op}", () => {
     const blueprint = normalizeBlueprint(emailPackManifest(), "test-pack");
-    const candidates = webmailCandidates().filter((c) => c.op !== "message.send");
+    const candidates = webmailCandidates().filter((c) => c.op !== "message.send" && c.op !== "message.receive");
     const report = solveMapping(candidates, blueprint);
     expect(report.satisfied).toBe(false);
-    expect(report.gaps).toHaveLength(1);
+    expect(report.gaps).toHaveLength(2); // send AND receive are both absent — honest gap data
     expect(report.gaps[0].missingOp).toBe("message.send@1");
     expect(report.gaps[0].reason).toContain("no candidate with op message.send");
     // everything else still binds — a partial mapping is honest data
@@ -85,7 +86,7 @@ describe("Ω8 discovery.mapping — solveMapping (pure constraint solving)", () 
     const misRisk = [{ id: "sc-1", op: "message.send", selector: "button.send", riskHint: "READ", evidence: ev("capture:btn-send"), confidence: 0.9 }];
     const report = solveMapping(misRisk, blueprint);
     expect(report.satisfied).toBe(false);
-    expect(report.gaps).toHaveLength(1);
+    expect(report.gaps).toHaveLength(1); // risk-mismatch on the single blueprint op — no silent bind
     expect(report.gaps[0].missingOp).toBe("message.send@1");
     expect(report.gaps[0].reason).toContain("risk mismatch (READ != EXTERNAL_MUTATION)");
     expect(report.bindings).toEqual([]);
@@ -174,15 +175,15 @@ describe("Ω8 discovery.mapping — handler (discovery.map@1 via fake port)", ()
     }, ctx, META);
     const v = r as { satisfied: boolean; bindings: unknown[]; surplus: unknown[]; vaultRef: { ns: string; id: string; rev: number } };
     expect(v.satisfied).toBe(true);
-    expect(v.bindings).toHaveLength(5);
+    expect(v.bindings).toHaveLength(6);
     expect(v.vaultRef).toEqual({ ns: "discovery", id: "mapping:map-r1", rev: 2 });
     const append = calls.find((c) => c.op === "vault.append@1")!;
     const p = append.payload as { ns: string; id: string; refs: Array<{ ns: string; id: string }>; meta: { type: string } };
     expect(p.ns).toBe("discovery");
     expect(p.id).toBe("mapping:map-r1");
     expect(p.meta.type).toBe("mapping");
-    // provenance: the candidates object + every BOUND candidate's evidence (5 bindings → 5 capture spans + candidates ref)
-    expect(p.refs).toHaveLength(6);
+    // provenance: the candidates object + every BOUND candidate's evidence (6 bindings → 6 capture spans + candidates ref)
+    expect(p.refs).toHaveLength(7);
     expect(p.refs).toContainEqual({ ns: "discovery", id: "candidates:r1", rev: 1 });
     expect(p.refs).toContainEqual({ ns: "discovery", id: "capture:btn-send", rev: 1 });
   });
@@ -192,13 +193,13 @@ describe("Ω8 discovery.mapping — handler (discovery.map@1 via fake port)", ()
     const r = await def.ops!["discovery.map@1"]!({ candidates: webmailCandidates(), runId: "map-r2" }, ctx, META);
     const v = r as { satisfied: boolean; blueprintSource: string; bindings: unknown[] };
     expect(v.satisfied).toBe(true);
-    expect(v.bindings).toHaveLength(5);
+    expect(v.bindings).toHaveLength(6);
     expect(v.blueprintSource).toContain("domain-email");
   });
 
   test("UNSAT propagates honestly: gap report + still persisted (the gap is data)", async () => {
     const { ctx, calls } = fakeCtx();
-    const candidates = webmailCandidates().filter((c) => c.op !== "message.send");
+    const candidates = webmailCandidates().filter((c) => c.op !== "message.send" && c.op !== "message.receive");
     const r = await def.ops!["discovery.map@1"]!({ candidates, blueprint: emailPackManifest(), runId: "map-r3" }, ctx, META);
     const v = r as { satisfied: boolean; gaps: Array<{ missingOp: string }> };
     expect(v.satisfied).toBe(false);
