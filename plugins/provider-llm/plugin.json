@@ -1,0 +1,18 @@
+{
+  "manifestVersion": "1",
+  "id": "provider.llm",
+  "version": "0.1.0",
+  "description": "LLM provider: chat.complete@1 with a deterministic in-sandbox SIMULATOR backend (every completion carries sim: true). The live openai-compatible leg is implemented but owner-machine-only: it requires config.live AND a credential.use capability that no in-sandbox composition grants. A live adapter tier would declare EXTERNAL_MUTATION for paid API usage (v2 policy refinement); the simulator is local, so chat.complete stays READ.",
+  "entry": "src/index.ts",
+  "publisher": { "keyId": "", "signature": "" },
+  "contributions": {
+    "contract": [{ "kind": "contract", "id": "chat.complete", "version": "1", "risk": "READ" }]
+  },
+  "dependencies": [],
+  "capabilities": {
+    "requested": [],
+    "justification": "The simulator is self-contained (no network, no secrets, no capabilities). A live adapter tier would request credential.use — a REFERENCE to a vault-held credential, never the secret itself; that tier is owner-machine only (docs/SURFACES.md credential law)."
+  },
+  "runtime": { "tier": "worker-thread", "budget": { "cpuMs": 500, "memMB": 128 } },
+  "contentHash": ""
+}

@@ -1,0 +1,21 @@
+{
+  "name": "llm",
+  "entries": [
+    {
+      "id": "vivim.law",
+      "source": "../plugins/vivim-law",
+      "bootPhase": 0,
+      "grant": {
+        "capabilities": ["host.journal.append", "host.tokens.revoke"],
+        "contracts": ["law.check@1", "law.registry@1", "law.consent.grant@1", "law.tokens.revoke@1", "law.amendment@1"]
+      },
+      "config": { "journalPath": "" }
+    },
+    {
+      "id": "provider.llm",
+      "source": "../plugins/provider-llm",
+      "bootPhase": 1,
+      "grant": { "capabilities": [], "contracts": ["chat.complete@1"] }
+    }
+  ]
+}

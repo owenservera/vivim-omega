@@ -1,0 +1,27 @@
+{
+  "name": "risk-cli",
+  "entries": [
+    {
+      "id": "vivim.law",
+      "source": "../../../../plugins/vivim-law",
+      "bootPhase": 0,
+      "grant": {
+        "capabilities": ["host.journal.append", "host.tokens.revoke"],
+        "contracts": ["law.check@1", "law.registry@1", "law.consent.grant@1", "law.tokens.revoke@1", "law.amendment@1"]
+      },
+      "config": { "journalPath": "" }
+    },
+    {
+      "id": "omega.risky",
+      "source": "../../../../examples/plugin-risky",
+      "bootPhase": 1,
+      "grant": { "capabilities": [], "contracts": ["risky.op@1", "risky.read@1"] }
+    },
+    {
+      "id": "omega.echo",
+      "source": "../../../../examples/plugin-echo",
+      "bootPhase": 1,
+      "grant": { "capabilities": [], "contracts": ["echo.ping@1"] }
+    }
+  ]
+}
