@@ -16,10 +16,10 @@ const WAVES: Array<{ id: string; title: string; deliverable: string; status: str
   { id: "Ω7", title: "discovery perception/observation", deliverable: "ApplicationGraph from captured fixtures, zero LLM", status: "built" },
   { id: "Ω8", title: "discovery inference/mapping/verification", deliverable: "DRAFT→PROMOTED only on postcondition probes", status: "built" },
   { id: "Ω9", title: "healing + ecosystem", deliverable: "Drift→rediscovery→probation→promotion, builder tooling", status: "built" },
-  { id: "Ω10", title: "vivim.mind (self-knowledge)", deliverable: "WorldModel derived from registry+vault+projections, contacts learned from history", status: "in-progress" },
-  { id: "Ω11", title: "vivim.nlcl (deterministic NLP)", deliverable: "17 symbol families, 7-stage pure pipeline, instant feedback projection, nlcl-pure shared browser/server", status: "in-progress" },
-  { id: "Ω12", title: "vivim.director (reprogramming)", deliverable: "Rules/teach/consent as data, tick loop, NL-driven backend reconfiguration", status: "in-progress" },
-  { id: "Ω13", title: "surfaces/web (Ω console)", deliverable: "WorldModel replication, authoritative interpret/execute/consent, live stream, browser-side keystroke feedback", status: "in-progress" },
+  { id: "Ω10", title: "vivim.mind (self-knowledge)", deliverable: "WorldModel derived from registry+vault+projections, contacts learned from history", status: "built" },
+  { id: "Ω11", title: "vivim.nlcl (deterministic NLP)", deliverable: "17 symbol families, 7-stage pure pipeline, instant feedback projection, nlcl-pure shared browser/server", status: "built" },
+  { id: "Ω12", title: "vivim.director (reprogramming)", deliverable: "Rules/teach/consent as data, tick loop, NL-driven backend reconfiguration", status: "built" },
+  { id: "Ω13", title: "surfaces/web (Ω console)", deliverable: "WorldModel replication, authoritative interpret/execute/consent, live stream, browser-side keystroke feedback", status: "built" },
 ];
 
 export async function emitStatus(extra: { gate?: unknown; hostLoc?: number; tests?: { pass: number; fail: number } } = {}): Promise<void> {

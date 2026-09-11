@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-09-11T04:51:41.344Z",
+  "generatedAt": "2026-09-11T07:49:43.439Z",
   "repo": "vivim-omega",
   "branch": "omega",
-  "head": "5bddb4a",
+  "head": "1ba78a7",
   "waves": [
     {
       "id": "Ω0",
@@ -63,69 +63,32 @@
       "title": "healing + ecosystem",
       "deliverable": "Drift→rediscovery→probation→promotion, builder tooling",
       "status": "built"
+    },
+    {
+      "id": "Ω10",
+      "title": "vivim.mind (self-knowledge)",
+      "deliverable": "WorldModel derived from registry+vault+projections, contacts learned from history",
+      "status": "built"
+    },
+    {
+      "id": "Ω11",
+      "title": "vivim.nlcl (deterministic NLP)",
+      "deliverable": "17 symbol families, 7-stage pure pipeline, instant feedback projection, nlcl-pure shared browser/server",
+      "status": "built"
+    },
+    {
+      "id": "Ω12",
+      "title": "vivim.director (reprogramming)",
+      "deliverable": "Rules/teach/consent as data, tick loop, NL-driven backend reconfiguration",
+      "status": "built"
+    },
+    {
+      "id": "Ω13",
+      "title": "surfaces/web (Ω console)",
+      "deliverable": "WorldModel replication, authoritative interpret/execute/consent, live stream, browser-side keystroke feedback",
+      "status": "built"
     }
   ],
-  "gate": {
-    "startedAt": "2026-09-11T04:51:26.850Z",
-    "checks": {
-      "host-loc": {
-        "ok": true,
-        "detail": {
-          "loc": 822,
-          "budget": 1000
-        }
-      },
-      "fresh-tree": {
-        "ok": true,
-        "detail": {
-          "vivim-final-enhanced": {
-            "head": "abb6add",
-            "clean": true
-          },
-          "vivim-final-program": {
-            "head": "4a5eb84",
-            "clean": true
-          },
-          "legacyImports": 0
-        }
-      },
-      "tests": {
-        "ok": true,
-        "detail": {
-          "pass": 391,
-          "fail": 0
-        }
-      },
-      "attest": {
-        "ok": true,
-        "detail": {
-          "compileMs": 3,
-          "bootMs": 32,
-          "echo": true,
-          "counterBump": true,
-          "counterValue": {
-            "count": 1
-          },
-          "compartments": [
-            "vivim.law",
-            "omega.echo",
-            "omega.counter"
-          ],
-          "refusalRegister": "REFUSED",
-          "budgetRegister": "BUDGET",
-          "recovery": {
-            "midSwapCleaned": true,
-            "replayRefused": true
-          }
-        }
-      }
-    }
-  },
-  "hostLoc": 822,
-  "tests": {
-    "pass": 391,
-    "fail": 0
-  },
   "benchmarks": {
     "at": "2026-09-11T02:27:42.745Z",
     "bootMs": 27,
