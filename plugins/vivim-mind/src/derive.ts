@@ -131,19 +131,20 @@ export interface WorldEvidence {
   lexiconRows: EvidenceRow[];  // ns "nlcl"
 }
 
-// ---- ops catalog: config rows × registry liveness → OpView ----
+// ---- ops catalog: config rows (RECIPE DATA) → OpView ----
 
 /**
- * The ops catalog cross-check (D-215 segmentation): config rows are RECIPE DATA —
- * the user-signed grant is the authority for what the system can do — and the LIVE
- * registry adds liveness: an op whose provider plugin is not active in the registry
- * snapshot is filtered out (a dead provider's op is not part of the world).
+ * The ops catalog (D-215 segmentation): config rows are RECIPE DATA — the user-signed
+ * grant is the authority for what the system can do. The BOOT verified every provider
+ * (B1–B4) and the ROUTER routes the granted op or the call fails — liveness is enforced
+ * at call time, not guessed here. The law registry is an observation journal of gated
+ * callers, NOT a compartment liveness oracle (a fresh boot has zero law.check callers),
+ * so it must NOT filter the catalog: filtering on it would blank the world until
+ * something happens to be gated. The catalog passes through as granted; the registry
+ * still feeds kernel.plugins (what the law has actually SEEN) and the version counter.
  */
-export function opsForWorld(ops: OpRow[], registry: RegistrySnapshotView): OpView[] {
-  const active = new Set(registry.plugins.filter((id) => registry.states[id]?.state === "active"));
-  return ops
-    .filter((o) => active.has(o.provider))
-    .map((o) => ({ op: o.op, risk: o.risk, provider: o.provider, title: o.title }));
+export function opsForWorld(ops: OpRow[], _registry: RegistrySnapshotView): OpView[] {
+  return ops.map((o) => ({ op: o.op, risk: o.risk, provider: o.provider, title: o.title }));
 }
 
 // ---- message projection (the built-in ns-email projection, v1) ----

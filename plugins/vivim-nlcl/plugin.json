@@ -1,0 +1,20 @@
+{
+  "manifestVersion": "1",
+  "id": "vivim.nlcl",
+  "version": "0.1.0",
+  "description": "Ω11 — the Natural Command Language Layer as an upgradable ENGINE plugin (D-216). Wraps @vivim/omega-nlcl-pure (zero-dependency deterministic core, the same bytes run in the browser) and grounds every parse against vivim.mind's WorldModel. Determinism law N1: same (text, WorldModel, version) ⇒ same interpretation. The LLM is never in the parse path (N2: edge-only, opt-in).",
+  "entry": "src/index.ts",
+  "publisher": { "keyId": "", "signature": "" },
+  "contributions": {
+    "engine": [
+      { "kind": "engine", "id": "nlcl.interpret", "version": "1", "doc": "interpret {text} → Interpretation (deterministic, traced, grounded against mind.snapshot@1). READ risk by kind — engines declare no risk; the surface/executor routes the RESULTING op through law.check." }
+    ]
+  },
+  "dependencies": [],
+  "capabilities": {
+    "requested": ["port:mind.snapshot@1"],
+    "justification": "Interpretation grounds against the self-knowledge WorldModel: nlcl.interpret@1 calls mind.snapshot@1 (READ) to fetch entities/ops/lexicon/rules. The language engine holds no other capability — executing the parsed op is the caller's business (the surface routes it through law.check like any root call)."
+  },
+  "runtime": { "tier": "worker-thread", "budget": { "cpuMs": 500, "memMB": 64 } },
+  "contentHash": ""
+}

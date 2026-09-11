@@ -153,7 +153,7 @@ describe("Ω10 unit · parseMindConfig (composition passthrough — data, never 
   });
 });
 
-describe("Ω10 unit · opsForWorld (config rows × registry liveness — the D-215 segmentation)", () => {
+describe("Ω10 unit · opsForWorld (config rows — RECIPE DATA is the authority; liveness is call-time)", () => {
   const registry = {
     plugins: ["provider.email.file", "vivim.director", "vivim.law"],
     events: 7,
@@ -164,16 +164,11 @@ describe("Ω10 unit · opsForWorld (config rows × registry liveness — the D-2
     expect(opsForWorld(MIND_OPS, registry)).toEqual(MIND_OPS);
   });
 
-  test("an inactive provider's ops are filtered OUT (a dead provider's op is not part of the world)", () => {
-    const dead = { ...registry, plugins: ["provider.email.file"], states: { "provider.email.file": { state: "active" } } };
-    const ops = opsForWorld(MIND_OPS, dead);
-    expect(ops).toHaveLength(6); // the six provider.email.file ops; the three director.* ops are gone
-    expect(ops.every((o) => o.provider === "provider.email.file")).toBe(true);
-  });
-
-  test("an observed-but-not-active provider is filtered OUT too (state must be 'active')", () => {
+  test("the catalog passes through AS GRANTED regardless of registry observations — the registry is a gated-caller journal, not a liveness oracle (fresh boots have zero law.check callers; filtering would blank the world)", () => {
+    const emptyRegistry = { ...registry, plugins: [], states: {} };
+    expect(opsForWorld(MIND_OPS, emptyRegistry)).toEqual(MIND_OPS);
     const degraded = { ...registry, states: { ...registry.states, "vivim.director": { state: "degraded" } } };
-    expect(opsForWorld(MIND_OPS, degraded)).toHaveLength(6);
+    expect(opsForWorld(MIND_OPS, degraded)).toEqual(MIND_OPS);
   });
 });
 
@@ -347,7 +342,7 @@ describe("Ω10 unit · buildWorldModel (the assembly: ordering, cap, context, ke
     const world = buildWorldModel({ registry: emptyRegistry, messageRows: [], ruleRows: [], lexiconRows: [] }, config, {});
     expect(world.entities).toEqual([]);
     expect(world.context).toEqual({ latestMessageId: null, latestEntityId: null });
-    expect(world.ops).toEqual([]); // no provider of the catalog is active in this registry
+    expect(world.ops).toEqual(config.ops.map((o) => ({ op: o.op, risk: o.risk, provider: o.provider, title: o.title }))); // the recipe-granted catalog, unfiltered (liveness is enforced at call time by the router)
   });
 });
 

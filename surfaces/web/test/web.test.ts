@@ -1,0 +1,218 @@
+// surfaces/web — test/web.test.ts (Ω13 gate evidence)
+// Boots the REAL console composition (law+vault+mind+nlcl+director+pack+provider+llm) as the
+// live service on an ephemeral port, then drives the full loop over HTTP + socket.io:
+// snapshot replication → interpret → execute (consent ceremony) → consent → retry → rules fire.
+import { describe, expect, test, beforeAll, afterAll } from "bun:test";
+import { mkdirSync, rmSync } from "node:fs";
+import { join, dirname } from "node:path";
+import { io, type Socket } from "socket.io-client";
+import { startConsoleService, type RunningService } from "../src/server.ts";
+import type { Interpretation, WorldModel } from "@vivim/omega-nlcl-pure";
+
+const ROOT = join(import.meta.dir, "../../..");
+const COMPOSITION = join(ROOT, "compositions/console.json");
+
+interface ExecOutcomeWire {
+  interpretation: Interpretation;
+  surface?: { kind: string; payload: Record<string, unknown> };
+  executed: boolean;
+  op?: string;
+  result?: unknown;
+  refused?: { op: string; principal: string; consentId?: string; detail: string };
+  ruleActionConsent?: { principal: string; op: string; consentId?: string; decision: string };
+  worldV: number;
+}
+
+let service: RunningService;
+let base: string;
+const vaultDirs: string[] = [];
+
+function uniqueVault(): string {
+  const d = `/tmp/omega-web-test/${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
+  mkdirSync(d, { recursive: true });
+  vaultDirs.push(d);
+  return d;
+}
+
+beforeAll(async () => {
+  const vaultDir = uniqueVault();
+  // house pattern (email integration): a spec COPY with a unique vault dataDir, so the
+  // test never touches the repo's dev-vault (the live service's persistent home)
+  const spec = JSON.parse(await Bun.file(COMPOSITION).text()) as { entries: Array<{ id: string; source: string; config?: Record<string, unknown> }> };
+  for (const e of spec.entries) {
+    e.source = join(dirname(COMPOSITION), e.source); // absolutize: the copy lives in a temp dir
+    if (e.id === "vivim.vault" && e.config) e.config["dataDir"] = `${vaultDir}/vault-data`;
+  }
+  const specPath = `${vaultDir}/console-test.json`;
+  await Bun.write(specPath, JSON.stringify(spec));
+  service = await startConsoleService({
+    port: 0, // ephemeral — we read back the assigned port
+    vaultDir,
+    composition: specPath,
+    defaultComposition: specPath,
+  });
+  base = `http://127.0.0.1:${service.port}`;
+});
+
+afterAll(async () => {
+  await service.close();
+  for (const d of vaultDirs) rmSync(d, { recursive: true, force: true });
+}, 30000);
+
+describe("Ω13 · boot + seeding + snapshot replication", () => {
+  test("health: all 8 compartments active, 20+ routed ops, nlcl pinned", async () => {
+    const r = await (await fetch(`${base}/api/health`)).json() as { ok: boolean; plugins: Record<string, { state: string }>; routedOps: string[]; nlclVersion: string };
+    expect(r.ok).toBe(true);
+    for (const [id, c] of Object.entries(r.plugins)) {
+      expect(c.state).toBe("active");
+      expect(id).toBeTruthy();
+    }
+    expect(Object.keys(r.plugins).length).toBe(8);
+    expect(r.routedOps.length).toBeGreaterThanOrEqual(20);
+    expect(r.routedOps).toContain("nlcl.interpret@1");
+    expect(r.nlclVersion).toBeTruthy();
+  });
+
+  test("snapshot: seeded world with contacts derived from message history", async () => {
+    const r = await (await fetch(`${base}/api/snapshot`)).json() as { world: WorldModel };
+    const w = r.world;
+    expect(w.kernel.composition).toBe("console");
+    expect(w.ops.length).toBe(9);
+    const contacts = w.entities.filter((e) => e.type === "contact");
+    const messages = w.entities.filter((e) => e.type === "message");
+    expect(messages.length).toBe(4); // the seed batch
+    expect(contacts.map((c) => c.label).sort()).toEqual(["Maria Garcia", "Peter Miller", "Peter Zhang", "Sarah Chen"]);
+    expect(w.context.latestMessageId).toBeTruthy();
+    // ops catalog carries the law's surface: send is EXTERNAL_MUTATION (consent preview)
+    expect(w.ops.find((o) => o.op === "message.send@1")?.risk).toBe("EXTERNAL_MUTATION");
+  });
+});
+
+describe("Ω13 · interpret + execute: the owner's example end-to-end", () => {
+  test("POST /api/interpret 'send this to Peter' → grounded, ambiguous (two Peters), canonical form", async () => {
+    const r = await (await fetch(`${base}/api/interpret`, { method: "POST", body: JSON.stringify({ text: "send this to Peter" }) })).json() as { interpretation: Interpretation };
+    const interp = r.interpretation;
+    expect(interp.ir?.intent).toBe("message.send@1");
+    expect(interp.ir?.payload["to"]).toBe("peter.miller@omega.local");
+    expect(interp.status).toBe("ambiguous");
+    expect(interp.canonical).toMatch(/^\/send @msg_/);
+    expect(interp.suggestions.filter((s) => s.kind === "disambiguation").length).toBe(2);
+    expect(interp.effects[0]?.gate).toBe("consent");
+  });
+
+  test("execute → REFUSED with the consentId (the ✓ card), then consent → retry executes", async () => {
+    // 1. first execute: the law gate refuses root's message.send
+    const r1 = await (await fetch(`${base}/api/execute`, { method: "POST", body: JSON.stringify({ text: "send 'hello from the console test' to Sarah" }) })).json() as { outcome: ExecOutcomeWire };
+    expect(r1.outcome.executed).toBe(false);
+    expect(r1.outcome.refused?.consentId).toMatch(/^consent_[0-9a-f]+$/);
+    expect(r1.outcome.refused?.op).toBe("message.send@1");
+    // 2. the confirm card grants it
+    const g = await (await fetch(`${base}/api/consent`, { method: "POST", body: JSON.stringify({ consentId: r1.outcome.refused!.consentId }) })).json() as { ok: boolean; granted: boolean };
+    expect(g.granted).toBe(true);
+    // 3. retry: same NL, now clean
+    const r2 = await (await fetch(`${base}/api/execute`, { method: "POST", body: JSON.stringify({ text: "send 'hello from the console test' to Sarah" }) })).json() as { outcome: ExecOutcomeWire };
+    expect(r2.outcome.executed).toBe(true);
+    expect(r2.outcome.result).toMatchObject({ messageId: expect.stringMatching(/^msg_/) });
+  });
+
+  test("ambiguous Peter: execute with the primary pick works; disambiguation picks are data", async () => {
+    const r = await (await fetch(`${base}/api/execute`, { method: "POST", body: JSON.stringify({ text: "send this to Peter about the follow-up" }) })).json() as { outcome: ExecOutcomeWire };
+    // consent was granted in the previous test → executes with the primary (Peter Miller)
+    expect(r.outcome.executed).toBe(true);
+    const to = (r.outcome.interpretation.ir?.slots["to"]);
+    expect(to?.entityId).toBe("contact:peter-miller");
+    expect(to?.matches?.length).toBe(2);
+  });
+});
+
+describe("Ω13 · reprogramming: teach + rules fire through the live loop", () => {
+  test("teach 'blitz means send' → the word parses immediately after", async () => {
+    const r = await (await fetch(`${base}/api/execute`, { method: "POST", body: JSON.stringify({ text: "teach blitz means send" }) })).json() as { outcome: ExecOutcomeWire };
+    expect(r.outcome.executed).toBe(true);
+    expect(r.outcome.interpretation.canonical).toBe("blitz = /send");
+    // the NEXT parse sees the taught word (the world version bumped → new lexicon entry)
+    const p = await (await fetch(`${base}/api/interpret`, { method: "POST", body: JSON.stringify({ text: "blitz 'taught words work' to Sarah" }) })).json() as { interpretation: Interpretation };
+    expect(p.interpretation.ir?.intent).toBe("message.send@1");
+    expect(p.interpretation.ir?.payload["to"]).toBe("sarah.chen@omega.local");
+  });
+
+  test("rule: create → actionConsent card → grant for vivim.director → trigger fires", async () => {
+    // 1. create the rule; the response carries the rule-action consent pre-check
+    const r1 = await (await fetch(`${base}/api/execute`, { method: "POST", body: JSON.stringify({ text: "when Maria messages me, forward it to Sarah" }) })).json() as { outcome: ExecOutcomeWire };
+    expect(r1.outcome.executed).toBe(true);
+    expect(r1.outcome.result).toMatchObject({ ruleId: "rule:maria-garcia-forward" });
+    expect(r1.outcome.ruleActionConsent?.principal).toBe("vivim.director");
+    const actionConsentId = r1.outcome.ruleActionConsent?.consentId;
+    expect(actionConsentId).toMatch(/^consent_[0-9a-f]+$/);
+    // 2. grant the rule's action consent (principal vivim.director — the console user is root)
+    const g = await (await fetch(`${base}/api/consent`, { method: "POST", body: JSON.stringify({ consentId: actionConsentId, principal: "vivim.director" }) })).json() as { granted: boolean };
+    expect(g.granted).toBe(true);
+    // 3. trigger: Maria messages; the director tick (500ms live interval) fires the rule.
+    //    The rule applies to the UNPROCESSED inbox: the seeded "Welcome" message from Maria
+    //    (arrived before the rule existed) fires too — pinned semantics: rules apply to
+    //    unprocessed messages; the fired ledger prevents re-fires, never duplicates.
+    const rec = await (await fetch(`${base}/api/execute`, { method: "POST", body: JSON.stringify({ text: "Maria messages me: the trigger test" }) })).json() as { outcome: ExecOutcomeWire };
+    expect(rec.outcome.executed).toBe(true);
+    let fwd: WorldModel["entities"] = [];
+    for (let i = 0; i < 30; i++) {
+      await new Promise((r) => setTimeout(r, 250));
+      const snap = await (await fetch(`${base}/api/snapshot`)).json() as { world: WorldModel };
+      fwd = snap.world.entities.filter((e) => e.type === "message" && (e.data as { to?: string })?.["to"] === "sarah.chen@omega.local" && ((e.data as { subject?: string })?.["subject"] ?? "").startsWith("Fwd:"));
+      if (fwd.length >= 2) break;
+    }
+    expect(fwd.length).toBe(2); // Fwd: Welcome (the seed) + Fwd: the trigger test
+    const subjects = fwd.map((m) => (m.data as { subject: string })["subject"]).sort();
+    expect(subjects).toEqual(["Fwd: Welcome", "Fwd: the trigger test"]);
+    const trigger = fwd.find((m) => (m.data as { subject: string })["subject"] === "Fwd: the trigger test")!;
+    expect((trigger.data as { body: string })["body"]).toBe("the trigger test");
+    // 4. the world catches up: the rule + the sent messages exist
+    const snap2 = await (await fetch(`${base}/api/snapshot`)).json() as { world: WorldModel };
+    expect(snap2.world.rules.length).toBe(1);
+    expect(snap2.world.rules[0]?.enabled).toBe(true);
+  }, 20000);
+});
+
+describe("Ω13 · the live stream (socket.io, path '/')", () => {
+  test("connect → snapshot + journal history; execute → 'result' pushes; world bumps broadcast", async () => {
+    const socket: Socket = io(`http://127.0.0.1:${service.port}/?XTransformPort=${service.port}`, {
+      path: "/", transports: ["websocket", "polling"], forceNew: true, reconnection: false, timeout: 5000,
+    });
+    try {
+      const got: { snapshot?: { world: WorldModel }; journal?: { events: unknown[] }; results: ExecOutcomeWire[]; world?: { world: WorldModel } } = { results: [] };
+      socket.on("snapshot", (p) => { got.snapshot = p; });
+      socket.on("journal", (p) => { got.journal = p; });
+      socket.on("result", (p) => { got.results.push(p); });
+      socket.on("world", (p) => { got.world = p; });
+      await new Promise<void>((resolve) => socket.on("connect", () => resolve()));
+      // initial replication
+      for (let i = 0; i < 30 && !(got.snapshot && got.journal); i++) await new Promise((r) => setTimeout(r, 100));
+      expect(got.snapshot?.world?.ops?.length).toBe(9);
+      expect((got.journal?.events?.length ?? 0)).toBeGreaterThanOrEqual(0); // history exists on a used vault
+      // an execute pushes the result; a RECEIVE bumps the world (v = events+entities+rules+lexicon)
+      const r = await (await fetch(`${base}/api/execute`, { method: "POST", body: JSON.stringify({ text: "search forward" }) })).json() as { outcome: ExecOutcomeWire };
+      expect(r.outcome.executed).toBe(true);
+      const rec = await (await fetch(`${base}/api/execute`, { method: "POST", body: JSON.stringify({ text: "Peter Zhang messages me: the stream test" }) })).json() as { outcome: ExecOutcomeWire };
+      expect(rec.outcome.executed).toBe(true);
+      for (let i = 0; i < 60 && !(got.results.length >= 2 && got.world); i++) await new Promise((res) => setTimeout(res, 150));
+      expect(got.results.map((x) => x.interpretation?.ir?.intent)).toContain("message.search@1");
+      expect(got.results.map((x) => x.interpretation?.ir?.intent)).toContain("message.receive@1");
+      expect(got.world?.world?.v).toBeGreaterThan(0);
+    } finally {
+      socket.disconnect();
+    }
+  }, 25000);
+});
+
+describe("Ω13 · surface pseudo-intents + the LLM edge", () => {
+  test("'what can I say?' → the help payload with the ops catalog", async () => {
+    const r = await (await fetch(`${base}/api/execute`, { method: "POST", body: JSON.stringify({ text: "what can I say?" }) })).json() as { outcome: ExecOutcomeWire };
+    expect(r.outcome.surface?.kind).toBe("help");
+    expect((r.outcome.surface?.payload?.["ops"] as unknown[]).length).toBe(9);
+  });
+  test("POST /api/assist → a deterministic simulator suggestion (the opt-in LLM edge, N2)", async () => {
+    const r = await (await fetch(`${base}/api/assist`, { method: "POST", body: JSON.stringify({ text: "how do I mail Peter the report" }) })).json() as { ok: boolean; suggestion: string; sim: boolean };
+    expect(r.ok).toBe(true);
+    expect(r.sim).toBe(true);
+    expect(r.suggestion.length).toBeGreaterThan(0);
+  });
+});

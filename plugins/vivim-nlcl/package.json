@@ -1,0 +1,7 @@
+{
+  "name": "@vivim/plugins-vivim-nlcl",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "dependencies": { "@vivim/omega-shim": "workspace:*", "@vivim/omega-contracts": "workspace:*", "@vivim/omega-host": "workspace:*", "@vivim/omega-nlcl-pure": "workspace:*", "@vivim/omega-sdk": "workspace:*" }
+}

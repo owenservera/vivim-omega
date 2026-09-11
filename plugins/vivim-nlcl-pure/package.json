@@ -1,0 +1,10 @@
+{
+  "name": "@vivim/omega-nlcl-pure",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Ω11 pure NCLL engine — the deterministic Natural Command Language Layer core. ZERO imports (browser + worker + server share these exact bytes). Determinism law N1: interpret(text, world) is a pure function.",
+  "exports": {
+    ".": "./src/index.ts"
+  }
+}
