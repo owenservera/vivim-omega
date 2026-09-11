@@ -9,7 +9,10 @@ export { interpret } from "./interpret.ts";
 export { lex } from "./lexer.ts";
 export { SYMBOL_FAMILIES, FAMILY_BY_CHAR, STOPWORDS, MODIFIER_WORDS } from "./symbols.ts";
 export { DEFAULT_FRAMES, NCLL_VERSION, framesForWorld } from "./frames.ts";
-export { ground, groundPhrase, entitySymbol, CONTEXT_WORDS } from "./ground.ts";
+export {
+  ground, groundPhrase, entitySymbol, CONTEXT_WORDS,
+  applyPriors, groundWithPriors, groundPhraseWithPriors,
+} from "./ground.ts";
 export { matchFrames, fillFrame, buildPayload, buildCanonical, buildReading, type Candidate } from "./grammar.ts";
 export {
   recognizeHelp, recognizeEntityQuery, recognizeTeach, recognizeRule, recognizeReceive, recognizeInbox,
@@ -21,6 +24,9 @@ export type {
   RiskClass, FamilyChar, PluginView, OpView, EntityView, LexiconEntry, RuleView, WorldModel,
   Interpretation, InterpStatus, Token, TokKind, EntityMatch, IRSlot, IR, TokenNote, EffectView,
   Suggestion, SuggestionKind, GapNote, GapKind, StageTrace, FamilyDef, SlotKind, FrameSlot, OpFrame,
+  EntityPrior, ChannelPrior, VerbPrior, CorrectionPrior, BehaviorPriors,
+  CapabilityView, GapRecord, AttachmentView, FocusView, PendingIntent,
+  VisualSlotCard, VisualEntityChip, VisualChannelPicker, VisualRiskBadge, VisualSpec,
 } from "./types.ts";
 
 import type { WorldModel, EntityView } from "./types.ts";

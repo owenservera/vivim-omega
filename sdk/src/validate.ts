@@ -36,11 +36,33 @@ function issue(code: string, path: string, message: string): ValidationIssue {
 export function validateManifest(m: PluginManifest): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
 
-  // risk only on CONTRACT kind
+  // risk only on CONTRACT kind; language data only on LANG kind
   for (const [kind, list] of Object.entries(m.contributions ?? {})) {
     for (const c of list ?? []) {
       if (c.risk !== undefined && kind !== "contract") {
         issues.push(issue("RISK_NON_CONTRACT", `contributions.${kind}[${c.id}]`, `risk "${c.risk}" is only legal on contract-kind contributions (found kind "${kind}")`));
+      }
+      // Ω13.5 — frames/lexicon are legal ONLY on lang-kind contributions
+      const hasLangData = (c as { frames?: unknown; lexicon?: unknown }).frames !== undefined
+        || (c as { frames?: unknown; lexicon?: unknown }).lexicon !== undefined;
+      if (hasLangData && kind !== "lang") {
+        issues.push(issue("LANG_DATA_NON_LANG", `contributions.${kind}[${c.id}]`, `frames/lexicon data is only legal on lang-kind contributions (found kind "${kind}")`));
+      }
+      if (kind === "lang") {
+        const lc = c as { frames?: Array<{ op?: string }>; lexicon?: Array<{ word?: string; op?: string }> };
+        for (const f of lc.frames ?? []) {
+          if (typeof f.op !== "string" || !OP_PATTERN.test(`${f.op}@1`)) {
+            issues.push(issue("LANG_FRAME_OP", `contributions.lang[${c.id}].frames`, `frame op "${String(f.op)}" must be a valid op id (routable as <op>@1)`));
+          }
+        }
+        for (const lx of lc.lexicon ?? []) {
+          if (typeof lx.word !== "string" || lx.word.length === 0) {
+            issues.push(issue("LANG_LEXICON_WORD", `contributions.lang[${c.id}].lexicon`, `lexicon entry requires a non-empty word`));
+          }
+          if (typeof lx.op !== "string" || !OP_PATTERN.test(`${lx.op}@1`)) {
+            issues.push(issue("LANG_LEXICON_OP", `contributions.lang[${c.id}].lexicon`, `lexicon entry op "${String(lx.op)}" must be a valid op id`));
+          }
+        }
       }
     }
   }

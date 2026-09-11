@@ -5,6 +5,7 @@
 export const CONTRIBUTION_KINDS = [
   "schema", "contract", "engine", "provider",
   "runtime", "surface", "policy", "pack", "test",
+  "lang", // Ω13.5 — vocabulary/frames as data (see ./lang.ts). NOT routable.
 ] as const;
 export type ContributionKind = (typeof CONTRIBUTION_KINDS)[number];
 

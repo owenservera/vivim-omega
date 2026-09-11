@@ -28,11 +28,51 @@ export const PORT_ERROR_CODES = ["REFUSED", "REVOKED", "SCOPE", "BUDGET", "DEGRA
 // (vivim.vault's SCHEMA contribution) carry extra declarative metadata ("fields",
 // "doc") — legal per the pinned type, covered by the publisher signature. The
 // manifest TOP LEVEL stays strict: a typo'd field there is a real error.
+// ---- Ω13.5: language-as-data shapes (mirror contracts/lang.ts) ----
+export const LangFrameSlotSchema = z.looseObject({
+  role: z.string().min(1),
+  kind: z.enum(["entity", "text", "content", "enum", "rest"]),
+  preps: z.array(z.string()).optional(),
+  entityTypes: z.array(z.string()).optional(),
+  enumValues: z.array(z.string()).optional(),
+  required: z.boolean().optional(),
+  patient: z.boolean().optional(),
+  payloadKey: z.string().optional(),
+  family: z.string().optional(),
+});
+
+export const LangOpFrameSchema = z.looseObject({
+  op: z.string().min(1),
+  verbs: z.array(z.string()),
+  title: z.string(),
+  slots: z.array(LangFrameSlotSchema),
+  reading: z.string(),
+  examples: z.array(z.string()),
+  family: z.string(),
+  surfaceOnly: z.boolean().optional(),
+});
+
+export const LangLexiconEntrySchema = z.looseObject({
+  word: z.string().min(1),
+  op: z.string().min(1),
+  note: z.string().optional(),
+  source: z.string().optional(),
+});
+
 export const ContributionSchema = z.looseObject({
-  kind: z.enum(CONTRIBUTION_KINDS),
-  id: z.string().regex(ID_PATTERN, { error: "contribution id must match ^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$" }),
-  version: z.string().regex(VERSION_PATTERN, { error: 'version must be "1" | "1.0" | "1.0.0" style' }),
-  risk: z.enum(RISK_CLASSES).optional(),
+   kind: z.enum(CONTRIBUTION_KINDS),
+   id: z.string().regex(ID_PATTERN, { error: "contribution id must match ^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$" }),
+   version: z.string().regex(VERSION_PATTERN, { error: 'version must be "1" | "1.0" | "1.0.0" style' }),
+   risk: z.enum(RISK_CLASSES).optional(),
+   // Ω13.5 — language data rides on `lang`-kind contributions (validated semantically
+   // by validateManifest; carried here so the shared contributions record parses them).
+   frames: z.array(LangOpFrameSchema).optional(),
+   lexicon: z.array(LangLexiconEntrySchema).optional(),
+});
+
+/** Explicit `lang` contribution schema (kind pinned to "lang"). */
+export const LangContributionSchema = ContributionSchema.extend({
+  kind: z.literal("lang"),
 });
 
 export const DependencyRefSchema = z.strictObject({

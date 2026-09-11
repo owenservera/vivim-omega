@@ -37,14 +37,21 @@ export interface RuleView {
 
 /** THE grounding target — everything NCLL knows about the world it commands. */
 export interface WorldModel {
-  v: number;                 // version; bumped on any change
-  t: number;                 // built-at (epoch ms) — the only clock, supplied by the producer
-  kernel: { composition: string; nlclVersion: string; plugins: PluginView[] };
-  ops: OpView[];
-  entities: EntityView[];
-  lexicon: LexiconEntry[];
-  rules: RuleView[];
-  context: { latestMessageId: string | null; latestEntityId: string | null };
+   v: number;                 // version; bumped on any change
+   t: number;                 // built-at (epoch ms) — the only clock, supplied by the producer
+   kernel: { composition: string; nlclVersion: string; plugins: PluginView[] };
+   ops: OpView[];
+   entities: EntityView[];
+   lexicon: LexiconEntry[];
+   rules: RuleView[];
+   context: { latestMessageId: string | null; latestEntityId: string | null };
+   // ---- Ω13.5 additions (all optional; absent = pre-learning world) ----
+   priors?: BehaviorPriors;          // learned ranking data (never decides)
+   capabilities?: CapabilityView[];  // what plugins can do
+   capabilityGaps?: GapRecord[];     // what the user asked for that no plugin does yet
+   attachments?: AttachmentView[];   // attached documents/files in focus
+   focus?: FocusView;                // the current session focus
+   pendingIntents?: PendingIntent[]; // draft IRs awaiting explicit confirmation
 }
 
 // ---- interpretation result ----
@@ -174,4 +181,147 @@ export interface OpFrame {
   examples: string[];
   family: FamilyChar;
   surfaceOnly?: boolean;     // pseudo-intents served by surfaces, never routed
+}
+
+// ===========================================================================
+// Ω13.5 — learned behavior, capabilities, focus, pending intents, visual spec
+// ===========================================================================
+
+/** Learned-behavior priors: DERIVED DATA that RANKS groundings. Never decides,
+ *  never executes, never bypasses a law gate. Pure input to grounding (N1 holds:
+ *  same text + world + priors + version ⇒ same interpretation). */
+export interface EntityPrior {
+  entityId: string;          // matches EntityView.id
+  type: string;              // matches EntityView.type
+  uses: number;              // observed interaction count
+  lastUsedAt: number;        // epoch ms of most recent use
+  score: number;             // fused ranking score 0..1 (ranking only)
+}
+export interface ChannelPrior {
+  contactEntityId: string;
+  channel: string;           // "email" | "whatsapp" | "sms" | ...
+  uses: number;
+  score: number;
+}
+export interface VerbPrior {
+  verb: string;              // folded word or short phrase
+  op: string;                // the op it historically resolved to
+  uses: number;
+  score: number;
+}
+/** A correction memory: the user disambiguated X → prefer Y. Deterministic tiebreak. */
+export interface CorrectionPrior {
+  inputText: string;         // folded mention/phrase the user typed
+  slotRole: string;          // which slot it filled
+  chosenEntityId: string;    // what the user actually picked
+  rejectedEntityIds: string[];
+  at: number;
+}
+export interface BehaviorPriors {
+  v: number;                 // prior-set version
+  entities?: EntityPrior[];
+  channels?: ChannelPrior[];
+  verbs?: VerbPrior[];
+  corrections?: CorrectionPrior[];
+}
+
+/** A declared capability a plugin offers (feeds capability discovery + gap registry). */
+export interface CapabilityView {
+  capability: string;        // e.g. "compose.email", "summarize.text"
+  provider: string;          // plugin id offering it
+  title: string;
+  status: "available" | "pending" | "unavailable";
+}
+
+/** A recorded capability gap: the user asked for something no plugin provides yet. */
+export interface GapRecord {
+  id: string;
+  capability: string;        // what was wanted
+  context?: string;          // the input/phrase that surfaced it
+  count: number;             // how often requested
+  firstAt: number;
+  lastAt: number;
+  status: "open" | "in-progress" | "resolved";
+}
+
+/** An attached document/file in the current focus. */
+export interface AttachmentView {
+  id: string;                // "attachment:<id>"
+  label: string;             // file name
+  mimeType?: string;
+  sizeBytes?: number;
+  at: number;
+}
+
+/** The current session focus: what the user is working on right now. */
+export interface FocusView {
+  sessionId: string;
+  activeAttachmentId: string | null;
+  activeEntityId: string | null;
+  startedAt: number;
+}
+
+/** A pending (draft) intent: a vault-resident, editable, confirmable IR awaiting
+ *  explicit user confirmation. Execution only on confirm (law-gated as always). */
+export interface PendingIntent {
+  id: string;                // "intent:<id>"
+  input: string;             // the raw NL
+  ir: IR;                    // the deterministic interpretation
+  status: "draft" | "confirmed" | "cancelled" | "executed";
+  createdAt: number;
+  updatedAt: number;
+}
+
+// ---- deterministic visual projection (the machine showing what it will do) ----
+
+/** Slot card for the visual projection. */
+export interface VisualSlotCard {
+  role: string;
+  kind: SlotKind;
+  display: string;
+  canonical: string;
+  filled: boolean;
+  required: boolean;
+  confidence: number;
+  alternatives?: EntityMatch[];
+  ambiguous: boolean;
+}
+/** Entity chip for the visual projection. */
+export interface VisualEntityChip {
+  entityId: string;
+  type: string;
+  label: string;
+  symbol: string;            // "@peter-miller"
+}
+/** Channel picker state for the visual projection. */
+export interface VisualChannelPicker {
+  contactEntityId: string;
+  options: Array<{ channel: string; label: string; score: number; preferred: boolean }>;
+}
+/** Risk/consent badge for the visual projection. */
+export interface VisualRiskBadge {
+  op: string;
+  risk: RiskClass;
+  gate: "consent" | "journal" | "open";
+  consentId?: string;
+}
+/**
+ * The deterministic visual projection of an interpretation — the machine showing
+ * what it will execute, BEFORE executing. A pure function of (ir, world, priors);
+ * identical in browser and server (N1). This is the fast-tracked intent-exposure
+ * surface for the consumer app.
+ */
+export interface VisualSpec {
+  intent: string | null;
+  reading: string | null;
+  canonical: string | null;
+  confidence: number;
+  status: InterpStatus;
+  slots: VisualSlotCard[];
+  entityChips: VisualEntityChip[];
+  channelPicker: VisualChannelPicker | null;
+  riskBadges: VisualRiskBadge[];
+  suggestions: Suggestion[];
+  gaps: GapNote[];
+  focusAttachment: AttachmentView | null;
 }

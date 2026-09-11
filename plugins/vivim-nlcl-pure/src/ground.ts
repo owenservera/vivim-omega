@@ -3,7 +3,7 @@
 // substring. Ties keep world order. This is THE gap-narrowing surface: every mention shows
 // what the machine understood, with alternatives.
 
-import type { EntityMatch, EntityView, WorldModel } from "./types.ts";
+import type { EntityMatch, EntityView, WorldModel, BehaviorPriors } from "./types.ts";
 import { fold, lev, words } from "./text.ts";
 
 export const CONTEXT_WORDS = new Set(["this", "that", "it", "them", "they", "latest", "last", "newest", "current"]);
@@ -106,4 +106,65 @@ export function groundPhrase(phrase: string, entities: EntityView[], typeFilter?
     if (byLast.matches.length > 0) return byLast;
   }
   return direct;
+}
+
+// ===========================================================================
+// Ω13.5 — prior-aware grounding (learned ranking, deterministic, non-deciding)
+// ===========================================================================
+
+/**
+ * Apply learned priors to a grounding result: deterministic re-ranking + correction
+ * tiebreak. RANKING ONLY — never adds/removes entities, never decides execution,
+ * never bypasses a gate. Pure given (result, priors, mention, slotRole).
+ */
+export function applyPriors(
+  result: GroundResult,
+  priors: BehaviorPriors | undefined,
+  mention: string,
+  slotRole: string,
+): GroundResult {
+  if (!priors || result.matches.length === 0) return result;
+  const folded = mention.toLowerCase();
+  const entityPriorById = new Map((priors.entities ?? []).map((p) => [p.entityId, p] as const));
+  const correction = (priors.corrections ?? []).find(
+    (c) => c.inputText === folded && c.slotRole === slotRole,
+  );
+  const rescored: EntityMatch[] = result.matches.map((m) => {
+    let score = m.score;
+    const prior = entityPriorById.get(m.entity.id);
+    if (prior) score = Math.min(1, score * 0.7 + prior.score * 0.3); // blend, ranking only
+    if (correction) {
+      if (correction.chosenEntityId === m.entity.id) score = Math.min(1, score + 0.25);
+      if (correction.rejectedEntityIds.includes(m.entity.id)) score = Math.max(0, score - 0.25);
+    }
+    return { ...m, score };
+  });
+  rescored.sort((a, b) => b.score - a.score || a.entity.id.localeCompare(b.entity.id));
+  const capped = rescored.slice(0, 8);
+  const primary = capped.length > 0 ? capped[0] : null;
+  const ambiguous = capped.length > 1 && primary !== null
+    && Math.abs(capped[1].score - primary.score) < 0.01;
+  return { matches: capped, primary, ambiguous };
+}
+
+/** ground() + learned priors (backward compatible: priors optional). */
+export function groundWithPriors(
+  name: string,
+  entities: EntityView[],
+  priors: BehaviorPriors | undefined,
+  slotRole: string,
+  typeFilter?: string[],
+): GroundResult {
+  return applyPriors(ground(name, entities, typeFilter), priors, name, slotRole);
+}
+
+/** groundPhrase() + learned priors (backward compatible: priors optional). */
+export function groundPhraseWithPriors(
+  phrase: string,
+  entities: EntityView[],
+  priors: BehaviorPriors | undefined,
+  slotRole: string,
+  typeFilter?: string[],
+): GroundResult {
+  return applyPriors(groundPhrase(phrase, entities, typeFilter), priors, phrase, slotRole);
 }
