@@ -13,9 +13,9 @@ const WAVES: Array<{ id: string; title: string; deliverable: string; status: str
   { id: "Ω4", title: "SDK + testkit", deliverable: "zod schemas, signing, typed client, FakeHost, conformance", status: "built" },
   { id: "Ω5", title: "domain-email + provider", deliverable: "First domain pack, full loop through vault + consent", status: "built" },
   { id: "Ω6", title: "surfaces", deliverable: "CLI + MCP surfaces, provider-llm, webmail scaffold", status: "built" },
-  { id: "Ω7", title: "discovery perception/observation", deliverable: "ApplicationGraph from captured fixtures, zero LLM", status: "planned" },
-  { id: "Ω8", title: "discovery inference/mapping/verification", deliverable: "DRAFT→PROMOTED only on postcondition probes", status: "planned" },
-  { id: "Ω9", title: "healing + ecosystem", deliverable: "Drift→rediscovery→probation→promotion, builder tooling", status: "planned" },
+  { id: "Ω7", title: "discovery perception/observation", deliverable: "ApplicationGraph from captured fixtures, zero LLM", status: "built" },
+  { id: "Ω8", title: "discovery inference/mapping/verification", deliverable: "DRAFT→PROMOTED only on postcondition probes", status: "built" },
+  { id: "Ω9", title: "healing + ecosystem", deliverable: "Drift→rediscovery→probation→promotion, builder tooling", status: "built" },
 ];
 
 export async function emitStatus(extra: { gate?: unknown; hostLoc?: number; tests?: { pass: number; fail: number } } = {}): Promise<void> {
