@@ -1,0 +1,40 @@
+{
+  "name": "email",
+  "entries": [
+    {
+      "id": "vivim.law",
+      "source": "../plugins/vivim-law",
+      "bootPhase": 0,
+      "grant": {
+        "capabilities": ["host.journal.append", "host.tokens.revoke"],
+        "contracts": ["law.check@1", "law.registry@1", "law.consent.grant@1", "law.tokens.revoke@1", "law.amendment@1"]
+      }
+    },
+    {
+      "id": "pack.domain-email",
+      "source": "../packs/domain-email",
+      "bootPhase": 1,
+      "grant": { "capabilities": [], "contracts": [] }
+    },
+    {
+      "id": "vivim.vault",
+      "source": "../plugins/vivim-vault",
+      "bootPhase": 1,
+      "grant": {
+        "capabilities": [],
+        "contracts": ["vault.append@1", "vault.get@1", "vault.query@1", "vault.search@1", "vault.verify@1", "vault.compact@1", "vault.roundtrip@1"]
+      },
+      "config": { "dataDir": "/tmp/omega-email-test/main/vault-data" }
+    },
+    {
+      "id": "provider.email.file",
+      "source": "../plugins/provider-email-file",
+      "bootPhase": 1,
+      "grant": {
+        "capabilities": ["port:vault.append@1", "port:vault.get@1", "port:vault.query@1", "port:vault.search@1"],
+        "contracts": ["message.send@1", "message.list@1", "message.search@1", "message.read@1", "message.move@1"]
+      },
+      "config": { "from": "demo@omega.local" }
+    }
+  ]
+}

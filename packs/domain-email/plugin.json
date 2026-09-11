@@ -1,0 +1,124 @@
+{
+  "manifestVersion": "1",
+  "id": "pack.domain-email",
+  "version": "0.1.0",
+  "description": "Ω5 domain pack — the email ontology as DECLARATIONS: SCHEMA (Message/Thread/Folder/Contact), CONTRACT (the five message.* ops with their risk classes), POLICY (consent defaults, keep-all retention, draft→sent state machine), TEST (pack conformance dir). A pack declares the domain; a PROVIDER plugin (provider.email.file) implements the contracts. Passive v1: no ops, no capabilities, no dependencies — a pack may carry ops in a later version.",
+  "entry": "src/index.ts",
+  "publisher": { "keyId": "", "signature": "" },
+  "contributions": {
+    "schema": [
+      {
+        "kind": "schema",
+        "id": "email.message",
+        "version": "1",
+        "fields": [
+          { "name": "id", "type": "string", "required": true, "doc": "message id within ns email; provider-assigned (e.g. msg_<hex>)" },
+          { "name": "threadId", "type": "string", "required": true, "doc": "owning thread id; derived from (subject, to) when not supplied by the caller" },
+          { "name": "folder", "type": "string", "required": true, "doc": "mailbox folder name: sent | archive | trash | ... (moved via message.move@1)" },
+          { "name": "from", "type": "string", "required": true, "doc": "sender address; provider config from, default me@local" },
+          { "name": "to", "type": "string", "required": true, "doc": "recipient address; must contain '@'" },
+          { "name": "subject", "type": "string", "required": true, "doc": "non-empty subject line" },
+          { "name": "body", "type": "string", "required": true, "doc": "plain-text body (may be empty)" },
+          { "name": "sentAt", "type": "integer", "required": true, "doc": "epoch ms at send time" },
+          { "name": "flags", "type": "json", "required": true, "doc": "mailbox flags object {seen: boolean, flagged: boolean, draft: boolean}; message.read@1 sets seen, message.send@1 clears draft (draft→sent transition)" }
+        ],
+        "doc": "email.Message@1 — one stored email message (persisted as a vault object in ns 'email', meta.type='message')."
+      },
+      {
+        "kind": "schema",
+        "id": "email.thread",
+        "version": "1",
+        "fields": [
+          { "name": "id", "type": "string", "required": true, "doc": "thread id; referenced by email.Message.threadId" },
+          { "name": "subject", "type": "string", "required": true, "doc": "thread subject (subject of the first message)" },
+          { "name": "messageIds", "type": "array", "required": true, "doc": "ordered message ids in this thread" },
+          { "name": "lastAt", "type": "integer", "required": true, "doc": "epoch ms of the most recent message in the thread" }
+        ],
+        "doc": "email.Thread@1 — a conversation rollup. Declared ontology; materialized by providers from wave Ω6 on."
+      },
+      {
+        "kind": "schema",
+        "id": "email.folder",
+        "version": "1",
+        "fields": [
+          { "name": "id", "type": "string", "required": true, "doc": "folder id (the folder name used by email.Message.folder)" },
+          { "name": "name", "type": "string", "required": true, "doc": "human-readable folder name" }
+        ],
+        "doc": "email.Folder@1 — a mailbox folder. Declared ontology; folder rows are materialized by providers from wave Ω6 on."
+      },
+      {
+        "kind": "schema",
+        "id": "email.contact",
+        "version": "1",
+        "fields": [
+          { "name": "id", "type": "string", "required": true, "doc": "contact id" },
+          { "name": "email", "type": "string", "required": true, "doc": "contact address; must contain '@'" },
+          { "name": "displayName", "type": "string", "required": false, "doc": "optional display name" }
+        ],
+        "doc": "email.Contact@1 — an address-book entry. Declared ontology; materialized by providers from wave Ω6 on."
+      }
+    ],
+    "contract": [
+      { "kind": "contract", "id": "message.send", "version": "1", "risk": "EXTERNAL_MUTATION", "doc": "send {to, subject, body, threadId?} — leaves the local vault world (an outbound message), so consent is required by default (email.policy@1)." },
+      { "kind": "contract", "id": "message.list", "version": "1", "risk": "READ", "doc": "list {folder?, limit?} — summaries of stored messages (latest revision each), newest first, bounded." },
+      { "kind": "contract", "id": "message.search", "version": "1", "risk": "READ", "doc": "search {q} — full-text search over stored message bodies (vault FTS), summaries back." },
+      { "kind": "contract", "id": "message.read", "version": "1", "risk": "READ", "doc": "read {id} — the full message; marks it seen (flags.seen) as a separate internal vault revision." },
+      { "kind": "contract", "id": "message.move", "version": "1", "risk": "MUTATION", "doc": "move {id, folder} — internal mailbox mutation: appends a new revision with the folder changed." }
+    ],
+    "policy": [
+      {
+        "kind": "policy",
+        "id": "email.policy",
+        "version": "1",
+        "policy": {
+          "policyId": "email.policy",
+          "version": "1.0.0",
+          "description": "Domain policy for pack.domain-email: consent defaults, retention, and the message state machine — declarative data a law provider may consume (vivim.law v1 evaluates its own risk table; this doc is the domain's declared intent).",
+          "consent": {
+            "default": "require-consent",
+            "ops": {
+              "message.send@1": "require-consent",
+              "message.move@1": "allow-and-journal",
+              "message.list@1": "allow",
+              "message.search@1": "allow",
+              "message.read@1": "allow"
+            },
+            "rationale": "sending mail is an external mutation of the world outside the vault (recipients, servers); reading and moving are vault-internal."
+          },
+          "retention": {
+            "strategy": "keep-all",
+            "version": 1,
+            "coldRevisionsKept": true,
+            "notes": "v1 keeps every revision (vault Merkle chain is append-only); compaction may move superseded revisions cold but never deletes them, and refs-honoring protects referenced revisions."
+          },
+          "stateMachine": {
+            "entity": "email.message@1",
+            "initial": "draft",
+            "states": ["draft", "sent"],
+            "transitions": [
+              { "from": "draft", "to": "sent", "via": "message.send@1", "doc": "message.send@1 materializes the message already in state sent (flags.draft=false); v1 has no persisted draft state" }
+            ]
+          }
+        },
+        "doc": "email.policy@1 — the email domain policy as data."
+      }
+    ],
+    "test": [
+      {
+        "kind": "test",
+        "id": "email.pack-test",
+        "version": "1",
+        "dir": "test",
+        "runner": "bun test",
+        "doc": "pack conformance: ontology validation (schema fields complete, contract risk classes, namespace-clean ids, acyclic draft→sent state machine)."
+      }
+    ]
+  },
+  "dependencies": [],
+  "capabilities": {
+    "requested": [],
+    "justification": "A pack is passive declarations: no ops to route, no ports to call, no host capabilities. The implementing provider (provider.email.file) carries the capabilities; this manifest only declares the domain."
+  },
+  "runtime": { "tier": "worker-thread", "budget": { "cpuMs": 100, "memMB": 32 } },
+  "contentHash": ""
+}

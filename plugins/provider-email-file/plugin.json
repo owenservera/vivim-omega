@@ -1,0 +1,30 @@
+{
+  "manifestVersion": "1",
+  "id": "provider.email.file",
+  "version": "0.1.0",
+  "description": "Ω5 provider — file-backed email over the user's vault. Implements the five message.* contracts DECLARED by pack.domain-email (same ids/versions — cross-plugin contract implementation is the PREFERRED state, not a conflict): messages persist as vault objects in ns 'email' via port calls (data/code divorce — this plugin owns no storage), so replacing the provider keeps the data.",
+  "entry": "src/index.ts",
+  "publisher": { "keyId": "", "signature": "" },
+  "contributions": {
+    "provider": [
+      { "kind": "provider", "id": "message.send", "version": "1", "doc": "send {to, subject, body, threadId?} → vault.append@1 (ns email, meta.type message) → {messageId, rev, sentAt}. Risk/risk-class for this op is DECLARED by pack.domain-email (risk lives on contract kind only)." },
+      { "kind": "provider", "id": "message.list", "version": "1", "doc": "list {folder?, limit?} → vault.query@1 + bounded vault.get@1 → summaries (no bodies)." },
+      { "kind": "provider", "id": "message.search", "version": "1", "doc": "search {q} → vault.search@1 (FTS) → matched ids → summaries." },
+      { "kind": "provider", "id": "message.read", "version": "1", "doc": "read {id} → full message; sets flags.seen via a separate vault.append revision (the op contract is READ; the internal append is provider-side, gated as vault.append@1 MUTATION)." },
+      { "kind": "provider", "id": "message.move", "version": "1", "doc": "move {id, folder} → appends a new revision with the folder changed." }
+    ]
+  },
+  "dependencies": [
+    { "ref": "contract:message.send@1", "range": "1.x" },
+    { "ref": "contract:message.list@1", "range": "1.x" },
+    { "ref": "contract:message.search@1", "range": "1.x" },
+    { "ref": "contract:message.read@1", "range": "1.x" },
+    { "ref": "contract:message.move@1", "range": "1.x" }
+  ],
+  "capabilities": {
+    "requested": ["port:vault.append@1", "port:vault.get@1", "port:vault.query@1", "port:vault.search@1"],
+    "justification": "Messages persist in the USER'S VAULT, not in this plugin (data/code divorce): appending a message/flag/folder revision needs port:vault.append@1; list/search/read need port:vault.get@1, port:vault.query@1, port:vault.search@1. The composition grants exactly these four per user-signed Recipe — never this manifest."
+  },
+  "runtime": { "tier": "worker-thread", "budget": { "cpuMs": 1000, "memMB": 128 } },
+  "contentHash": ""
+}
