@@ -1,0 +1,15 @@
+{
+  "manifestVersion": "1",
+  "id": "omega.baddep",
+  "version": "0.1.0",
+  "description": "conformance fixture: depends on a contract no self-contained world provides",
+  "entry": "src/index.ts",
+  "publisher": { "keyId": "", "signature": "" },
+  "contributions": {
+    "contract": [{ "kind": "contract", "id": "baddep.op", "version": "1", "risk": "READ" }]
+  },
+  "dependencies": [{ "ref": "contract:echo.ping@1", "range": "1.x" }],
+  "capabilities": { "requested": [] },
+  "runtime": { "tier": "worker-thread", "budget": { "cpuMs": 100, "memMB": 64 } },
+  "contentHash": ""
+}

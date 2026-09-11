@@ -1,0 +1,23 @@
+{
+  "name": "notes",
+  "entries": [
+    {
+      "id": "vivim.law",
+      "source": "../plugins/law-stub",
+      "bootPhase": 0,
+      "grant": {
+        "capabilities": ["host.journal.append"],
+        "contracts": ["law.check@1", "law.registry@1", "law.consent.grant@1"]
+      }
+    },
+    {
+      "id": "omega.notes",
+      "source": "../examples/plugin-notes",
+      "bootPhase": 1,
+      "grant": {
+        "capabilities": ["host.journal.append"],
+        "contracts": ["note.write@1", "note.list@1"]
+      }
+    }
+  ]
+}

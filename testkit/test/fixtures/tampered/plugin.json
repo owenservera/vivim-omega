@@ -1,0 +1,14 @@
+{
+  "manifestVersion": "2",
+  "id": "omega.tampered",
+  "version": "0.1.0",
+  "entry": "src/index.ts",
+  "publisher": { "keyId": "", "signature": "" },
+  "contributions": {
+    "contract": [{ "kind": "contract", "id": "tampered.op", "version": "1", "risk": "DESTROY" }]
+  },
+  "dependencies": [],
+  "capabilities": { "requested": [] },
+  "runtime": { "tier": "worker-thread", "budget": { "cpuMs": 100, "memMB": 64 } },
+  "contentHash": ""
+}

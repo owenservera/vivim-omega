@@ -1,0 +1,19 @@
+{
+  "manifestVersion": "1",
+  "id": "omega.notes",
+  "version": "0.1.0",
+  "description": "Ω4 existence proof: in-memory notes store. Installs staged→active through the sdk conformance runner and the real µhost with ZERO changes to host/, sdk/, testkit/ — those packages were committed before this plugin existed.",
+  "entry": "src/index.ts",
+  "publisher": { "keyId": "", "signature": "" },
+  "contributions": {
+    "schema": [{ "kind": "schema", "id": "note", "version": "1" }],
+    "contract": [
+      { "kind": "contract", "id": "note.write", "version": "1", "risk": "MUTATION" },
+      { "kind": "contract", "id": "note.list", "version": "1", "risk": "READ" }
+    ]
+  },
+  "dependencies": [],
+  "capabilities": { "requested": [] },
+  "runtime": { "tier": "worker-thread", "budget": { "cpuMs": 100, "memMB": 64 } },
+  "contentHash": ""
+}
