@@ -1,0 +1,44 @@
+{
+  "name": "discovery",
+  "entries": [
+    {
+      "id": "vivim.law",
+      "source": "../plugins/vivim-law",
+      "bootPhase": 0,
+      "grant": {
+        "capabilities": ["host.journal.append", "host.tokens.revoke"],
+        "contracts": ["law.check@1", "law.registry@1", "law.consent.grant@1", "law.tokens.revoke@1", "law.amendment@1"]
+      }
+    },
+    {
+      "id": "vivim.vault",
+      "source": "../plugins/vivim-vault",
+      "bootPhase": 1,
+      "grant": {
+        "capabilities": [],
+        "contracts": ["vault.append@1", "vault.get@1", "vault.query@1", "vault.search@1", "vault.verify@1", "vault.compact@1", "vault.roundtrip@1"]
+      },
+      "config": { "dataDir": "/tmp/omega-discovery-perception/vault-data" }
+    },
+    {
+      "id": "discovery.perception",
+      "source": "../plugins/discovery-perception",
+      "bootPhase": 1,
+      "grant": {
+        "capabilities": ["port:vault.append@1", "port:vault.get@1"],
+        "contracts": ["discovery.perceive@1"]
+      },
+      "config": { "fixturesDir": "/home/z/my-project/vivim/vivim-omega/fixtures" }
+    },
+    {
+      "id": "discovery.observation",
+      "source": "../plugins/discovery-observation",
+      "bootPhase": 1,
+      "grant": {
+        "capabilities": ["port:vault.append@1", "port:vault.get@1"],
+        "contracts": ["discovery.observe@1"]
+      },
+      "config": { "fixturesDir": "/home/z/my-project/vivim/vivim-omega/fixtures" }
+    }
+  ]
+}

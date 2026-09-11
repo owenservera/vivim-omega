@@ -1,0 +1,106 @@
+{
+  "fixture": "ai-chat",
+  "capturedAt": 1735690200000,
+  "url": "https://chat.example.local/",
+  "viewport": { "width": 1024, "height": 768 },
+  "root": {
+    "tag": "div",
+    "id": "app",
+    "classes": ["chat-app"],
+    "children": [
+      {
+        "tag": "header",
+        "id": "chat-header",
+        "classes": ["chat-header"],
+        "children": [
+          { "tag": "h1", "text": "Omega Assistant", "classes": ["brand"] },
+          { "tag": "button", "id": "clear-btn", "ariaLabel": "Clear conversation", "classes": ["icon-btn"] }
+        ]
+      },
+      {
+        "tag": "main",
+        "id": "chat-main",
+        "classes": ["chat-main"],
+        "children": [
+          {
+            "tag": "ul",
+            "id": "message-list",
+            "role": "list",
+            "classes": ["message-list"],
+            "children": [
+              {
+                "tag": "li",
+                "id": "msg-user-1",
+                "classes": ["message", "user"],
+                "children": [
+                  { "tag": "span", "text": "what is the merkle chain?", "classes": ["bubble"] }
+                ]
+              },
+              {
+                "tag": "li",
+                "id": "msg-assistant-1",
+                "classes": ["message", "assistant"],
+                "children": [
+                  { "tag": "span", "text": "The merkle chain links each vault entry to the previous one by hash.", "classes": ["bubble"] }
+                ]
+              }
+            ]
+          },
+          {
+            "tag": "div",
+            "id": "composer",
+            "classes": ["composer"],
+            "children": [
+              {
+                "tag": "div",
+                "id": "composer-toolbar",
+                "classes": ["composer-toolbar"],
+                "children": [
+                  {
+                    "tag": "select",
+                    "id": "model-select",
+                    "ariaLabel": "Model",
+                    "classes": ["model-select"],
+                    "children": [
+                      { "tag": "option", "text": "omega-mini" },
+                      { "tag": "option", "text": "omega-pro" }
+                    ]
+                  },
+                  { "tag": "button", "id": "attach-btn", "text": "Attach", "classes": ["tool-btn"] },
+                  { "tag": "button", "id": "mic-btn", "ariaLabel": "Voice input", "classes": ["tool-btn"] }
+                ]
+              },
+              { "tag": "textarea", "id": "prompt-input", "placeholder": "Ask anything...", "classes": ["prompt"] },
+              { "tag": "button", "id": "send-btn", "text": "Send", "classes": ["primary"] },
+              { "tag": "button", "id": "stop-btn", "text": "Stop", "ariaLabel": "Stop generating", "classes": ["tool-btn"] }
+            ]
+          },
+          {
+            "tag": "div",
+            "id": "stream-panel",
+            "role": "region",
+            "classes": ["stream-panel"],
+            "children": [
+              {
+                "tag": "div",
+                "id": "stream-text",
+                "classes": ["stream-text"],
+                "children": [
+                  { "tag": "span", "text": "", "classes": ["stream-cursor"] }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "tag": "footer",
+        "id": "chat-footer",
+        "classes": ["chat-footer"],
+        "children": [
+          { "tag": "span", "id": "token-counter", "text": "0 tokens", "classes": ["token-counter"] }
+        ]
+      }
+    ]
+  }
+}

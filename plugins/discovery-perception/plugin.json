@@ -1,0 +1,80 @@
+{
+  "manifestVersion": "1",
+  "id": "discovery.perception",
+  "version": "0.1.0",
+  "description": "Ω7 discovery engine — perception: walks a captured page (fixtures only in-sandbox; live capture legs are owner-machine CDP scripts, see docs/DISCOVERY.md), classifies DOM nodes into an ApplicationGraph, and appends both the capture bytes and the graph to the user's vault as evidence objects (P5 provenance: every claim node cites capture bytes). ZERO LLM, ZERO network — deterministic by construction.",
+  "entry": "src/index.ts",
+  "publisher": { "keyId": "", "signature": "" },
+  "contributions": {
+    "engine": [
+      {
+        "kind": "engine",
+        "id": "discovery.perceive",
+        "version": "1",
+        "doc": "perceive {fixture: {name, pageRef? {ns, id}}} → {graphId: {ns, id, rev, cid}, nodeCount, edgeCount}. READ-class engine op — the pinned grammar allows risk only on contract-kind contributions, so engines declare none; this op reads a fixture and appends evidence, and its internal vault.append@1 calls are gated by the vault contract's MUTATION risk (journaled by law). pageRef defaults to {ns: 'discovery', id: 'capture:<name>'}. The page capture bytes AND the graph are appended to the vault; every GraphNode cites the capture revision via discovery.evidence-ref@1."
+      }
+    ],
+    "schema": [
+      {
+        "kind": "schema",
+        "id": "discovery.application-graph",
+        "version": "1",
+        "fields": [
+          { "name": "id", "type": "string", "required": true, "doc": "graph identity: 'graph:<fixtureName>' (matches the vault object id in ns 'discovery')" },
+          { "name": "capturedAt", "type": "integer", "required": true, "doc": "epoch ms from the CAPTURE fixture (never wall clock — determinism)" },
+          { "name": "source", "type": "object", "required": true, "fields": [{ "name": "fixtureName", "type": "string", "required": true }], "doc": "capture provenance: which fixture produced this graph" },
+          { "name": "nodes", "type": "array", "required": true, "doc": "discovery.graph-node@1[] — classified interactive/structural nodes" },
+          { "name": "edges", "type": "array", "required": true, "doc": "discovery.causal-edge@1[] — EMPTY from perception; causal edges come from discovery.observe@1" }
+        ],
+        "doc": "discovery.application-graph@1 — the shared ApplicationGraph evidence model for Ω8/Ω9 (the contract of record; the TS types in both discovery plugins are mirrors of this declaration)."
+      },
+      {
+        "kind": "schema",
+        "id": "discovery.graph-node",
+        "version": "1",
+        "fields": [
+          { "name": "id", "type": "string", "required": true, "doc": "deterministic path id: 'n' + child-index path from the root ('n0', 'n0.3.2')" },
+          { "name": "kind", "type": "enum", "required": true, "doc": "control | field | button | list | container" },
+          { "name": "label", "type": "string", "required": true, "doc": "aria-label → own text → placeholder → first descendant text → id → tag(:role) fallback, whitespace-collapsed, capped at 60 chars" },
+          { "name": "selectorHint", "type": "string", "required": true, "doc": "'#id' when the DOM node has an id; else a CSS path of tag:nth-of-type(k) segments from the capture root" },
+          { "name": "evidence", "type": "array", "required": true, "doc": "discovery.evidence-ref@1[] — every claim node cites capture bytes (≥1 ref, constitutional)" }
+        ],
+        "doc": "discovery.graph-node@1 — one classified node of an ApplicationGraph."
+      },
+      {
+        "kind": "schema",
+        "id": "discovery.causal-edge",
+        "version": "1",
+        "fields": [
+          { "name": "id", "type": "string", "required": true, "doc": "deterministic derivation id: 'e<index>' in observation order" },
+          { "name": "from", "type": "string", "required": true, "doc": "node id of the causal origin (user action / network-attributed node)" },
+          { "name": "to", "type": "string", "required": true, "doc": "node id of the node the DOM update landed on" },
+          { "name": "trigger", "type": "enum", "required": true, "doc": "click | type | network — what caused the DOM update" },
+          { "name": "latencyMs", "type": "integer", "required": true, "doc": "ts(dom-update) − ts(cause), authored fixture timestamps (deterministic)" },
+          { "name": "evidence", "type": "array", "required": true, "doc": "discovery.evidence-ref@1[] — cites the trace lines backing the edge (cause line + network lines + dom-update line), by byte span" }
+        ],
+        "doc": "discovery.causal-edge@1 — a cause→effect edge between graph nodes, produced by discovery.observe@1."
+      },
+      {
+        "kind": "schema",
+        "id": "discovery.evidence-ref",
+        "version": "1",
+        "fields": [
+          { "name": "casRef", "type": "string", "required": true, "doc": "vault object holding the capture bytes, as '<ns>/<id>@<rev>' (e.g. 'discovery/capture:webmail-inbox@1'); resolves via vault.get@1 {ns, id, rev}" },
+          { "name": "span", "type": "object", "doc": "optional {start, end}: UTF-8 BYTE offsets [start, end) into the referenced capture bytes — observation cites per event line; perception cites whole-capture (no span)" }
+        ],
+        "doc": "discovery.evidence-ref@1 — the provenance unit: which vault object's bytes back a claim."
+      }
+    ]
+  },
+  "dependencies": [
+    { "ref": "contract:vault.append@1", "range": "1.x" },
+    { "ref": "contract:vault.get@1", "range": "1.x" }
+  ],
+  "capabilities": {
+    "requested": ["port:vault.append@1", "port:vault.get@1"],
+    "justification": "Evidence is constitutional (P5): the page capture bytes and the ApplicationGraph persist in the USER'S VAULT, not in this plugin — port:vault.append@1 writes the capture + graph objects (ns 'discovery'), port:vault.get@1 reads the capture bytes back after the append (integrity self-check). The composition grants exactly these two per user-signed Recipe — never this manifest."
+  },
+  "runtime": { "tier": "worker-thread", "budget": { "cpuMs": 2000, "memMB": 128 } },
+  "contentHash": ""
+}

@@ -1,0 +1,17 @@
+{"type":"click","targetSelector":"#compose-btn","ts":1735689600120,"detail":{"button":0}}
+{"type":"network","targetSelector":"#compose-form","ts":1735689600145,"detail":{"method":"POST","url":"/api/drafts/new","requestId":"req-101","status":201}}
+{"type":"dom-update","targetSelector":"#compose-form","ts":1735689600300,"detail":{"mutation":"class-removed","classes":["hidden"]}}
+{"type":"type","targetSelector":"#to-field","ts":1735689600800,"detail":{"value":"river@omega.local"}}
+{"type":"type","targetSelector":"#subject-field","ts":1735689601300,"detail":{"value":"status update"}}
+{"type":"type","targetSelector":"#body-field","ts":1735689601800,"detail":{"value":"the merkle chain is intact"}}
+{"type":"click","targetSelector":"#send-btn","ts":1735689602400,"detail":{"button":0}}
+{"type":"network","targetSelector":"#send-btn","ts":1735689602420,"detail":{"method":"POST","url":"/api/messages/send","requestId":"req-102","status":200}}
+{"type":"dom-update","targetSelector":"#msg-list","ts":1735689602900,"detail":{"mutation":"node-appended","node":"li#msg-4"}}
+{"type":"dom-update","targetSelector":"#status-bar","ts":1735689602950,"detail":{"mutation":"text-change","text":"Message sent"}}
+{"type":"click","targetSelector":"#msg-1","ts":1735689603400,"detail":{"button":0}}
+{"type":"dom-update","targetSelector":"#msg-1","ts":1735689603490,"detail":{"mutation":"class-added","classes":["seen"]}}
+{"type":"type","targetSelector":"#search-input","ts":1735689605000,"detail":{"value":"merkle"}}
+{"type":"network","targetSelector":"#search-input","ts":1735689605080,"detail":{"method":"GET","url":"/api/messages/search?q=merkle","requestId":"req-103","status":200}}
+{"type":"dom-update","targetSelector":"#msg-list","ts":1735689605400,"detail":{"mutation":"list-replaced","count":1}}
+{"type":"network","targetSelector":"#msg-list","ts":1735689607000,"detail":{"method":"PUSH","url":"/events","requestId":"push-1","kind":"new-mail"}}
+{"type":"dom-update","targetSelector":"#msg-list","ts":1735689607120,"detail":{"mutation":"node-appended","node":"li#msg-5"}}

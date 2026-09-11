@@ -1,0 +1,109 @@
+{
+  "fixture": "webmail-inbox",
+  "capturedAt": 1735689600000,
+  "url": "https://mail.example.local/inbox",
+  "viewport": { "width": 1280, "height": 800 },
+  "root": {
+    "tag": "div",
+    "id": "app",
+    "classes": ["webmail-app"],
+    "children": [
+      {
+        "tag": "header",
+        "id": "top-bar",
+        "classes": ["top-bar"],
+        "children": [
+          { "tag": "h1", "text": "Omega Webmail", "classes": ["brand"] },
+          { "tag": "input", "id": "search-input", "type": "search", "placeholder": "Search mail...", "classes": ["search"] },
+          { "tag": "button", "id": "search-btn", "text": "Search", "classes": ["icon-btn"] }
+        ]
+      },
+      {
+        "tag": "nav",
+        "id": "folders",
+        "role": "navigation",
+        "classes": ["folders"],
+        "children": [
+          { "tag": "a", "id": "folder-inbox", "text": "Inbox (3)", "classes": ["folder", "active"] },
+          { "tag": "a", "id": "folder-drafts", "text": "Drafts (1)", "classes": ["folder"] },
+          { "tag": "a", "id": "folder-sent", "text": "Sent", "classes": ["folder"] },
+          { "tag": "a", "id": "folder-archive", "text": "Archive", "classes": ["folder"] }
+        ]
+      },
+      {
+        "tag": "main",
+        "id": "main",
+        "classes": ["main-pane"],
+        "children": [
+          {
+            "tag": "div",
+            "id": "toolbar",
+            "classes": ["toolbar"],
+            "children": [
+              { "tag": "button", "id": "compose-btn", "text": "Compose", "classes": ["primary"] },
+              { "tag": "button", "id": "refresh-btn", "text": "Refresh", "classes": ["tool-btn"] },
+              { "tag": "button", "id": "delete-btn", "text": "Delete", "classes": ["tool-btn"], "ariaLabel": "Delete selected message" }
+            ]
+          },
+          {
+            "tag": "ul",
+            "id": "msg-list",
+            "role": "list",
+            "classes": ["message-list"],
+            "children": [
+              {
+                "tag": "li",
+                "id": "msg-1",
+                "classes": ["message", "unread"],
+                "children": [
+                  { "tag": "span", "text": "Alice Chen", "classes": ["sender"] },
+                  { "tag": "span", "text": "Quarterly numbers", "classes": ["subject"] },
+                  { "tag": "button", "id": "star-1", "ariaLabel": "Star message 1", "classes": ["star"] }
+                ]
+              },
+              {
+                "tag": "li",
+                "id": "msg-2",
+                "classes": ["message"],
+                "children": [
+                  { "tag": "span", "text": "Bob Rivera", "classes": ["sender"] },
+                  { "tag": "span", "text": "Re: architecture review", "classes": ["subject"] },
+                  { "tag": "button", "id": "star-2", "ariaLabel": "Star message 2", "classes": ["star"] }
+                ]
+              },
+              {
+                "tag": "li",
+                "id": "msg-3",
+                "classes": ["message", "unread"],
+                "children": [
+                  { "tag": "span", "text": "Carol Diaz", "classes": ["sender"] },
+                  { "tag": "span", "text": "Lunch on Friday?", "classes": ["subject"] },
+                  { "tag": "button", "id": "star-3", "ariaLabel": "Star message 3", "classes": ["star"] }
+                ]
+              }
+            ]
+          },
+          {
+            "tag": "div",
+            "id": "compose-form",
+            "classes": ["compose", "hidden"],
+            "children": [
+              { "tag": "input", "id": "to-field", "type": "email", "placeholder": "To", "classes": ["compose-to"] },
+              { "tag": "input", "id": "subject-field", "type": "text", "placeholder": "Subject", "classes": ["compose-subject"] },
+              { "tag": "textarea", "id": "body-field", "placeholder": "Message body", "classes": ["compose-body"] },
+              { "tag": "button", "id": "send-btn", "text": "Send", "classes": ["primary", "send"] }
+            ]
+          }
+        ]
+      },
+      {
+        "tag": "footer",
+        "id": "status-bar",
+        "classes": ["status-bar"],
+        "children": [
+          { "tag": "span", "id": "status-text", "text": "3 messages, 1 unread", "classes": ["status"] }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "manifestVersion": "1",
+  "id": "discovery.observation",
+  "version": "0.1.0",
+  "description": "Ω7 discovery engine — observation: replays a captured network/DOM event trace (fixtures only in-sandbox; live capture legs are owner-machine CDP scripts, see docs/DISCOVERY.md), derives CausalEdges (click/type/network → dom-update, latency from authored timestamps), cites every edge with byte-span evidence into the appended trace object, and records DRIFT against a prior observation of the same fixture as DATA (divergence is observed, never an error). ZERO LLM, ZERO network — deterministic by construction.",
+  "entry": "src/index.ts",
+  "publisher": { "keyId": "", "signature": "" },
+  "contributions": {
+    "engine": [
+      {
+        "kind": "engine",
+        "id": "discovery.observe",
+        "version": "1",
+        "doc": "observe {fixture: {name, pageRef?, traceRef?}, graphRef? {ns, id}} → {edges, eventCount, edgesCount, drift, observationId {ns, id, rev, cid}}. READ-class engine op — the pinned grammar allows risk only on contract-kind contributions, so engines declare none; its internal vault.append@1 calls are gated by the vault contract's MUTATION risk (journaled by law). Replays fixtures/<name>/events.jsonl: each dom-update is attributed to the most recent user action (click/type) or network event in the same request lineage; an edge per dom-update, latencyMs = ts(dom) − ts(cause). With graphRef, edge endpoints resolve to GraphNode ids from the perceived ApplicationGraph (vault.get); without it, edges carry the raw selector as node reference. Drift vs the latest prior observation (ns 'discovery', id 'observation:<name>') is returned as data, never an error."
+      }
+    ]
+  },
+  "dependencies": [
+    { "ref": "contract:vault.append@1", "range": "1.x" },
+    { "ref": "contract:vault.get@1", "range": "1.x" }
+  ],
+  "capabilities": {
+    "requested": ["port:vault.append@1", "port:vault.get@1"],
+    "justification": "Evidence is constitutional (P5): the event trace bytes, the derived observation, and its causal edges persist in the USER'S VAULT, not in this plugin — port:vault.append@1 writes the trace + observation objects (ns 'discovery'), port:vault.get@1 reads the trace bytes back (integrity self-check), resolves an explicit graphRef, and loads the prior observation for drift comparison. The composition grants exactly these two per user-signed Recipe — never this manifest."
+  },
+  "runtime": { "tier": "worker-thread", "budget": { "cpuMs": 2000, "memMB": 128 } },
+  "contentHash": ""
+}

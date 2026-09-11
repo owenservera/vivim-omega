@@ -1,0 +1,13 @@
+{"type":"type","targetSelector":"#prompt-input","ts":1735690200100,"detail":{"value":"why is the vault merkle chain append-only?"}}
+{"type":"dom-update","targetSelector":"#chat-footer","ts":1735690200140,"detail":{"mutation":"text-change","text":"7 tokens"}}
+{"type":"click","targetSelector":"#send-btn","ts":1735690200900,"detail":{"button":0}}
+{"type":"network","targetSelector":"#send-btn","ts":1735690200930,"detail":{"method":"POST","url":"/api/chat/stream","requestId":"req-201","status":200}}
+{"type":"dom-update","targetSelector":"#message-list","ts":1735690201150,"detail":{"mutation":"node-appended","node":"li#msg-user-2"}}
+{"type":"network","targetSelector":"#stream-text","ts":1735690201500,"detail":{"method":"STREAM","url":"/api/chat/stream","requestId":"req-201","chunk":1}}
+{"type":"dom-update","targetSelector":"#stream-text","ts":1735690201650,"detail":{"mutation":"text-append","text":"The "}}
+{"type":"network","targetSelector":"#stream-text","ts":1735690201900,"detail":{"method":"STREAM","requestId":"req-201","chunk":2}}
+{"type":"dom-update","targetSelector":"#stream-text","ts":1735690201980,"detail":{"mutation":"text-append","text":"merkle chain "}}
+{"type":"network","targetSelector":"#stream-text","ts":1735690202200,"detail":{"method":"STREAM","requestId":"req-201","chunk":3}}
+{"type":"dom-update","targetSelector":"#stream-text","ts":1735690202260,"detail":{"mutation":"text-append","text":"links every entry."}}
+{"type":"dom-update","targetSelector":"#message-list","ts":1735690202400,"detail":{"mutation":"node-appended","node":"li#msg-assistant-2"}}
+{"type":"dom-update","targetSelector":"#stream-text","ts":1735690202450,"detail":{"mutation":"text-clear","text":""}}
