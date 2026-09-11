@@ -1,0 +1,53 @@
+{
+  "name": "healing",
+  "entries": [
+    {
+      "id": "vivim.law",
+      "source": "../plugins/vivim-law",
+      "bootPhase": 0,
+      "grant": {
+        "capabilities": [
+          "port:host.journal.append@1",
+          "host.journal.append",
+          "port:host.tokens.revoke@1",
+          "host.tokens.revoke"
+        ],
+        "contracts": [
+          "law.check@1",
+          "law.registry@1",
+          "law.consent.grant@1",
+          "law.tokens.revoke@1",
+          "law.amendment@1"
+        ]
+      },
+      "config": { "journalPath": "" }
+    },
+    {
+      "id": "vivim.vault",
+      "source": "../plugins/vivim-vault",
+      "bootPhase": 1,
+      "grant": {
+        "capabilities": [],
+        "contracts": [
+          "vault.append@1",
+          "vault.get@1",
+          "vault.query@1",
+          "vault.search@1",
+          "vault.verify@1",
+          "vault.compact@1",
+          "vault.roundtrip@1"
+        ]
+      },
+      "config": { "dataDir": "/tmp/omega-healing/vault-data" }
+    },
+    {
+      "id": "discovery.healing",
+      "source": "../plugins/discovery-healing",
+      "bootPhase": 1,
+      "grant": {
+        "capabilities": ["port:vault.append@1"],
+        "contracts": ["discovery.heal@1"]
+      }
+    }
+  ]
+}

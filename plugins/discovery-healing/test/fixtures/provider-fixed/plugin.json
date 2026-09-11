@@ -1,0 +1,25 @@
+{
+  "manifestVersion": "1",
+  "id": "provider.compose",
+  "version": "0.1.1",
+  "description": "Ω9 healing fixture — the FIXED world (version bumped 0.1.0 → 0.1.1: content + manifest both changed, so the amended recipe is a genuinely different pin). Identical shape to ../provider-broken, but the selector cites the re-observed button location — this is the source a heal@1 PROMOTE decision installs through the amendment transport (recipe re-compile + atomic pin swap + bootWithRecovery).",
+  "entry": "src/index.ts",
+  "publisher": { "keyId": "", "signature": "" },
+  "contributions": {
+    "provider": [
+      {
+        "kind": "provider",
+        "id": "compose.click",
+        "version": "1",
+        "doc": "click the compose button: payload {buttons: string[]} — the fresh capture's button inventory; returns {clicked, triedSelector, buttonsSeen}. clicked iff the provider's selector is present. Same op id/version as the broken twin — the amendment replaces the IMPLEMENTATION behind the stable contract, which is the whole point of healing."
+      }
+    ]
+  },
+  "dependencies": [],
+  "capabilities": {
+    "requested": [],
+    "justification": "Self-contained fixture: the world arrives in the payload (fresh capture inventory); no capabilities, no storage, no network."
+  },
+  "runtime": { "tier": "worker-thread", "budget": { "cpuMs": 200, "memMB": 64 } },
+  "contentHash": ""
+}

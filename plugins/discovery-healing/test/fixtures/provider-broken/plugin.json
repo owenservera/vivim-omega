@@ -1,0 +1,25 @@
+{
+  "manifestVersion": "1",
+  "id": "provider.compose",
+  "version": "0.1.0",
+  "description": "Ω9 healing fixture — the BROKEN world. A minimal UI provider: compose.click@1 receives the fresh capture's button inventory and clicks the button at the provider's OWN selector. The stale selector below ('#compose-btn', what the promoted SurfaceContract cites) no longer appears in the live inventory — the button moved. Behavioral drift: the op still answers ok (the provider is alive), it just misses the button. The FIXED twin (../provider-fixed, version 0.1.1) cites the re-observed selector; the amendment transport swaps them via recipe re-compile + atomic pin swap.",
+  "entry": "src/index.ts",
+  "publisher": { "keyId": "", "signature": "" },
+  "contributions": {
+    "provider": [
+      {
+        "kind": "provider",
+        "id": "compose.click",
+        "version": "1",
+        "doc": "click the compose button: payload {buttons: string[]} — the fresh capture's button inventory; returns {clicked, triedSelector, buttonsSeen}. clicked iff the provider's selector is present in the inventory. Risk for this op would be DECLARED by a domain pack's CONTRACT (risk is contract-kind data); the fixture declares none, so the op is READ-class here."
+      }
+    ]
+  },
+  "dependencies": [],
+  "capabilities": {
+    "requested": [],
+    "justification": "Self-contained fixture: the world arrives in the payload (fresh capture inventory); no capabilities, no storage, no network."
+  },
+  "runtime": { "tier": "worker-thread", "budget": { "cpuMs": 200, "memMB": 64 } },
+  "contentHash": ""
+}

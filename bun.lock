@@ -68,6 +68,64 @@
         "@vivim/omega-shim": "workspace:*",
       },
     },
+    "plugins/discovery-healing": {
+      "name": "@vivim/plugin-discovery-healing",
+      "version": "0.1.0",
+      "dependencies": {
+        "@vivim/omega-contracts": "workspace:*",
+        "@vivim/omega-host": "workspace:*",
+        "@vivim/omega-shim": "workspace:*",
+      },
+      "devDependencies": {
+        "@vivim/omega-sdk": "workspace:*",
+        "@vivim/omega-testkit": "workspace:*",
+      },
+    },
+    "plugins/discovery-inference": {
+      "name": "@vivim/plugin-discovery-inference",
+      "version": "0.1.0",
+      "dependencies": {
+        "@vivim/omega-contracts": "workspace:*",
+        "@vivim/omega-host": "workspace:*",
+        "@vivim/omega-shim": "workspace:*",
+      },
+    },
+    "plugins/discovery-mapping": {
+      "name": "@vivim/plugin-discovery-mapping",
+      "version": "0.1.0",
+      "dependencies": {
+        "@vivim/omega-contracts": "workspace:*",
+        "@vivim/omega-host": "workspace:*",
+        "@vivim/omega-shim": "workspace:*",
+      },
+    },
+    "plugins/discovery-observation": {
+      "name": "@vivim/plugin-discovery-observation",
+      "version": "0.1.0",
+      "dependencies": {
+        "@vivim/omega-contracts": "workspace:*",
+        "@vivim/omega-host": "workspace:*",
+        "@vivim/omega-shim": "workspace:*",
+      },
+    },
+    "plugins/discovery-perception": {
+      "name": "@vivim/plugin-discovery-perception",
+      "version": "0.1.0",
+      "dependencies": {
+        "@vivim/omega-contracts": "workspace:*",
+        "@vivim/omega-host": "workspace:*",
+        "@vivim/omega-shim": "workspace:*",
+      },
+    },
+    "plugins/discovery-verification": {
+      "name": "@vivim/plugin-discovery-verification",
+      "version": "0.1.0",
+      "dependencies": {
+        "@vivim/omega-contracts": "workspace:*",
+        "@vivim/omega-host": "workspace:*",
+        "@vivim/omega-shim": "workspace:*",
+      },
+    },
     "plugins/law-stub": {
       "name": "@vivim/plugin-law-stub",
       "version": "0.1.0",
@@ -172,7 +230,9 @@
       "dependencies": {
         "@vivim/omega-contracts": "workspace:*",
         "@vivim/omega-host": "workspace:*",
+        "@vivim/omega-sdk": "workspace:*",
         "@vivim/omega-shim": "workspace:*",
+        "@vivim/omega-testkit": "workspace:*",
       },
     },
   },
@@ -190,6 +250,18 @@
     "@vivim/omega-tooling": ["@vivim/omega-tooling@workspace:tooling"],
 
     "@vivim/pack-domain-email": ["@vivim/pack-domain-email@workspace:packs/domain-email"],
+
+    "@vivim/plugin-discovery-healing": ["@vivim/plugin-discovery-healing@workspace:plugins/discovery-healing"],
+
+    "@vivim/plugin-discovery-inference": ["@vivim/plugin-discovery-inference@workspace:plugins/discovery-inference"],
+
+    "@vivim/plugin-discovery-mapping": ["@vivim/plugin-discovery-mapping@workspace:plugins/discovery-mapping"],
+
+    "@vivim/plugin-discovery-observation": ["@vivim/plugin-discovery-observation@workspace:plugins/discovery-observation"],
+
+    "@vivim/plugin-discovery-perception": ["@vivim/plugin-discovery-perception@workspace:plugins/discovery-perception"],
+
+    "@vivim/plugin-discovery-verification": ["@vivim/plugin-discovery-verification@workspace:plugins/discovery-verification"],
 
     "@vivim/plugin-law-stub": ["@vivim/plugin-law-stub@workspace:plugins/law-stub"],
 
