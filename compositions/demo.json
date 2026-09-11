@@ -1,0 +1,26 @@
+{
+  "name": "demo",
+  "entries": [
+    {
+      "id": "vivim.law",
+      "source": "../plugins/law-stub",
+      "bootPhase": 0,
+      "grant": {
+        "capabilities": ["host.journal.append"],
+        "contracts": ["law.check@1", "law.registry@1", "law.consent.grant@1"]
+      }
+    },
+    {
+      "id": "omega.echo",
+      "source": "../examples/plugin-echo",
+      "bootPhase": 1,
+      "grant": { "capabilities": [], "contracts": ["echo.ping@1"] }
+    },
+    {
+      "id": "omega.counter",
+      "source": "../examples/plugin-counter",
+      "bootPhase": 1,
+      "grant": { "capabilities": ["port:echo.ping@1"], "contracts": ["counter.bump@1", "counter.value@1"] }
+    }
+  ]
+}

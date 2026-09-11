@@ -1,0 +1,19 @@
+{
+  "manifestVersion": "1",
+  "id": "vivim.law",
+  "version": "0.1.0",
+  "description": "Ω0 law stub — occupies the vivim.law slot so the boot-order law is real from wave 0. Replaced by the real law plugin in Ω1 via recipe re-compile + atomic pin swap (D-213).",
+  "entry": "src/index.ts",
+  "publisher": { "keyId": "", "signature": "" },
+  "contributions": {
+    "contract": [
+      { "kind": "contract", "id": "law.check", "version": "1", "risk": "READ" },
+      { "kind": "contract", "id": "law.registry", "version": "1", "risk": "READ" },
+      { "kind": "contract", "id": "law.consent.grant", "version": "1", "risk": "READ" }
+    ]
+  },
+  "dependencies": [],
+  "capabilities": { "requested": ["host.journal.append"], "justification": "law decisions journal to the vault (pre-vault state derivation)" },
+  "runtime": { "tier": "worker-thread", "budget": { "cpuMs": 50, "memMB": 64 } },
+  "contentHash": ""
+}

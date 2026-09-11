@@ -1,0 +1,149 @@
+{
+  "generatedAt": "2026-09-11T02:29:41.530Z",
+  "repo": "vivim-omega",
+  "branch": "omega",
+  "head": "uncommitted",
+  "waves": [
+    {
+      "id": "Ω0",
+      "title": "µhost",
+      "deliverable": "Recipe verify, worker compartments, port router (B1–B4), recovery, CLI, demos",
+      "status": "built"
+    },
+    {
+      "id": "Ω1",
+      "title": "vivim.law",
+      "deliverable": "Gate/consent, attenuation, revocation, registry, amendment",
+      "status": "in-progress"
+    },
+    {
+      "id": "Ω2",
+      "title": "vivim.vault",
+      "deliverable": "SQLite WAL+FTS5, CAS, Merkle changelog, verify, compaction",
+      "status": "in-progress"
+    },
+    {
+      "id": "Ω3",
+      "title": "vivim.run",
+      "deliverable": "Bounded pool, budgets, crash-loop quarantine",
+      "status": "in-progress"
+    },
+    {
+      "id": "Ω4",
+      "title": "SDK + testkit",
+      "deliverable": "zod schemas, signing, typed client, FakeHost, conformance",
+      "status": "planned"
+    },
+    {
+      "id": "Ω5",
+      "title": "domain-email + provider",
+      "deliverable": "First domain pack, full loop through vault + consent",
+      "status": "planned"
+    },
+    {
+      "id": "Ω6",
+      "title": "surfaces",
+      "deliverable": "CLI + MCP surfaces, provider-llm, webmail scaffold",
+      "status": "planned"
+    },
+    {
+      "id": "Ω7",
+      "title": "discovery perception/observation",
+      "deliverable": "ApplicationGraph from captured fixtures, zero LLM",
+      "status": "planned"
+    },
+    {
+      "id": "Ω8",
+      "title": "discovery inference/mapping/verification",
+      "deliverable": "DRAFT→PROMOTED only on postcondition probes",
+      "status": "planned"
+    },
+    {
+      "id": "Ω9",
+      "title": "healing + ecosystem",
+      "deliverable": "Drift→rediscovery→probation→promotion, builder tooling",
+      "status": "planned"
+    }
+  ],
+  "gate": {
+    "startedAt": "2026-09-11T02:29:38.141Z",
+    "checks": {
+      "host-loc": {
+        "ok": true,
+        "detail": {
+          "loc": 812,
+          "budget": 1000
+        }
+      },
+      "fresh-tree": {
+        "ok": true,
+        "detail": {
+          "vivim-final-enhanced": {
+            "head": "abb6add",
+            "clean": true
+          },
+          "vivim-final-program": {
+            "head": "4a5eb84",
+            "clean": true
+          },
+          "legacyImports": 0
+        }
+      },
+      "tests": {
+        "ok": true,
+        "detail": {
+          "pass": 21,
+          "fail": 0
+        }
+      },
+      "attest": {
+        "ok": true,
+        "detail": {
+          "compileMs": 3,
+          "bootMs": 31,
+          "echo": true,
+          "counterBump": true,
+          "counterValue": {
+            "count": 1
+          },
+          "compartments": [
+            "vivim.law",
+            "omega.echo",
+            "omega.counter"
+          ],
+          "refusalRegister": "REFUSED",
+          "budgetRegister": "BUDGET",
+          "recovery": {
+            "midSwapCleaned": true,
+            "replayRefused": true
+          }
+        }
+      }
+    }
+  },
+  "hostLoc": 812,
+  "tests": {
+    "pass": 21,
+    "fail": 0
+  },
+  "benchmarks": {
+    "at": "2026-09-11T02:27:42.745Z",
+    "bootMs": 27,
+    "portRtt": {
+      "n": 200,
+      "p50": 0.03,
+      "p99": 0.7,
+      "unit": "ms"
+    },
+    "interCompartmentRtt": {
+      "n": 50,
+      "p50": 0.14,
+      "unit": "ms"
+    },
+    "envelope": {
+      "rttP99Max": 50,
+      "bootMax": 500,
+      "unit": "ms"
+    }
+  }
+}

@@ -1,0 +1,115 @@
+{
+  "lockfileVersion": 1,
+  "configVersion": 1,
+  "workspaces": {
+    "": {
+      "name": "vivim-omega",
+    },
+    "contracts": {
+      "name": "@vivim/omega-contracts",
+      "version": "0.1.0",
+    },
+    "examples/plugin-counter": {
+      "name": "@vivim/plugin-plugin-counter",
+      "version": "0.1.0",
+      "dependencies": {
+        "@vivim/omega-contracts": "workspace:*",
+        "@vivim/omega-shim": "workspace:*",
+      },
+    },
+    "examples/plugin-echo": {
+      "name": "@vivim/plugin-plugin-echo",
+      "version": "0.1.0",
+      "dependencies": {
+        "@vivim/omega-contracts": "workspace:*",
+        "@vivim/omega-shim": "workspace:*",
+      },
+    },
+    "examples/plugin-notes": {
+      "name": "@vivim/plugin-plugin-notes",
+      "version": "0.1.0",
+      "dependencies": {
+        "@vivim/omega-contracts": "workspace:*",
+        "@vivim/omega-shim": "workspace:*",
+      },
+    },
+    "host": {
+      "name": "@vivim/omega-host",
+      "version": "0.1.0",
+      "dependencies": {
+        "@vivim/omega-contracts": "workspace:*",
+      },
+    },
+    "plugins/law-stub": {
+      "name": "@vivim/plugin-law-stub",
+      "version": "0.1.0",
+      "dependencies": {
+        "@vivim/omega-contracts": "workspace:*",
+        "@vivim/omega-shim": "workspace:*",
+      },
+    },
+    "plugins/vivim-law": {
+      "name": "@vivim/plugin-vivim-law",
+      "version": "0.1.0",
+      "dependencies": {
+        "@vivim/omega-contracts": "workspace:*",
+        "@vivim/omega-shim": "workspace:*",
+      },
+    },
+    "plugins/vivim-run": {
+      "name": "@vivim/plugin-vivim-run",
+      "version": "0.1.0",
+      "dependencies": {
+        "@vivim/omega-contracts": "workspace:*",
+        "@vivim/omega-shim": "workspace:*",
+      },
+    },
+    "plugins/vivim-vault": {
+      "name": "@vivim/plugin-vivim-vault",
+      "version": "0.1.0",
+      "dependencies": {
+        "@vivim/omega-contracts": "workspace:*",
+        "@vivim/omega-shim": "workspace:*",
+      },
+    },
+    "shim": {
+      "name": "@vivim/omega-shim",
+      "version": "0.1.0",
+      "dependencies": {
+        "@vivim/omega-contracts": "workspace:*",
+      },
+    },
+    "tooling": {
+      "name": "@vivim/omega-tooling",
+      "version": "0.1.0",
+      "dependencies": {
+        "@vivim/omega-contracts": "workspace:*",
+        "@vivim/omega-host": "workspace:*",
+        "@vivim/omega-shim": "workspace:*",
+      },
+    },
+  },
+  "packages": {
+    "@vivim/omega-contracts": ["@vivim/omega-contracts@workspace:contracts"],
+
+    "@vivim/omega-host": ["@vivim/omega-host@workspace:host"],
+
+    "@vivim/omega-shim": ["@vivim/omega-shim@workspace:shim"],
+
+    "@vivim/omega-tooling": ["@vivim/omega-tooling@workspace:tooling"],
+
+    "@vivim/plugin-law-stub": ["@vivim/plugin-law-stub@workspace:plugins/law-stub"],
+
+    "@vivim/plugin-plugin-counter": ["@vivim/plugin-plugin-counter@workspace:examples/plugin-counter"],
+
+    "@vivim/plugin-plugin-echo": ["@vivim/plugin-plugin-echo@workspace:examples/plugin-echo"],
+
+    "@vivim/plugin-plugin-notes": ["@vivim/plugin-plugin-notes@workspace:examples/plugin-notes"],
+
+    "@vivim/plugin-vivim-law": ["@vivim/plugin-vivim-law@workspace:plugins/vivim-law"],
+
+    "@vivim/plugin-vivim-run": ["@vivim/plugin-vivim-run@workspace:plugins/vivim-run"],
+
+    "@vivim/plugin-vivim-vault": ["@vivim/plugin-vivim-vault@workspace:plugins/vivim-vault"],
+  }
+}

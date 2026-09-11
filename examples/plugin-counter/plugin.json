@@ -1,0 +1,18 @@
+{
+  "manifestVersion": "1",
+  "id": "omega.counter",
+  "version": "0.1.0",
+  "description": "Ω0 demo plugin: bumps a counter and calls echo through a granted capability token.",
+  "entry": "src/index.ts",
+  "publisher": { "keyId": "", "signature": "" },
+  "contributions": {
+    "contract": [
+      { "kind": "contract", "id": "counter.bump", "version": "1", "risk": "READ" },
+      { "kind": "contract", "id": "counter.value", "version": "1", "risk": "READ" }
+    ]
+  },
+  "dependencies": [{ "ref": "contract:echo.ping@1", "range": "1.x" }],
+  "capabilities": { "requested": ["port:echo.ping@1"], "justification": "counter.bump echoes the new count (Ω0 demo of inter-compartment calls)" },
+  "runtime": { "tier": "worker-thread", "budget": { "cpuMs": 100, "memMB": 64 } },
+  "contentHash": ""
+}

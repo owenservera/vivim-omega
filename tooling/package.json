@@ -1,0 +1,11 @@
+{
+  "name": "@vivim/omega-tooling",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@vivim/omega-host": "workspace:*",
+    "@vivim/omega-contracts": "workspace:*",
+    "@vivim/omega-shim": "workspace:*"
+  }
+}

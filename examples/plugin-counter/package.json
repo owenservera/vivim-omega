@@ -1,0 +1,7 @@
+{
+  "name": "@vivim/plugin-plugin-counter",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "dependencies": { "@vivim/omega-shim": "workspace:*", "@vivim/omega-contracts": "workspace:*" }
+}
