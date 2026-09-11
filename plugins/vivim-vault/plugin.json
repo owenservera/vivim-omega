@@ -1,0 +1,43 @@
+{
+  "manifestVersion": "1",
+  "id": "vivim.vault",
+  "version": "0.1.0",
+  "description": "Ω2 vault spine — SQLite WAL+FTS5 canonical store, content-addressed CAS (write-tmp→fsync→rename), Merkle-chained changelog, verify walk, refs-honoring compaction, roundtrip swap harness. Owns vault format v1; the data dir belongs to the user's vault (config.dataDir), never to this plugin.",
+  "entry": "src/index.ts",
+  "publisher": { "keyId": "", "signature": "" },
+  "contributions": {
+    "schema": [
+      {
+        "kind": "schema",
+        "id": "vault.object",
+        "version": "1",
+        "fields": [
+          { "name": "ns", "type": "string", "required": true, "doc": "namespace; non-empty, no '|' (Merkle field separator)" },
+          { "name": "id", "type": "string", "required": true, "doc": "object id within ns; non-empty, no '|'" },
+          { "name": "rev", "type": "integer", "required": true, "doc": "per-(ns,id) revision; starts at 1, increments per append (allocated from the changelog, compaction-proof)" },
+          { "name": "cid", "type": "string", "doc": "sha256 hex of canonical JSON of data; the CAS blob address cas/<cid[0:2]>/<cid>" },
+          { "name": "data", "type": "json", "required": true, "doc": "structured-clone-safe payload; stored content-addressed, small payloads inline via the same CAS" },
+          { "name": "meta", "type": "json", "doc": "caller metadata object; stored in objects.meta envelope {meta, refs} and returned verbatim by vault.get@1" },
+          { "name": "refs", "type": "array", "doc": "provenance edges [{ns, id, rev}]; referenced revisions survive compaction" }
+        ],
+        "doc": "vault.object v1 — the stored object shape (D3 03-WAVE-SPECS §1 vault format v1)."
+      }
+    ],
+    "contract": [
+      { "kind": "contract", "id": "vault.append", "version": "1", "risk": "MUTATION" },
+      { "kind": "contract", "id": "vault.get", "version": "1", "risk": "READ" },
+      { "kind": "contract", "id": "vault.query", "version": "1", "risk": "READ" },
+      { "kind": "contract", "id": "vault.search", "version": "1", "risk": "READ" },
+      { "kind": "contract", "id": "vault.verify", "version": "1", "risk": "READ" },
+      { "kind": "contract", "id": "vault.compact", "version": "1", "risk": "MUTATION" },
+      { "kind": "contract", "id": "vault.roundtrip", "version": "1", "risk": "EXTERNAL_MUTATION" }
+    ]
+  },
+  "dependencies": [],
+  "capabilities": {
+    "requested": [],
+    "justification": "Self-contained by construction: the vault data dir is user-vault territory (ctx.config.dataDir passthrough) and every capability this plugin needs is its own storage; roundtrip writes only to a caller-specified target dir, gated as EXTERNAL_MUTATION by law."
+  },
+  "runtime": { "tier": "worker-thread", "budget": { "cpuMs": 2000, "memMB": 256 } },
+  "contentHash": ""
+}

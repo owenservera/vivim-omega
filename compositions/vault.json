@@ -1,0 +1,32 @@
+{
+  "name": "vault",
+  "entries": [
+    {
+      "id": "vivim.law",
+      "source": "../plugins/law-stub",
+      "bootPhase": 0,
+      "grant": {
+        "capabilities": ["host.journal.append"],
+        "contracts": ["law.check@1", "law.registry@1", "law.consent.grant@1"]
+      }
+    },
+    {
+      "id": "vivim.vault",
+      "source": "../plugins/vivim-vault",
+      "bootPhase": 1,
+      "grant": {
+        "capabilities": [],
+        "contracts": [
+          "vault.append@1",
+          "vault.get@1",
+          "vault.query@1",
+          "vault.search@1",
+          "vault.verify@1",
+          "vault.compact@1",
+          "vault.roundtrip@1"
+        ]
+      },
+      "config": { "dataDir": "/tmp/omega-vault/data" }
+    }
+  ]
+}
