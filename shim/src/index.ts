@@ -9,6 +9,7 @@ export interface CallMeta { causationId: string; deadlineMs: number; from: strin
 export interface PluginContext {
   manifest: PluginManifest;
   capabilities: string[];
+  config: Record<string, unknown>; // data passthrough from the composition entry (never authority)
   port: {
     call(op: string, payload?: unknown, opts?: { deadlineMs?: number }): Promise<PortResult>;
   };
@@ -37,6 +38,7 @@ export function startPlugin(def: PluginDef): void {
       ctx = {
         manifest: init.manifest,
         capabilities: init.capabilities,
+        config: (init as { config?: Record<string, unknown> }).config ?? {},
         port: {
           call: (op, payload, opts) => {
             const deadlineMs = opts?.deadlineMs ?? 5000;

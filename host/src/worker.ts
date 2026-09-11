@@ -9,6 +9,7 @@ export interface CompartmentInit {
   manifest: unknown;
   tokens: Record<string, string>;   // capability -> opaque token (B3: checked host-side)
   capabilities: string[];
+  config?: Record<string, unknown>; // data passthrough (never authority)
 }
 
 export interface DeliverMsg {

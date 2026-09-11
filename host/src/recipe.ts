@@ -115,6 +115,7 @@ export function compileComposition(
       contentHash,
       grant: se.grant,
       bootPhase: se.bootPhase,
+      ...(se.config ? { config: se.config } : {}),
     });
   }
   const unsignedRecipeObj = {

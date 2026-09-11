@@ -61,7 +61,7 @@ export async function bootComposition(recipe: Recipe, buildDir: string, vaultDir
     const tokens = router.mintTokensFor(e);
     const handle = spawnCompartment(e.id, srcDir, m.entry);
     router.register(e, m, handle, tokens);
-    handle.post({ type: "init", manifest: m, tokens, capabilities: e.grant.capabilities });
+    handle.post({ type: "init", manifest: m, tokens, capabilities: e.grant.capabilities, ...(e.config ? { config: e.config } : {}) });
   }
   await waitReady(router, recipe);
   return { recipe, buildDir, router, manifests, shutdown: () => router.shutdown() };

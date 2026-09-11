@@ -14,6 +14,7 @@ export interface CompositionEntry {
     contracts: string[];    // ops for which THIS entry is the routed implementation
   };
   bootPhase: number;    // 0 = vivim.law — the µhost refuses any other assignment
+  config?: Record<string, unknown>; // data passthrough (never authority): the plugin's declared config
 }
 
 export interface Recipe {
@@ -31,6 +32,7 @@ export interface CompositionSpecEntry {
   source: string;      // plugin dir, relative to the spec file
   bootPhase: number;
   grant: { capabilities: string[]; contracts: string[] };
+  config?: Record<string, unknown>;
 }
 
 export interface CompositionSpec {

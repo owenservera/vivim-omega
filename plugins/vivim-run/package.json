@@ -1,7 +1,7 @@
 {
-  "name": "@vivim/plugin-vivim-run",
+  "name": "@vivim/plugin-$(basename $p)",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "dependencies": { "@vivim/omega-shim": "workspace:*", "@vivim/omega-contracts": "workspace:*" }
+  "dependencies": { "@vivim/omega-shim": "workspace:*", "@vivim/omega-contracts": "workspace:*", "@vivim/omega-host": "workspace:*" }
 }
