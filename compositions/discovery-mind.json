@@ -1,0 +1,53 @@
+{
+  "name": "discovery-mind",
+  "_note": "Ω8 GATE composition — the discovery mind pipeline: real vivim.law (phase 0) + vivim.vault + the three discovery engines (phase 1, ordinary plugins whose only outputs are candidates/mappings/promotions + evidence in the user's vault). discovery.mapping reads its blueprint from config.blueprintPath (cwd-relative from the host process; absolute paths pass through) — the pack's CONTRACT declarations consumed as DATA. Engine ops are ENGINE contributions: risk lives on contract-kind contributions only (pinned manifest grammar), so the ops route ungated and the semantic READ class is documented on the contributions. The engines' vault appends ARE gated (vault.append@1 = MUTATION → allow-and-journal under each engine's principal).",
+  "entries": [
+    {
+      "id": "vivim.law",
+      "source": "../plugins/vivim-law",
+      "bootPhase": 0,
+      "grant": {
+        "capabilities": ["host.journal.append", "host.tokens.revoke"],
+        "contracts": ["law.check@1", "law.registry@1", "law.consent.grant@1", "law.tokens.revoke@1", "law.amendment@1"]
+      }
+    },
+    {
+      "id": "vivim.vault",
+      "source": "../plugins/vivim-vault",
+      "bootPhase": 1,
+      "grant": {
+        "capabilities": [],
+        "contracts": ["vault.append@1", "vault.get@1", "vault.query@1", "vault.search@1", "vault.verify@1", "vault.compact@1", "vault.roundtrip@1"]
+      },
+      "config": { "dataDir": "/tmp/omega-discovery-mind/vault-data" }
+    },
+    {
+      "id": "discovery.inference",
+      "source": "../plugins/discovery-inference",
+      "bootPhase": 1,
+      "grant": {
+        "capabilities": ["port:vault.append@1", "port:vault.get@1"],
+        "contracts": ["discovery.infer@1"]
+      }
+    },
+    {
+      "id": "discovery.mapping",
+      "source": "../plugins/discovery-mapping",
+      "bootPhase": 1,
+      "grant": {
+        "capabilities": ["port:vault.append@1"],
+        "contracts": ["discovery.map@1"]
+      },
+      "config": { "blueprintPath": "packs/domain-email/plugin.json" }
+    },
+    {
+      "id": "discovery.verification",
+      "source": "../plugins/discovery-verification",
+      "bootPhase": 1,
+      "grant": {
+        "capabilities": ["port:vault.append@1", "port:vault.get@1"],
+        "contracts": ["discovery.verify@1"]
+      }
+    }
+  ]
+}

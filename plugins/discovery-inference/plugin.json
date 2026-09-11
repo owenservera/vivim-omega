@@ -1,0 +1,44 @@
+{
+  "manifestVersion": "1",
+  "id": "discovery.inference",
+  "version": "0.1.0",
+  "description": "Ω8 discovery engine — inference. Consumes an ApplicationGraph (plain JSON payload: inline graph object OR a vault ref) emitted by the Ω7 perception/observation engines and infers candidate SurfaceContracts (discovery.surfacecontract@1): buttons with action-word labels → click contracts with risk hints, fields → typing contracts, lists → read contracts. Every candidate MUST cite the node's evidence refs (vault objects, ns 'discovery') — no evidence, no candidate. Confidence is a RECORDED heuristic (label-match strength), never a promotion input: promotion belongs to discovery.verify@1. The engine's only outputs are candidates + evidence persisted to the user's vault.",
+  "entry": "src/index.ts",
+  "publisher": { "keyId": "", "signature": "" },
+  "contributions": {
+    "engine": [
+      {
+        "kind": "engine",
+        "id": "discovery.infer",
+        "version": "1",
+        "doc": "infer {graph, runId?} → {runId, candidates[], vaultRef} — graph is an inline ApplicationGraph or a vault ref {ns,id,rev}; candidates are DRAFT SurfaceContracts citing graph evidence, appended to the vault (ns 'discovery', id 'candidates:<runId>'). Semantic risk class: READ (inference observes data; risk fields are legal on contract-kind contributions only per the pinned manifest grammar, so the class lives here as documentation)."
+      }
+    ],
+    "schema": [
+      {
+        "kind": "schema",
+        "id": "discovery.surfacecontract",
+        "version": "1",
+        "fields": [
+          { "name": "id", "type": "string", "required": true, "doc": "candidate id, unique within an inference run (sc-<n>), referenced by mapping bindings and verification probes" },
+          { "name": "nodeId", "type": "string", "required": true, "doc": "the ApplicationGraph node the candidate was inferred from (traceability to perception evidence)" },
+          { "name": "op", "type": "string", "required": true, "doc": "label-derived op name, e.g. message.send (binds against a blueprint op like message.send@1 by name)" },
+          { "name": "selector", "type": "string", "required": true, "doc": "the node's selectorHint; empty selectors fail mapping's non-empty constraint" },
+          { "name": "actionType", "type": "string", "required": true, "doc": "click | type | read — how the surface is driven" },
+          { "name": "riskHint", "type": "string", "required": true, "doc": "EXTERNAL_MUTATION | MUTATION | READ — inferred risk hint; mapping requires compatibility with the blueprint op's declared risk" },
+          { "name": "evidence", "type": "array", "required": true, "doc": "EvidenceRef[] {ns,id,rev} — vault refs carried from the graph node; MANDATORY: a node without evidence yields no candidate" },
+          { "name": "status", "type": "string", "required": true, "doc": "DRAFT | PROMOTED | REJECTED — candidates are born DRAFT; only discovery.verify@1 may rewrite to PROMOTED (probe evidence ≥ policy threshold); REJECTED is reserved for explicit future rejection" },
+          { "name": "confidence", "type": "number", "required": true, "doc": "0..1 label-match heuristic (exact domain word 0.9, partial 0.6, generic 0.4) — recorded, NEVER a promotion input" }
+        ],
+        "doc": "discovery.surfacecontract@1 — the candidate contract shape produced by discovery.infer@1 and consumed by discovery.map@1 / discovery.verify@1."
+      }
+    ]
+  },
+  "dependencies": [],
+  "capabilities": {
+    "requested": ["port:vault.append@1", "port:vault.get@1"],
+    "justification": "The engine's only outputs are candidates + evidence in the USER'S VAULT: port:vault.append@1 persists each run's candidate set (ns 'discovery', id 'candidates:<runId>', refs = the cited evidence — provenance edges); port:vault.get@1 resolves graphs passed as vault refs (input tolerance for the Ω7 perception engines' output: caller passes the graph object or a vault ref). Both are granted per-composition by the user-signed Recipe, never by this manifest."
+  },
+  "runtime": { "tier": "worker-thread", "budget": { "cpuMs": 1000, "memMB": 128 } },
+  "contentHash": ""
+}

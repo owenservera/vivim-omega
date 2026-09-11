@@ -1,0 +1,41 @@
+{
+  "manifestVersion": "1",
+  "id": "discovery.verification",
+  "version": "0.1.0",
+  "description": "Ω8 discovery engine — verification: THE PROMOTION GATE. Consumes a mapping report (discovery.map@1 output) plus caller-supplied postcondition probes (fixture replay harness: each probe {candidateId, preState, postState, passed, evidence}) and decides promotion by PROOF, never confidence: score = passedProbes/total with every probe citing resolvable vault evidence; score ≥ policy.threshold AND evidence complete → PROMOTED (candidate status rewritten in the returned report + the promotion event appended to the vault with full evidence); otherwise the candidate stays DRAFT with a gap report. The thresholds are POLICY DATA (discovery.promotion-policy@1, amendable by versioning the plugin + re-compiling the Recipe), never code constants.",
+  "entry": "src/index.ts",
+  "publisher": { "keyId": "", "signature": "" },
+  "contributions": {
+    "engine": [
+      {
+        "kind": "engine",
+        "id": "discovery.verify",
+        "version": "1",
+        "doc": "verify {mapping, probes, runId?, candidates?, candidatesRef?, mappingRef?} → promotion report {policy, results[], promoted[], stillDraft[], vaultRef} — probes simulate executing each mapped op against the fixture and check the postcondition (e.g. click send → a new message node appears in the outbox region). Semantic risk class: READ (verification evaluates evidence; risk fields are legal on contract-kind contributions only per the pinned manifest grammar)."
+      }
+    ],
+    "policy": [
+      {
+        "kind": "policy",
+        "id": "discovery.promotion-policy",
+        "version": "1",
+        "policy": {
+          "policyId": "discovery.promotion-policy",
+          "version": "1.0.0",
+          "description": "Promotion-gate policy as DATA: the thresholds that turn probe evidence into a PROMOTED SurfaceContract. Amendable by shipping a new plugin version + re-compiling the Recipe (the composition pins policy by content hash); never a code constant.",
+          "threshold": 0.95,
+          "requiredProbes": 3,
+          "evidenceRequired": true
+        },
+        "doc": "discovery.promotion-policy@1 — promotion thresholds: score ≥ 0.95 across ≥ 3 probes, every probe citing resolvable vault evidence. Confidence is never an input."
+      }
+    ]
+  },
+  "dependencies": [],
+  "capabilities": {
+    "requested": ["port:vault.append@1", "port:vault.get@1"],
+    "justification": "Promotion events are appended to the USER'S VAULT (ns 'discovery', id 'promotion:<runId>', refs = every probe's evidence + candidatesRef + mappingRef — the full proof chain); port:vault.get@1 resolves each probe's evidence refs so 'evidence complete' means the refs EXIST in the vault (fail-closed: an unresolvable ref can never be part of a promotion). Granted per-composition by the user-signed Recipe, never by this manifest."
+  },
+  "runtime": { "tier": "worker-thread", "budget": { "cpuMs": 1000, "memMB": 128 } },
+  "contentHash": ""
+}
