@@ -3,7 +3,7 @@
 // router with real capability tokens. Each case gets its own temp vault + data dir.
 import { describe, test, expect, afterAll } from "bun:test";
 import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync, existsSync } from "node:fs";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { Database } from "bun:sqlite";
 import { bootComposition, compileComposition, ensureVault } from "@vivim/omega-host";
 import type { BootedHost } from "@vivim/omega-host";
@@ -213,7 +213,7 @@ describe("Ω2 integration — CAS atomicity through the worker", () => {
     expect(casFiles.filter((p) => p.includes(".tmp"))).toEqual([]);
 
     // simulate an interrupted write: leftover tmp next to real blobs
-    const someCid = casFiles[0].split("/").pop() as string;
+    const someCid = basename(casFiles[0]); // basename, not split("/") — separators are platform-specific
     writeFileSync(join(dataDir, "cas", someCid.slice(0, 2), `.${someCid}.tmp-9999-crash`), "partial garbage");
 
     const got = await host.router.callAsRoot("vault.get@1", { ns: "cas", id: "o2" });

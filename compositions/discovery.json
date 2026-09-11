@@ -28,7 +28,7 @@
         "capabilities": ["port:vault.append@1", "port:vault.get@1"],
         "contracts": ["discovery.perceive@1"]
       },
-      "config": { "fixturesDir": "/home/z/my-project/vivim/vivim-omega/fixtures" }
+      "config": { "fixturesDir": "fixtures" }
     },
     {
       "id": "discovery.observation",
@@ -38,7 +38,7 @@
         "capabilities": ["port:vault.append@1", "port:vault.get@1"],
         "contracts": ["discovery.observe@1"]
       },
-      "config": { "fixturesDir": "/home/z/my-project/vivim/vivim-omega/fixtures" }
+      "config": { "fixturesDir": "fixtures" }
     }
   ]
 }

@@ -8,6 +8,7 @@ import { join, dirname } from "node:path";
 import { io, type Socket } from "socket.io-client";
 import { startConsoleService, type RunningService } from "../src/server.ts";
 import type { Interpretation, WorldModel } from "@vivim/omega-nlcl-pure";
+import { consentIdFor } from "../../../plugins/vivim-law/src/consent.ts"; // stable (principal, op) derivation — the real one law uses
 
 const ROOT = join(import.meta.dir, "../../..");
 const COMPOSITION = join(ROOT, "compositions/console.json");
@@ -137,6 +138,14 @@ describe("Ω13 · reprogramming: teach + rules fire through the live loop", () =
   });
 
   test("rule: create → actionConsent card → grant for vivim.director → trigger fires", async () => {
+    // 0. pre-grant the director's send consent BEFORE the rule exists: the live
+    //    tick (500ms) must never attempt a matching message while ungranted —
+    //    a refused attempt ledgers by design (no retry), which would drop the
+    //    seed. The id is stable per (principal, op), so this grants exactly
+    //    what the card will name (asserted in step 1).
+    const preId = consentIdFor("vivim.director", "message.send@1");
+    const pre = await (await fetch(`${base}/api/consent`, { method: "POST", body: JSON.stringify({ consentId: preId, principal: "vivim.director" }) })).json() as { granted: boolean };
+    expect(pre.granted).toBe(true);
     // 1. create the rule; the response carries the rule-action consent pre-check
     const r1 = await (await fetch(`${base}/api/execute`, { method: "POST", body: JSON.stringify({ text: "when Maria messages me, forward it to Sarah" }) })).json() as { outcome: ExecOutcomeWire };
     expect(r1.outcome.executed).toBe(true);
@@ -144,6 +153,8 @@ describe("Ω13 · reprogramming: teach + rules fire through the live loop", () =
     expect(r1.outcome.ruleActionConsent?.principal).toBe("vivim.director");
     const actionConsentId = r1.outcome.ruleActionConsent?.consentId;
     expect(actionConsentId).toMatch(/^consent_[0-9a-f]+$/);
+    expect(actionConsentId).toBe(preId); // stable derivation: the card names the pre-granted id
+    expect(r1.outcome.ruleActionConsent?.decision).toBe("allow"); // pre-granted: card reports, not requests
     // 2. grant the rule's action consent (principal vivim.director — the console user is root)
     const g = await (await fetch(`${base}/api/consent`, { method: "POST", body: JSON.stringify({ consentId: actionConsentId, principal: "vivim.director" }) })).json() as { granted: boolean };
     expect(g.granted).toBe(true);

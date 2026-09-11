@@ -258,7 +258,9 @@ ${
     mkdirSync(nmDir, { recursive: true });
     const linkPath = join(nmDir, name);
     if (!existsSync(linkPath)) {
-      symlinkSync(target, linkPath);
+      // Junctions on Windows: directory symlinks need elevated privileges there,
+      // junctions don't — and both resolve identically for module loading.
+      symlinkSync(target, linkPath, process.platform === "win32" ? "junction" : "dir");
       devLinks.push(`node_modules/@vivim/${name} -> ${target}`);
     }
   };

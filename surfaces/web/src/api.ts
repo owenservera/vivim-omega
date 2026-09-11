@@ -9,6 +9,7 @@ import type { BootedHost } from "@vivim/omega-host";
 import type { PortResult } from "@vivim/omega-contracts";
 import { interpret } from "@vivim/omega-nlcl-pure";
 import type { Interpretation, IR, WorldModel } from "@vivim/omega-nlcl-pure";
+import { consentIdFor } from "../../../plugins/vivim-law/src/consent.ts"; // stable (principal, op) derivation — the law's own function
 
 export interface ExecuteOutcome {
   interpretation: Interpretation;
@@ -68,14 +69,20 @@ export function createConsoleService(host: BootedHost, startedAt: number): Conso
       return out;
     }
 
-    // the consent pre-check for rule actions: one combined card at rule creation
+    // the consent pre-check for rule actions: one combined card at rule creation.
+    // Always emitted (both decisions): with require-consent it names the id to
+    // grant; with allow it reports the already-active id (stable per
+    // (principal, op), so a pre-granted consent shows the same id).
     if (ir.intent === "director.rule@1") {
       const check = await call("law.check@1", { principal: "vivim.director", op: "message.send@1" });
       if (check.ok) {
         const d = check.value as LawDecisionResult;
-        if (d.decision === "require-consent") {
-          out.ruleActionConsent = { principal: "vivim.director", op: "message.send@1", consentId: d.consentId, decision: d.decision };
-        }
+        out.ruleActionConsent = {
+          principal: "vivim.director",
+          op: "message.send@1",
+          consentId: d.consentId ?? consentIdFor("vivim.director", "message.send@1"),
+          decision: d.decision,
+        };
       }
     }
 

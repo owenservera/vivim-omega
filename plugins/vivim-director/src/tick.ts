@@ -101,10 +101,11 @@ function isSelf(cfg: TickConfig, from: string): boolean {
 
 // ---- rule loading (step 4) ----
 
-async function loadEnabledRules(ctx: PluginContext): Promise<{ rules: RuleData[]; error?: string }> {
+async function loadEnabledRules(ctx: PluginContext): Promise<{ rules: RuleData[]; total: number; error?: string }> {
   const qr: PortResult = await ctx.port.call("vault.query@1", { ns: AUTOMATION_NS, filter: { idPrefix: RULE_PREFIX } });
-  if (!qr.ok) return { rules: [], error: `vault.query@1 ${qr.error}: ${qr.detail ?? ""}` };
+  if (!qr.ok) return { rules: [], total: 0, error: `vault.query@1 ${qr.error}: ${qr.detail ?? ""}` };
   const rows = ((qr.value as VaultQueryRow[]) ?? []).slice(0, TICK_RULE_CAP);
+  const total = rows.length; // rule ROWS (incl. disabled) — distinguishes "no rules yet" from "rules, none enabled"
   const rules: RuleData[] = [];
   for (const row of rows) {
     const gr: PortResult = await ctx.port.call("vault.get@1", { ns: AUTOMATION_NS, id: row.id });
@@ -113,7 +114,7 @@ async function loadEnabledRules(ctx: PluginContext): Promise<{ rules: RuleData[]
     if (rule && rule.enabled) rules.push(rule);
   }
   rules.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)); // deterministic order
-  return { rules };
+  return { rules, total };
 }
 
 // ---- firing (step 6) ----
@@ -174,6 +175,7 @@ export async function runTick(ctx: PluginContext, cfg: TickConfig, state: TickSt
   const scanned = rows.length;
 
   let rules: RuleData[] | null = null; // lazy: loaded once, on the first candidate that needs them
+  let ruleRowsTotal = -1; // rule ROWS seen (incl. disabled); -1 = not loaded yet
 
   for (const row of rows) {
     // memory optimization: an unchanged (id, rev) costs one query row, not a get
@@ -209,6 +211,7 @@ export async function runTick(ctx: PluginContext, cfg: TickConfig, state: TickSt
     if (rules === null) {
       const loaded = await loadEnabledRules(ctx);
       rules = loaded.rules;
+      ruleRowsTotal = loaded.total;
       error ??= loaded.error;
     }
 
@@ -224,7 +227,15 @@ export async function runTick(ctx: PluginContext, cfg: TickConfig, state: TickSt
       fired.push({ messageId: message.id, ...outcome });
     }
 
-    // 7. ledger: one append per processed message (after all rules attempted)
+    // 7. ledger: one append per ATTEMPTED message (after all rules attempted).
+    //    A refused firing is a legitimate ledgered outcome (ok:false + the
+    //    consentId the user must grant; the grant helps FUTURE messages), and
+    //    a disabled rule still processes (ledgered suppression — see test 5).
+    //    But zero RULE ROWS AT ALL (a later-created rule must still fire on this
+    //    message) leaves it unprocessed — the next tick retries honestly. The
+    //    ledger prevents RE-fires, never first fires (pinned late-rule
+    //    semantics: rules apply to the unprocessed inbox).
+    if (outcomes.length === 0 && ruleRowsTotal === 0) continue;
     const append: PortResult = await ctx.port.call("vault.append@1", {
       ns: AUTOMATION_NS,
       id: `${FIRED_PREFIX}${message.id}`,

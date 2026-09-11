@@ -374,7 +374,7 @@ describe("GATE-Ω7 observation — drift is data, not error (mutated fixture var
 
     // fixture variant: copy webmail-inbox, mutate ONE event timestamp (compose dom-update 300 → 700)
     const variantDir = join(c.root, "fixtures-variant");
-    mkdirSync(join(variantDir, "webmail-inbox"), { recursive: true });
+    rmSync(variantDir, { recursive: true, force: true }); // start clean; cpSync creates the dest itself
     cpSync(join(FIXTURES, "webmail-inbox"), join(variantDir, "webmail-inbox"), { recursive: true });
     const eventsPath = join(variantDir, "webmail-inbox", "events.jsonl");
     const lines = readFileSync(eventsPath, "utf-8").split("\n");

@@ -25,6 +25,13 @@ function tempVault(name: string): string {
   return v;
 }
 
+/**
+ * Spawn+boot wait budget. Each test boots a full composition in a child `bun`
+ * process — under full-suite parallel load that can exceed Bun's 5s default
+ * test timeout. The ceiling rises; no assertion changes (happy path still fast).
+ */
+const SPAWN_BUDGET_MS = 30_000;
+
 /** A scripted MCP client over the child process's stdio (line-delimited JSON-RPC). */
 class McpClient {
   private buf = "";
@@ -103,7 +110,7 @@ describe("GATE-Ω6 — MCP surface: scripted client over stdio JSON-RPC (law-stu
     expect(resp.result.protocolVersion).toBe("2025-06-18");
     expect(resp.result.capabilities.tools).toBeTruthy();
     expect(resp.result.serverInfo.name).toBe("vivim-mcp");
-  });
+  }, SPAWN_BUDGET_MS);
 
   test("notifications/initialized produces NO response (JSON-RPC law)", async () => {
     const c = new McpClient(ECHO_SPEC, tempVault("notif"));
@@ -113,7 +120,7 @@ describe("GATE-Ω6 — MCP surface: scripted client over stdio JSON-RPC (law-stu
     // the next awaited response must be tools/list's — proving the notification was silent
     const resp = await c.request("tools/list", {});
     expect(resp.result.tools).toBeTruthy();
-  });
+  }, SPAWN_BUDGET_MS);
 
   test("tools/list: tools generated FROM the routed ops (echo_ping_1 + law ops present)", async () => {
     const c = new McpClient(ECHO_SPEC, tempVault("tools"));
@@ -135,7 +142,7 @@ describe("GATE-Ω6 — MCP surface: scripted client over stdio JSON-RPC (law-stu
     // nothing outside the composition's grants is exposed
     expect(names).not.toContain("vault_append_1");
     expect(names).not.toContain("chat_complete_1");
-  });
+  }, SPAWN_BUDGET_MS);
 
   test("tools/call echo_ping_1 → the op runs as root; result carries the echo payload", async () => {
     const c = new McpClient(ECHO_SPEC, tempVault("call-echo"));
@@ -151,7 +158,7 @@ describe("GATE-Ω6 — MCP surface: scripted client over stdio JSON-RPC (law-stu
     expect(portResult.ok).toBe(true);
     expect(portResult.value.payload.hello).toBe("mcp"); // the payload reached the compartment
     expect(portResult.freshness).toBe("CURRENT");
-  });
+  }, SPAWN_BUDGET_MS);
 
   test("tools/call an unknown tool → isError true with a readable text", async () => {
     const c = new McpClient(ECHO_SPEC, tempVault("unknown-tool"));
@@ -161,7 +168,7 @@ describe("GATE-Ω6 — MCP surface: scripted client over stdio JSON-RPC (law-stu
     expect(resp.result.isError).toBe(true);
     expect(resp.result.content[0].text).toContain("unknown tool 'vault_append_1'");
     expect(resp.result.content[0].text).toContain("routed ops");
-  });
+  }, SPAWN_BUDGET_MS);
 
   test("ping → empty result (liveness without touching the composition)", async () => {
     const c = new McpClient(ECHO_SPEC, tempVault("ping"));
@@ -169,7 +176,7 @@ describe("GATE-Ω6 — MCP surface: scripted client over stdio JSON-RPC (law-stu
     const resp = await c.request("ping");
     expect(resp.error).toBeUndefined();
     expect(resp.result).toEqual({});
-  });
+  }, SPAWN_BUDGET_MS);
 
   test("unknown request method → JSON-RPC -32601; unknown notification stays silent", async () => {
     const c = new McpClient(ECHO_SPEC, tempVault("err"));
@@ -181,7 +188,7 @@ describe("GATE-Ω6 — MCP surface: scripted client over stdio JSON-RPC (law-stu
     await c.notify("notifications/whatever", {});
     const ok = await c.request("ping");
     expect(ok.result).toEqual({}); // still alive and in order
-  });
+  }, SPAWN_BUDGET_MS);
 
   test("malformed JSON line → -32700 parse error; the server keeps serving", async () => {
     const c = new McpClient(ECHO_SPEC, tempVault("parse"));
@@ -193,7 +200,7 @@ describe("GATE-Ω6 — MCP surface: scripted client over stdio JSON-RPC (law-stu
     expect(parseErr.error.code).toBe(-32700);
     const ok = await c.request("ping");
     expect(ok.result).toEqual({});
-  });
+  }, SPAWN_BUDGET_MS);
 
   test("stdin EOF → the server shuts the composition down and exits 0", async () => {
     const c = new McpClient(ECHO_SPEC, tempVault("eof"));
@@ -201,7 +208,7 @@ describe("GATE-Ω6 — MCP surface: scripted client over stdio JSON-RPC (law-stu
     await c.request("ping");
     const code = await c.close();
     expect(code).toBe(0);
-  });
+  }, SPAWN_BUDGET_MS);
 });
 
 describe("GATE-Ω6 — MCP consent ceremony through tools (real vivim.law + omega.risky)", () => {
@@ -237,7 +244,7 @@ describe("GATE-Ω6 — MCP consent ceremony through tools (real vivim.law + omeg
 
     // the whole ceremony happened through tools only — an external scripted
     // client operated the system using ONLY granted ops.
-  });
+  }, SPAWN_BUDGET_MS);
 
   test("READ-risk ops stay ungated through the surface (echo works with no consent)", async () => {
     const c = new McpClient(RISK_SPEC, tempVault("read"));
@@ -247,5 +254,5 @@ describe("GATE-Ω6 — MCP consent ceremony through tools (real vivim.law + omeg
     const pr = JSON.parse(resp.result.content[0].text);
     expect(pr.ok).toBe(true);
     expect(pr.value.payload.hello).toBe("read-ok");
-  });
+  }, SPAWN_BUDGET_MS);
 });

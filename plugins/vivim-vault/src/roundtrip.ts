@@ -10,7 +10,7 @@
 // doubles as proof that the copy's CAS is complete.
 
 import { mkdirSync } from "node:fs";
-import { isAbsolute, resolve } from "node:path";
+import { isAbsolute, relative, resolve } from "node:path";
 import { casCopyAll, casGet } from "./cas.ts";
 import { bodyText } from "./canon.ts";
 import { dbPath, DDL, ftsUpsert, openVault } from "./db.ts";
@@ -26,7 +26,12 @@ export function roundtrip(v: VaultDB, targetDir: string): RoundtripResult {
   }
   const srcRoot = resolve(v.dataDir);
   const dstRoot = resolve(targetDir);
-  if (dstRoot === srcRoot || dstRoot.startsWith(srcRoot + "/") || srcRoot.startsWith(dstRoot + "/")) {
+  // Containment via relative(), not startsWith(root + "/") — separators are
+  // platform-specific and a "/" suffix never matches a "\"-joined path.
+  const dstInSrc = relative(srcRoot, dstRoot);
+  const srcInDst = relative(dstRoot, srcRoot);
+  const inside = (rel: string): boolean => rel === "" || (!rel.startsWith("..") && !isAbsolute(rel));
+  if (inside(dstInSrc) || inside(srcInDst)) {
     throw new Error(`vault.roundtrip@1: targetDir must be disjoint from the vault dataDir (${srcRoot})`);
   }
 

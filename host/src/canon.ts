@@ -78,11 +78,23 @@ export function mintToken(prefix = "tok"): string {
 }
 
 export function atomicWrite(path: string, data: string): void {
-  // write-tmp → rename: the rename is the atomic durability boundary (B4)
+  // write-tmp → rename: the rename is the atomic durability boundary (B4).
+  // writeFileSync (not a streaming writer) so no handle lingers for the rename.
   const tmp = `${path}.tmp`;
-  const f = Bun.file(tmp).writer();
-  f.write(data); f.flush(); f.end();
-  renameSync(tmp, path);
+  writeFileSync(tmp, data);
+  // Windows: transient locks (AV/indexer, lazy handle release) can EPERM/EBUSY
+  // the rename. Retry briefly — the boundary is unchanged, rename stays atomic.
+  let last: unknown = null;
+  for (let i = 0; i < 10; i++) {
+    try { renameSync(tmp, path); return; }
+    catch (e) {
+      const code = (e as { code?: string }).code;
+      if (code !== "EPERM" && code !== "EBUSY" && code !== "EACCES") throw e;
+      last = e;
+      Bun.sleepSync(10 * (i + 1));
+    }
+  }
+  throw last;
 }
 
 export { writeFileSync };

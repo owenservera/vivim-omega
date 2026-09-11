@@ -11,7 +11,7 @@
 //   WS (socket.io, path "/"): 'journal' (live law-journal events), 'world' (version bumps
 //   with the fresh snapshot), 'result' (each execute outcome), 'snapshot' on connect.
 import { createServer } from "node:http";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { Server } from "socket.io";
 import { bootSurface } from "./boot.ts";
 import { createConsoleService, type ExecuteOutcome } from "./api.ts";
@@ -95,7 +95,7 @@ export async function startConsoleService(opts: ConsoleServiceOptions): Promise<
     if (req.method === "GET" && (url === "/api/health" || url === "/health")) {
       const st = boot.host.router.status();
       return send(200, {
-        ok: true, composition: boot.specPath ? boot.specPath.split("/").pop() : "recipe",
+        ok: true, composition: boot.specPath ? basename(boot.specPath) : "recipe",
         uptimeMs: service.uptimeMs(), plugins: st.compartments, routedOps: st.routedOps, nlclVersion: NCLL_VERSION,
       });
     }
@@ -203,7 +203,7 @@ export async function startConsoleService(opts: ConsoleServiceOptions): Promise<
   const boundPort = typeof httpServer.address() === "object" && httpServer.address() !== null
     ? (httpServer.address() as { port: number }).port
     : opts.port;
-  console.log(`[Ω13] console service on :${boundPort} — composition ${boot.specPath ? join(boot.specPath, "..").split("/").pop() : "recipe"}, ${boot.host.router.status().routedOps.length} routed ops, nlcl ${NCLL_VERSION}`);
+  console.log(`[Ω13] console service on :${boundPort} — composition ${boot.specPath ? basename(join(boot.specPath, "..")) : "recipe"}, ${boot.host.router.status().routedOps.length} routed ops, nlcl ${NCLL_VERSION}`);
 
   return {
     port: boundPort,
