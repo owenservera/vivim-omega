@@ -1,0 +1,46 @@
+{
+  "name": "spine",
+  "entries": [
+    {
+      "id": "vivim.law",
+      "source": "../plugins/vivim-law",
+      "bootPhase": 0,
+      "grant": {
+        "capabilities": ["host.journal.append", "host.tokens.revoke"],
+        "contracts": ["law.check@1", "law.registry@1", "law.consent.grant@1", "law.tokens.revoke@1", "law.amendment@1"]
+      }
+    },
+    {
+      "id": "vivim.vault",
+      "source": "../plugins/vivim-vault",
+      "bootPhase": 1,
+      "grant": {
+        "capabilities": [],
+        "contracts": ["vault.append@1", "vault.get@1", "vault.query@1", "vault.search@1", "vault.verify@1", "vault.compact@1", "vault.roundtrip@1"]
+      },
+      "config": { "dataDir": "/tmp/omega-spine/vault-data" }
+    },
+    {
+      "id": "vivim.run",
+      "source": "../plugins/vivim-run",
+      "bootPhase": 1,
+      "grant": {
+        "capabilities": ["host.compartment.admin", "port:echo.ping@1"],
+        "contracts": ["run.submit@1", "run.stats@1", "run.health@1"]
+      },
+      "config": { "capacity": 2 }
+    },
+    {
+      "id": "omega.echo",
+      "source": "../examples/plugin-echo",
+      "bootPhase": 1,
+      "grant": { "capabilities": [], "contracts": ["echo.ping@1"] }
+    },
+    {
+      "id": "omega.risky",
+      "source": "../examples/plugin-risky",
+      "bootPhase": 1,
+      "grant": { "capabilities": [], "contracts": ["risky.op@1", "risky.read@1"] }
+    }
+  ]
+}
