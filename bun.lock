@@ -198,6 +198,19 @@
       "name": "@vivim/omega-nlcl-pure",
       "version": "0.1.0",
     },
+    "plugins/vivim-providers": {
+      "name": "@vivim/plugin-vivim-providers",
+      "version": "0.1.0",
+      "dependencies": {
+        "@vivim/omega-contracts": "workspace:*",
+        "@vivim/omega-host": "workspace:*",
+        "@vivim/omega-shim": "workspace:*",
+      },
+      "devDependencies": {
+        "@vivim/omega-sdk": "workspace:*",
+        "@vivim/omega-testkit": "workspace:*",
+      },
+    },
     "plugins/vivim-run": {
       "name": "@vivim/plugin-vivim-run",
       "version": "0.1.0",
@@ -336,6 +349,8 @@
     "@vivim/plugin-plugin-risky": ["@vivim/plugin-plugin-risky@workspace:examples/plugin-risky"],
 
     "@vivim/plugin-vivim-law": ["@vivim/plugin-vivim-law@workspace:plugins/vivim-law"],
+
+    "@vivim/plugin-vivim-providers": ["@vivim/plugin-vivim-providers@workspace:plugins/vivim-providers"],
 
     "@vivim/plugin-vivim-run": ["@vivim/plugin-vivim-run@workspace:plugins/vivim-run"],
 

@@ -1,0 +1,50 @@
+{
+  "manifestVersion": "1",
+  "id": "vivim.providers",
+  "version": "0.1.0",
+  "description": "Ω14.1 provider registry — derives ProviderRegistryEntry rows from installed manifests and vault realizations. Read-mostly, pure derivation core.",
+  "entry": "src/index.ts",
+  "publisher": { "keyId": "", "signature": "" },
+  "contributions": {
+    "contract": [
+      { "kind": "contract", "id": "providers.registry", "version": "1", "risk": "READ" },
+      { "kind": "contract", "id": "providers.realization.get", "version": "1", "risk": "READ" },
+      { "kind": "contract", "id": "providers.session.start", "version": "1", "risk": "MUTATION" }
+    ],
+    "schema": [
+      {
+        "kind": "schema",
+        "id": "providers.registry-entry",
+        "version": "1",
+        "fields": [
+          { "name": "archetypeSlug", "type": "string", "required": true },
+          { "name": "providerId", "type": "string", "required": true },
+          { "name": "providerClass", "type": "string", "required": true },
+          { "name": "status", "type": "string", "required": true },
+          { "name": "aggregateScore", "type": "number", "required": true },
+          { "name": "activeInComposition", "type": "boolean", "required": true },
+          { "name": "realizationRef", "type": "json", "required": true },
+          { "name": "lastVerifiedAt", "type": "integer", "required": false },
+          { "name": "lastDriftCheckAt", "type": "integer", "required": false }
+        ]
+      }
+    ]
+  },
+  "dependencies": [
+    { "ref": "contract:vault.append@1", "range": "1.x" },
+    { "ref": "contract:vault.get@1", "range": "1.x" },
+    { "ref": "contract:vault.query@1", "range": "1.x" },
+    { "ref": "contract:law.registry@1", "range": "1.x" }
+  ],
+  "capabilities": {
+    "requested": [
+      "port:vault.append@1",
+      "port:vault.get@1",
+      "port:vault.query@1",
+      "port:law.registry@1"
+    ],
+    "justification": "Reads vault for realizations/sessions, writes session bookkeeping. Reads law registry for active ops."
+  },
+  "runtime": { "tier": "worker-thread", "budget": { "cpuMs": 500, "memMB": 128 } },
+  "contentHash": ""
+}

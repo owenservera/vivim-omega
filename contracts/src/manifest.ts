@@ -11,6 +11,9 @@ export type ContributionKind = (typeof CONTRIBUTION_KINDS)[number];
 
 export type RiskClass = "EXTERNAL_MUTATION" | "MUTATION" | "READ";
 
+export type ProviderClass = "SIMULATOR" | "API_NATIVE" | "BROWSER_MEDIATED";
+// Note: Structured to admit a future 4th member (e.g. "INTELLIGENCE_HARNESS") without a breaking change.
+
 export interface Contribution {
   kind: ContributionKind;
   id: string;          // namespace-scoped: "message.send" in pack domain-email
