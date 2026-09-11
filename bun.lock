@@ -53,6 +53,7 @@
       "version": "0.1.0",
       "dependencies": {
         "@vivim/omega-contracts": "workspace:*",
+        "@vivim/omega-host": "workspace:*",
         "@vivim/omega-shim": "workspace:*",
       },
     },
@@ -61,6 +62,7 @@
       "version": "0.1.0",
       "dependencies": {
         "@vivim/omega-contracts": "workspace:*",
+        "@vivim/omega-host": "workspace:*",
         "@vivim/omega-shim": "workspace:*",
       },
     },
@@ -69,6 +71,7 @@
       "version": "0.1.0",
       "dependencies": {
         "@vivim/omega-contracts": "workspace:*",
+        "@vivim/omega-host": "workspace:*",
         "@vivim/omega-shim": "workspace:*",
       },
     },

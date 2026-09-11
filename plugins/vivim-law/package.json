@@ -1,5 +1,5 @@
 {
-  "name": "@vivim/plugin-$(basename $p)",
+  "name": "@vivim/plugin-vivim-law",
   "version": "0.1.0",
   "private": true,
   "type": "module",
