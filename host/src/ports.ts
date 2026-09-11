@@ -42,7 +42,15 @@ export class PortRouter {
     this.manifests.set(entry.id, manifest);
     for (const op of entry.grant.contracts) this.opRoute.set(op, entry.id);
     for (const [op, risk] of riskyOps(manifest)) this.opRisk.set(op, risk);
-    for (const [cap, token] of Object.entries(tokens)) this.tokens.set(token, { token, pluginId: entry.id, cap, gen: this.generation });
+    // One record per token. Alias keys ("port:host.compartment.stats@1") and their guarding
+    // capability ("host.compartment.admin") resolve to the SAME effective cap, so insertion
+    // order can never change what a token authorizes (order-independence is a B3 invariant).
+    for (const [key, token] of Object.entries(tokens)) {
+      if (this.tokens.has(token)) continue;
+      const aliasedOp = key.startsWith("port:") ? key.slice("port:".length) : null;
+      const effectiveCap = aliasedOp && HOST_OP_TO_CAP[aliasedOp] ? HOST_OP_TO_CAP[aliasedOp] : key;
+      this.tokens.set(token, { token, pluginId: entry.id, cap: effectiveCap, gen: this.generation });
+    }
     handle.onMessage((m) => this.onWorkerMessage(entry.id, m));
     handle.onCrash(() => this.failInflight(entry.id, `compartment ${entry.id} crashed`));
   }
