@@ -17,6 +17,14 @@
         "@vivim/omega-shim": "workspace:*",
       },
     },
+    "examples/plugin-crashy": {
+      "name": "@vivim/plugin-plugin-crashy",
+      "version": "0.1.0",
+      "dependencies": {
+        "@vivim/omega-contracts": "workspace:*",
+        "@vivim/omega-shim": "workspace:*",
+      },
+    },
     "examples/plugin-echo": {
       "name": "@vivim/plugin-plugin-echo",
       "version": "0.1.0",
@@ -27,6 +35,14 @@
     },
     "examples/plugin-notes": {
       "name": "@vivim/plugin-plugin-notes",
+      "version": "0.1.0",
+      "dependencies": {
+        "@vivim/omega-contracts": "workspace:*",
+        "@vivim/omega-shim": "workspace:*",
+      },
+    },
+    "examples/plugin-risky": {
+      "name": "@vivim/plugin-plugin-risky",
       "version": "0.1.0",
       "dependencies": {
         "@vivim/omega-contracts": "workspace:*",
@@ -105,9 +121,13 @@
 
     "@vivim/plugin-plugin-counter": ["@vivim/plugin-plugin-counter@workspace:examples/plugin-counter"],
 
+    "@vivim/plugin-plugin-crashy": ["@vivim/plugin-plugin-crashy@workspace:examples/plugin-crashy"],
+
     "@vivim/plugin-plugin-echo": ["@vivim/plugin-plugin-echo@workspace:examples/plugin-echo"],
 
     "@vivim/plugin-plugin-notes": ["@vivim/plugin-plugin-notes@workspace:examples/plugin-notes"],
+
+    "@vivim/plugin-plugin-risky": ["@vivim/plugin-plugin-risky@workspace:examples/plugin-risky"],
 
     "@vivim/plugin-vivim-law": ["@vivim/plugin-vivim-law@workspace:plugins/vivim-law"],
 
