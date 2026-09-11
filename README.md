@@ -28,9 +28,9 @@ they become backfill sources after the core exists.
 contracts/   @vivim/omega-contracts — the pinned wire types (zero runtime)
 host/        @vivim/omega-host     — the µhost (LOC-gated, no manifest: it verifies them)
 shim/        @vivim/omega-shim     — compartment runtime (definePlugin + port client)
-plugins/     vivim-law · vivim-vault · vivim-run · providers · discovery engines · law-stub (Ω0 stand-in)
+plugins/     vivim-law · vivim-vault · vivim-run · vivim-mind (self-knowledge) · vivim-nlcl (deterministic NLP) · vivim-director (NL reprogramming) · providers · discovery engines · law-stub (Ω0 stand-in)
 packs/       domain packs (SCHEMA+CONTRACT+POLICY+TEST bundles)
-surfaces/    cli · mcp
+surfaces/    cli · mcp · web (the Ω console service)
 examples/    plugin-echo · plugin-counter (Ω0) · plugin-notes (Ω4)
 tooling/     recipe builder · gates · bench · demo · status
 compositions/ composition source specs (compiled into signed recipes)
@@ -59,7 +59,8 @@ bootPhase order → mint capability tokens → wire the router).
 
 ## Documents
 
-- `docs/BUILD-DECISIONS.md` — the build-track decision register (D-210…)
+- `docs/BUILD-DECISIONS.md` — the build-track decision register (D-210…D-222)
+- `docs/NCLL-AND-SELF-KNOWLEDGE.md` — Ω10–Ω13: the language waves (self-knowledge, the deterministic NCLL, NL reprogramming, the web console)
 - `BENCHMARKS.md` — append-only measured numbers per wave
 - `build/status.json` — machine-readable build state (feeds the review console)
 - Design of record: sandbox `design/VIVIM-OMEGA-MASTER-ARCHITECTURE.md` (D2) + `OMEGA-IMPLEMENTATION-*` (D3)
