@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-09-11T03:01:15.581Z",
+  "generatedAt": "2026-09-11T03:45:40.201Z",
   "repo": "vivim-omega",
   "branch": "omega",
-  "head": "c809957",
+  "head": "8055f42",
   "waves": [
     {
       "id": "Ω0",
@@ -14,25 +14,25 @@
       "id": "Ω1",
       "title": "vivim.law",
       "deliverable": "Gate/consent, attenuation, revocation, registry, amendment",
-      "status": "in-progress"
+      "status": "built"
     },
     {
       "id": "Ω2",
       "title": "vivim.vault",
       "deliverable": "SQLite WAL+FTS5, CAS, Merkle changelog, verify, compaction",
-      "status": "in-progress"
+      "status": "built"
     },
     {
       "id": "Ω3",
       "title": "vivim.run",
       "deliverable": "Bounded pool, budgets, crash-loop quarantine",
-      "status": "in-progress"
+      "status": "built"
     },
     {
       "id": "Ω4",
       "title": "SDK + testkit",
       "deliverable": "zod schemas, signing, typed client, FakeHost, conformance",
-      "status": "planned"
+      "status": "built"
     },
     {
       "id": "Ω5",
@@ -65,67 +65,6 @@
       "status": "planned"
     }
   ],
-  "gate": {
-    "startedAt": "2026-09-11T03:01:06.546Z",
-    "checks": {
-      "host-loc": {
-        "ok": true,
-        "detail": {
-          "loc": 822,
-          "budget": 1000
-        }
-      },
-      "fresh-tree": {
-        "ok": true,
-        "detail": {
-          "vivim-final-enhanced": {
-            "head": "abb6add",
-            "clean": true
-          },
-          "vivim-final-program": {
-            "head": "4a5eb84",
-            "clean": true
-          },
-          "legacyImports": 0
-        }
-      },
-      "tests": {
-        "ok": true,
-        "detail": {
-          "pass": 95,
-          "fail": 0
-        }
-      },
-      "attest": {
-        "ok": true,
-        "detail": {
-          "compileMs": 4,
-          "bootMs": 32,
-          "echo": true,
-          "counterBump": true,
-          "counterValue": {
-            "count": 1
-          },
-          "compartments": [
-            "vivim.law",
-            "omega.echo",
-            "omega.counter"
-          ],
-          "refusalRegister": "REFUSED",
-          "budgetRegister": "BUDGET",
-          "recovery": {
-            "midSwapCleaned": true,
-            "replayRefused": true
-          }
-        }
-      }
-    }
-  },
-  "hostLoc": 822,
-  "tests": {
-    "pass": 95,
-    "fail": 0
-  },
   "benchmarks": {
     "at": "2026-09-11T02:27:42.745Z",
     "bootMs": 27,

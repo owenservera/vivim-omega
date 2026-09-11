@@ -59,11 +59,38 @@
         "@vivim/omega-contracts": "workspace:*",
       },
     },
+    "packs/domain-email": {
+      "name": "@vivim/pack-domain-email",
+      "version": "0.1.0",
+      "dependencies": {
+        "@vivim/omega-contracts": "workspace:*",
+        "@vivim/omega-host": "workspace:*",
+        "@vivim/omega-shim": "workspace:*",
+      },
+    },
     "plugins/law-stub": {
       "name": "@vivim/plugin-law-stub",
       "version": "0.1.0",
       "dependencies": {
         "@vivim/omega-contracts": "workspace:*",
+        "@vivim/omega-shim": "workspace:*",
+      },
+    },
+    "plugins/provider-email-file": {
+      "name": "@vivim/plugins-provider-email-file",
+      "version": "0.1.0",
+      "dependencies": {
+        "@vivim/omega-contracts": "workspace:*",
+        "@vivim/omega-host": "workspace:*",
+        "@vivim/omega-shim": "workspace:*",
+      },
+    },
+    "plugins/provider-llm": {
+      "name": "@vivim/plugins-provider-llm",
+      "version": "0.1.0",
+      "dependencies": {
+        "@vivim/omega-contracts": "workspace:*",
+        "@vivim/omega-host": "workspace:*",
         "@vivim/omega-shim": "workspace:*",
       },
     },
@@ -110,6 +137,24 @@
         "@vivim/omega-contracts": "workspace:*",
       },
     },
+    "surfaces/cli": {
+      "name": "@vivim/surfaces-cli",
+      "version": "0.1.0",
+      "dependencies": {
+        "@vivim/omega-contracts": "workspace:*",
+        "@vivim/omega-host": "workspace:*",
+        "@vivim/omega-shim": "workspace:*",
+      },
+    },
+    "surfaces/mcp": {
+      "name": "@vivim/surfaces-mcp",
+      "version": "0.1.0",
+      "dependencies": {
+        "@vivim/omega-contracts": "workspace:*",
+        "@vivim/omega-host": "workspace:*",
+        "@vivim/omega-shim": "workspace:*",
+      },
+    },
     "testkit": {
       "name": "@vivim/omega-testkit",
       "version": "0.1.0",
@@ -144,6 +189,8 @@
 
     "@vivim/omega-tooling": ["@vivim/omega-tooling@workspace:tooling"],
 
+    "@vivim/pack-domain-email": ["@vivim/pack-domain-email@workspace:packs/domain-email"],
+
     "@vivim/plugin-law-stub": ["@vivim/plugin-law-stub@workspace:plugins/law-stub"],
 
     "@vivim/plugin-plugin-counter": ["@vivim/plugin-plugin-counter@workspace:examples/plugin-counter"],
@@ -161,6 +208,14 @@
     "@vivim/plugin-vivim-run": ["@vivim/plugin-vivim-run@workspace:plugins/vivim-run"],
 
     "@vivim/plugin-vivim-vault": ["@vivim/plugin-vivim-vault@workspace:plugins/vivim-vault"],
+
+    "@vivim/plugins-provider-email-file": ["@vivim/plugins-provider-email-file@workspace:plugins/provider-email-file"],
+
+    "@vivim/plugins-provider-llm": ["@vivim/plugins-provider-llm@workspace:plugins/provider-llm"],
+
+    "@vivim/surfaces-cli": ["@vivim/surfaces-cli@workspace:surfaces/cli"],
+
+    "@vivim/surfaces-mcp": ["@vivim/surfaces-mcp@workspace:surfaces/mcp"],
 
     "zod": ["zod@4.6.2", "", {}, "sha512-lh5RCAGFa1Cm2hjtNwLQhSs/AsqdWnTQaBER9fEwN/88pSh7KOtJavtBx/0VlkN/uFd61SwYmljLMDAsHlvzBQ=="],
   }

@@ -7,10 +7,10 @@ const ROOT = join(import.meta.dir, "../..");
 /** Wave registry: status is set by evidence, not ambition (D2 §9: claims carry no weight). */
 const WAVES: Array<{ id: string; title: string; deliverable: string; status: string }> = [
   { id: "Ω0", title: "µhost", deliverable: "Recipe verify, worker compartments, port router (B1–B4), recovery, CLI, demos", status: "built" },
-  { id: "Ω1", title: "vivim.law", deliverable: "Gate/consent, attenuation, revocation, registry, amendment", status: "in-progress" },
-  { id: "Ω2", title: "vivim.vault", deliverable: "SQLite WAL+FTS5, CAS, Merkle changelog, verify, compaction", status: "in-progress" },
-  { id: "Ω3", title: "vivim.run", deliverable: "Bounded pool, budgets, crash-loop quarantine", status: "in-progress" },
-  { id: "Ω4", title: "SDK + testkit", deliverable: "zod schemas, signing, typed client, FakeHost, conformance", status: "planned" },
+  { id: "Ω1", title: "vivim.law", deliverable: "Gate/consent, attenuation, revocation, registry, amendment", status: "built" },
+  { id: "Ω2", title: "vivim.vault", deliverable: "SQLite WAL+FTS5, CAS, Merkle changelog, verify, compaction", status: "built" },
+  { id: "Ω3", title: "vivim.run", deliverable: "Bounded pool, budgets, crash-loop quarantine", status: "built" },
+  { id: "Ω4", title: "SDK + testkit", deliverable: "zod schemas, signing, typed client, FakeHost, conformance", status: "built" },
   { id: "Ω5", title: "domain-email + provider", deliverable: "First domain pack, full loop through vault + consent", status: "planned" },
   { id: "Ω6", title: "surfaces", deliverable: "CLI + MCP surfaces, provider-llm, webmail scaffold", status: "planned" },
   { id: "Ω7", title: "discovery perception/observation", deliverable: "ApplicationGraph from captured fixtures, zero LLM", status: "planned" },

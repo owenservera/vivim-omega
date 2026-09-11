@@ -88,3 +88,6 @@ await emitStatus({ gate, hostLoc, tests: { pass: testPass, fail: testFail } });
 const summary = { ok: failed === 0, failed, hostLoc, tests: { pass: testPass, fail: testFail }, at: gate.startedAt };
 console.log(JSON.stringify(summary, null, 2));
 process.exit(failed === 0 ? 0 : 1);
+// gates.log line (append after status emit)
+import { appendFileSync as _append } from "node:fs";
+try { _append(join(ROOT, "build", "gates.log"), `${JSON.stringify(summary)}\n`); } catch {}
