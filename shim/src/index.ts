@@ -28,7 +28,7 @@ type ToHost = { type: "ready" } | { type: "call"; callId: string; capabilityToke
 
 export function startPlugin(def: PluginDef): void {
   const port = parentPort;
-  if (!port) throw new Error("shim: not running inside a worker compartment");
+  if (!port) return; // imported outside a worker (tests / FakeHost): wiring is skipped, the def stays pure
   const send = (m: ToHost) => port.postMessage(m);
   let ctx: PluginContext | null = null;
 

@@ -4,6 +4,9 @@
   "workspaces": {
     "": {
       "name": "vivim-omega",
+      "dependencies": {
+        "zod": "^4.6.2",
+      },
     },
     "contracts": {
       "name": "@vivim/omega-contracts",
@@ -91,11 +94,31 @@
         "@vivim/omega-shim": "workspace:*",
       },
     },
+    "sdk": {
+      "name": "@vivim/omega-sdk",
+      "version": "0.1.0",
+      "dependencies": {
+        "@vivim/omega-contracts": "workspace:*",
+        "@vivim/omega-host": "workspace:*",
+        "zod": "^4.6.2",
+      },
+    },
     "shim": {
       "name": "@vivim/omega-shim",
       "version": "0.1.0",
       "dependencies": {
         "@vivim/omega-contracts": "workspace:*",
+      },
+    },
+    "testkit": {
+      "name": "@vivim/omega-testkit",
+      "version": "0.1.0",
+      "dependencies": {
+        "@vivim/omega-contracts": "workspace:*",
+        "@vivim/omega-host": "workspace:*",
+        "@vivim/omega-sdk": "workspace:*",
+        "@vivim/omega-shim": "workspace:*",
+        "zod": "^4.6.2",
       },
     },
     "tooling": {
@@ -113,7 +136,11 @@
 
     "@vivim/omega-host": ["@vivim/omega-host@workspace:host"],
 
+    "@vivim/omega-sdk": ["@vivim/omega-sdk@workspace:sdk"],
+
     "@vivim/omega-shim": ["@vivim/omega-shim@workspace:shim"],
+
+    "@vivim/omega-testkit": ["@vivim/omega-testkit@workspace:testkit"],
 
     "@vivim/omega-tooling": ["@vivim/omega-tooling@workspace:tooling"],
 
@@ -134,5 +161,7 @@
     "@vivim/plugin-vivim-run": ["@vivim/plugin-vivim-run@workspace:plugins/vivim-run"],
 
     "@vivim/plugin-vivim-vault": ["@vivim/plugin-vivim-vault@workspace:plugins/vivim-vault"],
+
+    "zod": ["zod@4.6.2", "", {}, "sha512-lh5RCAGFa1Cm2hjtNwLQhSs/AsqdWnTQaBER9fEwN/88pSh7KOtJavtBx/0VlkN/uFd61SwYmljLMDAsHlvzBQ=="],
   }
 }

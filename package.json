@@ -11,7 +11,9 @@
     "packs/*",
     "surfaces/*",
     "examples/*",
-    "tooling"
+    "tooling",
+    "sdk",
+    "testkit"
   ],
   "scripts": {
     "omega:test": "bun test",
@@ -20,5 +22,8 @@
     "omega:status": "bun run tooling/gates/status.ts",
     "omega:demo": "bun run tooling/demo/demo.ts",
     "omega:host": "bun run host/src/main.ts"
+  },
+  "dependencies": {
+    "zod": "^4.6.2"
   }
 }
