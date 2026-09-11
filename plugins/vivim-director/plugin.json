@@ -1,0 +1,23 @@
+{
+  "manifestVersion": "1",
+  "id": "vivim.director",
+  "version": "0.1.0",
+  "description": "Ω12 — reprogrammability as DATA, never codegen (D-219). Rules are vault objects (ns 'automation'), teachings are vault objects (ns 'nlcl'), the fired ledger is a vault object per processed message; a deterministic 500ms tick loop scans vault ns 'email' for new/unseen inbox revisions, matches rules by the shared contact derivation, and executes actions THROUGH THE PORT under principal vivim.director — the law still gates every rule action (one consent at rule-creation time, granted by the user through the console). Swapping this plugin swaps the automation engine; the rules and teachings survive in the vault.",
+  "entry": "src/index.ts",
+  "publisher": { "keyId": "", "signature": "" },
+  "contributions": {
+    "engine": [
+      { "kind": "engine", "id": "director.rule", "version": "1", "doc": "rule {when:{event:'message.received', from:'contact:<slug>'|null}, then:{op, payload}} → vault.append@1 (ns automation, id rule:<from-slug|any>-forward[-n]) → {ruleId, rev, summary, actionConsent:{principal:'vivim.director', op}}. Engines declare no risk; semantics are READ/derivative — the op itself only appends a vault data object; the rule's ACTION op executes later, through the port, under principal vivim.director, gated by law.check. v1 vocabulary boundaries (fail-closed): when.event MUST be 'message.received'; then.op MUST be 'message.send@1' (the only action op the director executes); then.payload must be an object; then.payload.messageFromTrigger===true binds the trigger message (body=trigger body, subject=then.payload.subject ?? 'Fwd: <subject>'). actionConsent lets the surface pre-check law.check so the console grants ONCE at rule-creation time." },
+      { "kind": "engine", "id": "director.registry", "version": "1", "doc": "registry {filter:'rules'} → {rules:[{id, enabled, summary, when, then, createdAt}]} (vault.query ns automation idPrefix 'rule:' + bounded gets). registry {action:'enable'|'disable', ruleId} → vault.get + a new revision with enabled flipped → the updated rule (append-only disable/enable — revertable by construction). READ/derivative: both forms only read/append vault data; unknown ruleId → DEGRADED." },
+      { "kind": "engine", "id": "director.teach", "version": "1", "doc": "teach {word, op, action?:'add'|'remove'} → vault.append@1 (ns nlcl, id lexicon:<folded word>) with data.op = op (add) or null (remove). op:null IS the removal mechanism — the mind skips op:null rows, so 'unteach' is an append, never a delete. READ/derivative: a data revision only; future parses change because the WorldModel carries the lexicon. Validation (fail-closed): word folds to ^[a-z0-9-]{2,20}$; op matches <id>@<version> when action is add." },
+      { "kind": "engine", "id": "director.tick", "version": "1", "doc": "tick {} → {scanned, processed, fired:[{messageId, ruleId, ok, error?, consentId?}]} — the deterministic fire pass (also scheduled live: setInterval 500ms, config.intervalMs, in-flight guard, cleared on shutdown). Scans vault ns 'email' (bounded 200 rows) for new/changed revisions, keeps inbox+unseen+non-self messages, skips messages already in the fired ledger, matches enabled rules (sorted by id asc) via contactFromAddress (the shared derivation, D-216), fires each action through port:message.send@1 under principal vivim.director — law-gated; a REFUSED/consent-required result is a LEGITIMATE ledgered outcome (the user grants through the console; the next trigger fires clean — no retry spin). One ledger append per processed message after all rules attempted. Never throws: per-rule errors and vault failures are captured into the result/ledger (partial report)." }
+    ]
+  },
+  "dependencies": [],
+  "capabilities": {
+    "requested": ["port:vault.append@1", "port:vault.query@1", "port:vault.get@1", "port:message.send@1"],
+    "justification": "Rules, teachings, and the fired ledger are VAULT OBJECTS — data/code divorce: the director owns no storage, so persisting/appending them needs port:vault.append@1, and scanning email state + loading rules/ledger needs port:vault.query@1 and port:vault.get@1. Rule ACTIONS execute through port:message.send@1 under principal vivim.director so the LAW still gates them — one consent at rule-creation time, granted by the user through the console. The composition grants exactly these four per user-signed Recipe — never this manifest."
+  },
+  "runtime": { "tier": "worker-thread", "budget": { "cpuMs": 500, "memMB": 64 } },
+  "contentHash": ""
+}

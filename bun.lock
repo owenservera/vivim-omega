@@ -152,6 +152,17 @@
         "@vivim/omega-shim": "workspace:*",
       },
     },
+    "plugins/vivim-director": {
+      "name": "@vivim/plugins-vivim-director",
+      "version": "0.1.0",
+      "dependencies": {
+        "@vivim/omega-contracts": "workspace:*",
+        "@vivim/omega-host": "workspace:*",
+        "@vivim/omega-nlcl-pure": "workspace:*",
+        "@vivim/omega-sdk": "workspace:*",
+        "@vivim/omega-shim": "workspace:*",
+      },
+    },
     "plugins/vivim-law": {
       "name": "@vivim/plugin-vivim-law",
       "version": "0.1.0",
@@ -160,6 +171,32 @@
         "@vivim/omega-host": "workspace:*",
         "@vivim/omega-shim": "workspace:*",
       },
+    },
+    "plugins/vivim-mind": {
+      "name": "@vivim/plugins-vivim-mind",
+      "version": "0.1.0",
+      "dependencies": {
+        "@vivim/omega-contracts": "workspace:*",
+        "@vivim/omega-host": "workspace:*",
+        "@vivim/omega-nlcl-pure": "workspace:*",
+        "@vivim/omega-sdk": "workspace:*",
+        "@vivim/omega-shim": "workspace:*",
+      },
+    },
+    "plugins/vivim-nlcl": {
+      "name": "@vivim/plugins-vivim-nlcl",
+      "version": "0.1.0",
+      "dependencies": {
+        "@vivim/omega-contracts": "workspace:*",
+        "@vivim/omega-host": "workspace:*",
+        "@vivim/omega-nlcl-pure": "workspace:*",
+        "@vivim/omega-sdk": "workspace:*",
+        "@vivim/omega-shim": "workspace:*",
+      },
+    },
+    "plugins/vivim-nlcl-pure": {
+      "name": "@vivim/omega-nlcl-pure",
+      "version": "0.1.0",
     },
     "plugins/vivim-run": {
       "name": "@vivim/plugin-vivim-run",
@@ -241,6 +278,8 @@
 
     "@vivim/omega-host": ["@vivim/omega-host@workspace:host"],
 
+    "@vivim/omega-nlcl-pure": ["@vivim/omega-nlcl-pure@workspace:plugins/vivim-nlcl-pure"],
+
     "@vivim/omega-sdk": ["@vivim/omega-sdk@workspace:sdk"],
 
     "@vivim/omega-shim": ["@vivim/omega-shim@workspace:shim"],
@@ -284,6 +323,12 @@
     "@vivim/plugins-provider-email-file": ["@vivim/plugins-provider-email-file@workspace:plugins/provider-email-file"],
 
     "@vivim/plugins-provider-llm": ["@vivim/plugins-provider-llm@workspace:plugins/provider-llm"],
+
+    "@vivim/plugins-vivim-director": ["@vivim/plugins-vivim-director@workspace:plugins/vivim-director"],
+
+    "@vivim/plugins-vivim-mind": ["@vivim/plugins-vivim-mind@workspace:plugins/vivim-mind"],
+
+    "@vivim/plugins-vivim-nlcl": ["@vivim/plugins-vivim-nlcl@workspace:plugins/vivim-nlcl"],
 
     "@vivim/surfaces-cli": ["@vivim/surfaces-cli@workspace:surfaces/cli"],
 
