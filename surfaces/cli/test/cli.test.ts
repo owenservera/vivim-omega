@@ -21,6 +21,14 @@ function tempVault(name: string): string {
 
 interface CliRun { stdout: string; stderr: string; code: number }
 
+/**
+ * Spawn+boot wait budget. Each runCli boots a full composition in a child `bun`
+ * process — under full-suite parallel load that can exceed Bun's 5s default
+ * test timeout (the email-composition tests spawn three times). The ceiling
+ * rises; no assertion changes (happy path still fast).
+ */
+const SPAWN_BUDGET_MS = 30_000;
+
 async function runCli(args: string[], timeoutMs = 30_000): Promise<CliRun> {
   const proc = Bun.spawn(["bun", "run", CLI, ...args], { stdin: "ignore", stdout: "pipe", stderr: "pipe" });
   const [stdout, stderr, code] = await Promise.all([
@@ -40,13 +48,13 @@ describe("GATE-Ω6 — CLI surface (root-principal script over the µhost)", () 
     expect(r.stdout).toContain("consent <consentId>");
     expect(r.stdout).toContain("msg send");
     expect(r.stdout).toContain("status");
-  });
+  }, SPAWN_BUDGET_MS);
 
   test("unknown command → usage error, exit 2", async () => {
     const r = await runCli(["frobnicate"]);
     expect(r.code).toBe(2);
     expect(r.stderr).toContain("unknown command");
-  });
+  }, SPAWN_BUDGET_MS);
 
   test("call echo.ping@1 '{\"hello\":\"cli\"}' → ok, exit 0, payload echoed", async () => {
     const vault = tempVault("echo-ok");
@@ -59,7 +67,7 @@ describe("GATE-Ω6 — CLI surface (root-principal script over the µhost)", () 
     expect(existsSync(join(vault, "build", "echo-cli", "recipe.json"))).toBe(true);
     // the surface owns stdio: host/worker log lines never appear on stdout
     expect(r.stdout).not.toContain("[vivim]");
-  });
+  }, SPAWN_BUDGET_MS);
 
   test("call with --json emits ONE parseable JSON document", async () => {
     const vault = tempVault("echo-json");
@@ -70,7 +78,7 @@ describe("GATE-Ω6 — CLI surface (root-principal script over the µhost)", () 
     expect(doc.result.ok).toBe(true);
     expect(doc.result.value.payload.hello).toBe("json");
     expect(typeof doc.ms).toBe("number");
-  });
+  }, SPAWN_BUDGET_MS);
 
   test("call no.such.op@1 → REFUSED printed, exit 1", async () => {
     const vault = tempVault("echo-refused");
@@ -78,13 +86,13 @@ describe("GATE-Ω6 — CLI surface (root-principal script over the µhost)", () 
     expect(r.code).toBe(1);
     expect(r.stdout).toContain("fail no.such.op@1 → REFUSED");
     expect(r.stdout).toContain("no routed implementation for no.such.op@1");
-  });
+  }, SPAWN_BUDGET_MS);
 
   test("call with malformed json-args → usage error, exit 2 (before any boot)", async () => {
     const r = await runCli(["call", "echo.ping@1", "{nope", "--vault", tempVault("bad-json"), "--composition", ECHO_SPEC]);
     expect(r.code).toBe(2);
     expect(r.stderr).toContain("does not parse as JSON");
-  });
+  }, SPAWN_BUDGET_MS);
 
   test("plugins lists the compartments + routed ops of the booted composition", async () => {
     const vault = tempVault("plugins");
@@ -100,7 +108,7 @@ describe("GATE-Ω6 — CLI surface (root-principal script over the µhost)", () 
     expect(doc.routedOps).toContain("echo.ping@1");
     const echo = (doc.compartments as Array<{ id: string; routedOps: string[] }>).find((c) => c.id === "omega.echo");
     expect(echo?.routedOps).toEqual(["echo.ping@1"]);
-  });
+  }, SPAWN_BUDGET_MS);
 
   test("status prints pure router-status JSON (parseable stdout)", async () => {
     const vault = tempVault("status");
@@ -110,7 +118,7 @@ describe("GATE-Ω6 — CLI surface (root-principal script over the µhost)", () 
     expect(st.routedOps).toContain("echo.ping@1");
     expect(st.compartments["omega.echo"].state).toBe("active");
     expect(st.generation).toBeGreaterThanOrEqual(1);
-  });
+  }, SPAWN_BUDGET_MS);
 
   test("boot failure is fail-closed: JSON report on stderr, exit 1", async () => {
     const r = await runCli(["call", "echo.ping@1", "--vault", tempVault("noboot"), "--composition", "/no/such/spec.json"]);
@@ -118,7 +126,7 @@ describe("GATE-Ω6 — CLI surface (root-principal script over the µhost)", () 
     const report = JSON.parse(r.stderr.split("\n").find((l) => l.trim().startsWith("{"))!);
     expect(report.booted).toBe(false);
     expect(report.report.reason).toContain("not found");
-  });
+  }, SPAWN_BUDGET_MS);
 
   test("--recipe boots the already-compiled recipe (second boot mode)", async () => {
     const vault = tempVault("recipe-mode");
@@ -128,7 +136,7 @@ describe("GATE-Ω6 — CLI surface (root-principal script over the µhost)", () 
     const second = await runCli(["call", "echo.ping@1", '{"via":"recipe"}', "--vault", vault, "--recipe", recipeFile]);
     expect(second.code).toBe(0);
     expect(second.stdout).toContain('"via": "recipe"');
-  });
+  }, SPAWN_BUDGET_MS);
 });
 
 describe("GATE-Ω6 — CLI consent ceremony (real vivim.law + omega.risky)", () => {
@@ -145,7 +153,7 @@ describe("GATE-Ω6 — CLI consent ceremony (real vivim.law + omega.risky)", () 
     expect(r.stdout).toContain(`--composition ${RISK_SPEC}`);
     // the law gate really refused (register + detail), not a surface-side invention
     expect(r.stdout).toContain("fail risky.op@1 → REFUSED");
-  });
+  }, SPAWN_BUDGET_MS);
 
   test("consent <id> grants through law.consent.grant@1 → exit 0", async () => {
     const vault = tempVault("consent-grant");
@@ -161,7 +169,7 @@ describe("GATE-Ω6 — CLI consent ceremony (real vivim.law + omega.risky)", () 
     const lines = readFileSync(journal, "utf-8").trim().split("\n").filter(Boolean).map((l) => JSON.parse(l));
     const grantEntry = lines.find((l) => l.op === "law.consent.grant" && l.action === "grant" && l.consentId === id);
     expect(grantEntry).toBeTruthy();
-  });
+  }, SPAWN_BUDGET_MS);
 
   test("one-shot ceremony: call risky.op@1 --consent <id> grants then succeeds → exit 0", async () => {
     const vault = tempVault("consent-oneshot");
@@ -172,7 +180,7 @@ describe("GATE-Ω6 — CLI consent ceremony (real vivim.law + omega.risky)", () 
     expect(r.stdout).toContain("granted");
     expect(r.stdout).toContain("mutated");
     expect(r.stdout).toContain('"hello": "one"');
-  });
+  }, SPAWN_BUDGET_MS);
 
   test("msg list without an email provider in the composition → 'not in composition', exit 1", async () => {
     const vault = tempVault("msg-absent");
@@ -180,7 +188,7 @@ describe("GATE-Ω6 — CLI consent ceremony (real vivim.law + omega.risky)", () 
     expect(r.code).toBe(1);
     expect(r.stdout).toContain("not in composition");
     expect(r.stdout).toContain("provider.email.file");
-  });
+  }, SPAWN_BUDGET_MS);
 });
 
 describe("GATE-Ω6 — CLI msg sugar over the real email composition (Ω5 wave)", () => {
@@ -206,12 +214,12 @@ describe("GATE-Ω6 — CLI msg sugar over the real email composition (Ω5 wave)"
     const found = await runCli(["msg", "search", "surface sugar", "--vault", tempVault("msg-search"), "--composition", EMAIL_SPEC]);
     expect(found.code).toBe(0);
     expect(found.stdout).toContain(subject);
-  });
+  }, SPAWN_BUDGET_MS);
 
   test("msg list is READ-risk sugar → ungated, exit 0", async () => {
     const r = await runCli(["msg", "list", "--vault", tempVault("msg-list"), "--composition", EMAIL_SPEC]);
     expect(r.code).toBe(0);
     expect(r.stdout).toContain("ok message.list@1");
     expect(r.stdout).toContain("messages");
-  });
+  }, SPAWN_BUDGET_MS);
 });
