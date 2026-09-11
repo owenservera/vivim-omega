@@ -1,6 +1,6 @@
-// provider.email.file — message.ts (Ω5)
+// provider.email.file — message.ts (Ω5; v0.2.0 adds the receive helpers — Ω10/Ω11b)
 // Pure email-domain helpers: payload validation, Message construction, summary
-// projection, thread derivation, and the two pure revisions (seen / move).
+// projection, thread derivation, and the pure revisions (seen / move).
 // No ports, no I/O — import-safe outside a worker (unit-tested directly);
 // index.ts wiring layers the vault port calls on top.
 //
@@ -35,6 +35,12 @@ export type MessageSummary = Omit<Message, "body">;
 
 export interface SendInput { to: string; subject: string; body: string; threadId?: string }
 
+/** The folders message.receive@1 accepts (the default is "inbox" — the inbound leg). */
+export const RECEIVE_FOLDERS = ["inbox", "sent", "archive", "trash"] as const;
+export type ReceiveFolder = (typeof RECEIVE_FOLDERS)[number];
+
+export interface ReceiveInput { from: string; subject: string; body: string; folder?: string }
+
 // ---- validation (fail-closed: throw → DEGRADED at the port boundary) ----
 
 function requireStr(op: string, field: string, value: unknown, opts: { allowEmpty?: boolean } = {}): string {
@@ -68,6 +74,27 @@ export function validateMovePayload(op: string, payload: unknown): { id: string;
   const folder = requireStr(op, "folder", p.folder);
   if (/[|\u0000]/.test(folder)) throw new Error(`${op}: folder must not contain '|' or NUL`);
   return { id, folder };
+}
+
+/**
+ * message.receive@1 payload: {from, subject, body, folder?} — from must contain '@',
+ * subject non-empty, body a string (may be empty), folder one of
+ * inbox|sent|archive|trash when provided (default inbox, applied by buildReceivedMessage).
+ */
+export function validateReceivePayload(op: string, payload: unknown): ReceiveInput {
+  if (payload === null || payload === undefined || typeof payload !== "object" || Array.isArray(payload)) {
+    throw new Error(`${op}: payload must be an object`);
+  }
+  const p = payload as Record<string, unknown>;
+  const from = requireStr(op, "from", p.from);
+  if (!from.includes("@")) throw new Error(`${op}: from must be an email address containing '@' (got "${from}")`);
+  const subject = requireStr(op, "subject", p.subject);
+  const body = requireStr(op, "body", p.body, { allowEmpty: true });
+  const folder = p.folder === undefined || p.folder === null ? undefined : requireStr(op, "folder", p.folder);
+  if (folder !== undefined && !(RECEIVE_FOLDERS as readonly string[]).includes(folder)) {
+    throw new Error(`${op}: folder must be one of ${RECEIVE_FOLDERS.join("|")} when provided (got "${folder}")`);
+  }
+  return { from, subject, body, ...(folder !== undefined ? { folder } : {}) };
 }
 
 /** Defend the read path: whatever the vault returns must BE an email.Message@1. */
@@ -131,6 +158,30 @@ export function buildMessage(input: SendInput, opts: BuildOptions): Message {
     folder: DEFAULT_FOLDER,
     from: opts.from,
     to: input.to,
+    subject: input.subject,
+    body: input.body,
+    sentAt: opts.sentAt,
+    flags: { seen: false, flagged: false, draft: false },
+  };
+}
+
+export interface ReceivedOptions { to: string; id: string; sentAt: number }
+
+/**
+ * Build a RECEIVED (inbound) message: folder inbox (or the caller's validated folder —
+ * the default inbound leg is the inbox), to = the configured self address, flags
+ * unseen (an unread incoming message — the director's rule loop keys on exactly this
+ * state). The thread mirrors the sent side's conversation grouping, keyed by the
+ * COUNTERPART address: (subject, from) here vs (subject, to) on send, so a reply
+ * with the same subject lands in the same thread.
+ */
+export function buildReceivedMessage(input: ReceiveInput, opts: ReceivedOptions): Message {
+  return {
+    id: opts.id,
+    threadId: threadIdFor(input.subject, input.from),
+    folder: input.folder ?? "inbox",
+    from: input.from,
+    to: opts.to,
     subject: input.subject,
     body: input.body,
     sentAt: opts.sentAt,

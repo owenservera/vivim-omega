@@ -1,8 +1,8 @@
 {
   "manifestVersion": "1",
   "id": "pack.domain-email",
-  "version": "0.1.0",
-  "description": "Ω5 domain pack — the email ontology as DECLARATIONS: SCHEMA (Message/Thread/Folder/Contact), CONTRACT (the five message.* ops with their risk classes), POLICY (consent defaults, keep-all retention, draft→sent state machine), TEST (pack conformance dir). A pack declares the domain; a PROVIDER plugin (provider.email.file) implements the contracts. Passive v1: no ops, no capabilities, no dependencies — a pack may carry ops in a later version.",
+  "version": "0.2.0",
+  "description": "Ω5 domain pack — the email ontology as DECLARATIONS: SCHEMA (Message/Thread/Folder/Contact), CONTRACT (the six message.* ops with their risk classes — v0.2.0 appends message.receive@1, the inbound-ingest simulator contract that enables the \"when Peter messages me\" rule loop; D-222), POLICY (consent defaults, keep-all retention, draft→sent state machine), TEST (pack conformance dir). A pack declares the domain; a PROVIDER plugin (provider.email.file) implements the contracts. Passive v1: no ops, no capabilities, no dependencies — a pack may carry ops in a later version. Contract evolution is APPEND-ONLY: v0.1.0's five contracts are untouched; 1.x dependencies are unaffected.",
   "entry": "src/index.ts",
   "publisher": { "keyId": "", "signature": "" },
   "contributions": {
@@ -63,7 +63,8 @@
       { "kind": "contract", "id": "message.list", "version": "1", "risk": "READ", "doc": "list {folder?, limit?} — summaries of stored messages (latest revision each), newest first, bounded." },
       { "kind": "contract", "id": "message.search", "version": "1", "risk": "READ", "doc": "search {q} — full-text search over stored message bodies (vault FTS), summaries back." },
       { "kind": "contract", "id": "message.read", "version": "1", "risk": "READ", "doc": "read {id} — the full message; marks it seen (flags.seen) as a separate internal vault revision." },
-      { "kind": "contract", "id": "message.move", "version": "1", "risk": "MUTATION", "doc": "move {id, folder} — internal mailbox mutation: appends a new revision with the folder changed." }
+      { "kind": "contract", "id": "message.move", "version": "1", "risk": "MUTATION", "doc": "move {id, folder} — internal mailbox mutation: appends a new revision with the folder changed." },
+      { "kind": "contract", "id": "message.receive", "version": "1", "risk": "READ", "doc": "receive {from, subject, body, folder?} — ingest an inbound message into the vault (folder inbox). READ risk: ingestion is vault-internal; the simulator semantics (the real leg is an IMAP provider) are documented in the provider." }
     ],
     "policy": [
       {

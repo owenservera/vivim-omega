@@ -32,7 +32,7 @@
       "bootPhase": 1,
       "grant": {
         "capabilities": ["port:vault.append@1", "port:vault.get@1", "port:vault.query@1", "port:vault.search@1"],
-        "contracts": ["message.send@1", "message.list@1", "message.search@1", "message.read@1", "message.move@1"]
+        "contracts": ["message.send@1", "message.list@1", "message.search@1", "message.read@1", "message.move@1", "message.receive@1"]
       },
       "config": { "from": "demo@omega.local" }
     }

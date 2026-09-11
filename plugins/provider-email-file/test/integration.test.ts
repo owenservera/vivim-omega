@@ -31,7 +31,7 @@ async function shutdownCase(h: BootedHost): Promise<void> {
 
 const LAW_CONTRACTS = ["law.check@1", "law.registry@1", "law.consent.grant@1", "law.tokens.revoke@1", "law.amendment@1"];
 const VAULT_CONTRACTS = ["vault.append@1", "vault.get@1", "vault.query@1", "vault.search@1", "vault.verify@1", "vault.compact@1", "vault.roundtrip@1"];
-const MESSAGE_CONTRACTS = ["message.send@1", "message.list@1", "message.search@1", "message.read@1", "message.move@1"];
+const MESSAGE_CONTRACTS = ["message.send@1", "message.list@1", "message.search@1", "message.read@1", "message.move@1", "message.receive@1"];
 const PROVIDER_CAPS = ["port:vault.append@1", "port:vault.get@1", "port:vault.query@1", "port:vault.search@1"];
 
 /** Spec copy of compositions/email.json with a per-case dataDir (and optionally no pack — the sovereignty swap). */
@@ -67,6 +67,7 @@ async function bootEmail(caseName: string, specFactory: (dataDir: string) => Com
 }
 
 interface SendResult { messageId: string; rev: number; sentAt: number }
+interface ReceiveResult { messageId: string; rev: number; receivedAt: number; folder: string }
 interface ListResult { messages: Array<{ id: string; threadId: string; folder: string; from: string; to: string; subject: string; sentAt: number; flags: { seen: boolean; flagged: boolean; draft: boolean }; rev: number }>; scanned: number }
 interface ReadResult { message: { id: string; body: string; flags: { seen: boolean }; [k: string]: unknown }; rev: number; seenMarked: boolean }
 interface SearchMatch { id: string; subject: string; rev: number; rank: number; [k: string]: unknown }
@@ -355,5 +356,114 @@ describe("GATE-Ω5 — the email loop through vault + consent (compositions/emai
     } finally {
       await shutdownCase(host);
     }
+  });
+});
+
+describe("GATE-Ω10 receive loop — message.receive@1: the inbound simulator lands, reads, moves (compositions/email.json v0.2.0)", () => {
+  // The receive op is the substrate of the "when Peter messages me" rule loop (D-222):
+  // ingestion is vault-internal (READ — ungated at the op level; the internal append is
+  // gated as vault.append@1 MUTATION under the provider principal, like every append),
+  // the message lands in folder inbox, to = the configured self address, flags unseen.
+  let c: Case;
+
+  beforeAll(async () => {
+    c = await bootEmail("receive", (dataDir) => makeEmailSpec("email-receive", dataDir));
+  });
+
+  test("receive from peter.miller: UNGATED (READ) → one append, folder inbox, to = self, flags unseen", async () => {
+    const r = await c.host.router.callAsRoot("message.receive@1", {
+      from: "peter.miller@omega.local", subject: "the quarterly report", body: "numbers are attached, see the sheet",
+    });
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      const v = r.value as ReceiveResult;
+      expect(v.messageId).toMatch(/^msg_[0-9a-f]+$/);
+      expect(v.rev).toBe(1);             // a fresh (ns,id) — its own revision 1
+      expect(v.folder).toBe("inbox");    // the default inbound leg
+      expect(typeof v.receivedAt).toBe("number");
+    }
+    // the internal append was gated + journaled under the PROVIDER principal (vault.append@1 MUTATION)
+    const internal = journalLines(c.vaultDir).filter((l) => l.op === "vault.append@1" && l.decision === "allow" && l.principal === "provider.email.file");
+    expect(internal.length).toBe(1);
+    // bad payloads fail closed: DEGRADED (validation throws at the provider boundary)
+    const bad = await c.host.router.callAsRoot("message.receive@1", { from: "not-an-email", subject: "s", body: "b" });
+    expect(bad.ok).toBe(false);
+    if (!bad.ok) expect(bad.error).toBe("DEGRADED");
+    const badFolder = await c.host.router.callAsRoot("message.receive@1", { from: "p@x.local", subject: "s", body: "b", folder: "spam" });
+    expect(badFolder.ok).toBe(false);
+    if (!badFolder.ok) expect(badFolder.error).toBe("DEGRADED");
+  });
+
+  test("list shows it in the inbox with the folder filter; it is the only inbox message", async () => {
+    // one outbound message first, so the folder filter is load-bearing (sent vs inbox)
+    const first = await c.host.router.callAsRoot("message.send@1", { to: "sarah.chen@omega.local", subject: "outbound note", body: "hi" });
+    const consentId = await extractConsentId(first);
+    await c.host.router.callAsRoot("law.consent.grant@1", { consentId });
+    const sent = await c.host.router.callAsRoot("message.send@1", { to: "sarah.chen@omega.local", subject: "outbound note", body: "hi" });
+    expect(sent.ok).toBe(true);
+
+    const inbox = await c.host.router.callAsRoot("message.list@1", { folder: "inbox" });
+    expect(inbox.ok).toBe(true);
+    if (inbox.ok) {
+      const v = inbox.value as ListResult;
+      expect(v.messages).toHaveLength(1);
+      const m = v.messages[0];
+      expect(m.from).toBe("peter.miller@omega.local"); // inbound leg
+      expect(m.to).toBe("demo@omega.local");           // the configured self address
+      expect(m.folder).toBe("inbox");
+      expect(m.flags.seen).toBe(false);                // unread incoming
+      expect(m.subject).toBe("the quarterly report");
+    }
+    const sentFolder = await c.host.router.callAsRoot("message.list@1", { folder: "sent" });
+    expect(sentFolder.ok).toBe(true);
+    if (sentFolder.ok) {
+      const v = sentFolder.value as ListResult;
+      expect(v.messages).toHaveLength(1);
+      expect(v.messages[0].folder).toBe("sent");
+    }
+    // search finds the received body too (FTS over the ingested vault object)
+    const found = await c.host.router.callAsRoot("message.search@1", { q: "sheet" });
+    expect(found.ok).toBe(true);
+    if (found.ok) expect((found.value as { matches: SearchMatch[] }).matches).toHaveLength(1);
+  });
+
+  test("read marks the received message seen (a separate gated append); move works on it", async () => {
+    const q = await c.host.router.callAsRoot("vault.query@1", { ns: "email", filter: {} });
+    let receivedId = "";
+    if (q.ok) {
+      for (const row of q.value as Array<{ id: string }>) {
+        const g = await c.host.router.callAsRoot("vault.get@1", { ns: "email", id: row.id });
+        if (g.ok) {
+          const data = (g.value as { data: { from: string; folder: string } }).data;
+          if (data.from === "peter.miller@omega.local" && data.folder === "inbox") { receivedId = row.id; break; }
+        }
+      }
+    }
+    expect(receivedId).toMatch(/^msg_[0-9a-f]+$/);
+
+    const read = await c.host.router.callAsRoot("message.read@1", { id: receivedId });
+    expect(read.ok).toBe(true);
+    if (read.ok) {
+      const v = read.value as ReadResult;
+      expect(v.message.flags.seen).toBe(true);
+      expect(v.seenMarked).toBe(true);
+      expect(v.rev).toBe(2); // the seen flip appended revision 2
+    }
+
+    // move: consent under the law's fail-closed default (MUTATION-class), then archive it
+    const first = await c.host.router.callAsRoot("message.move@1", { id: receivedId, folder: "archive" });
+    const consentId = await extractConsentId(first);
+    await c.host.router.callAsRoot("law.consent.grant@1", { consentId });
+    const moved = await c.host.router.callAsRoot("message.move@1", { id: receivedId, folder: "archive" });
+    expect(moved.ok).toBe(true);
+    if (moved.ok) {
+      const v = moved.value as { messageId: string; rev: number; folder: string; changed: boolean };
+      expect(v.messageId).toBe(receivedId);
+      expect(v.folder).toBe("archive");
+      expect(v.changed).toBe(true);
+    }
+    const inbox = await c.host.router.callAsRoot("message.list@1", { folder: "inbox" });
+    expect(inbox.ok).toBe(true);
+    if (inbox.ok) expect((inbox.value as ListResult).messages).toHaveLength(0); // the inbox drained
   });
 });

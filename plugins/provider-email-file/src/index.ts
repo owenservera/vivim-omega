@@ -1,10 +1,12 @@
-// provider.email.file — index.ts (Ω5), the file-backed email provider.
+// provider.email.file — index.ts (Ω5; v0.2.0 adds message.receive@1 — Ω10/Ω11b),
+// the file-backed email provider.
 //
-// Implements the five message.* contracts DECLARED by pack.domain-email (same
+// Implements the six message.* contracts DECLARED by pack.domain-email (same
 // ids/versions — cross-plugin contract implementation is the preferred state).
 //
 // Ops exposed (PROVIDER contributions; risk classes are declared by the pack):
 //   message.send@1   (pack: EXTERNAL_MUTATION — consent) {to, subject, body, threadId?}
+//   message.receive@1 (pack: READ) {from, subject, body, folder?} — the inbound-ingest simulator
 //   message.list@1   (pack: READ)  {folder?, limit?}
 //   message.search@1 (pack: READ)  {q}
 //   message.read@1   (pack: READ)  {id}
@@ -23,9 +25,9 @@ import { definePlugin, startPlugin } from "@vivim/omega-shim";
 import type { PluginContext, CallMeta } from "@vivim/omega-shim";
 import type { PortResult } from "@vivim/omega-contracts";
 import {
-  applyMove, applySeen, asMessage, buildMessage, DEFAULT_FROM, EMAIL_NS, LIST_HARD_CAP,
+  applyMove, applySeen, asMessage, buildMessage, buildReceivedMessage, DEFAULT_FROM, EMAIL_NS, LIST_HARD_CAP,
   MESSAGE_META_TYPE, newMessageId, resolveFrom, summarize, validateMovePayload,
-  validateSendPayload, type Message,
+  validateReceivePayload, validateSendPayload, type Message,
 } from "./message.ts";
 
 // ---- vault port plumbing ----
@@ -64,6 +66,26 @@ startPlugin(definePlugin({
       });
       void meta; // causationId is stamped into the vault changelog by the vault itself
       return { messageId: id, rev: append.rev, sentAt: message.sentAt };
+    },
+
+    /**
+     * receive {from, subject, body, folder?} → {messageId, rev, receivedAt, folder}.
+     * The inbound-ingest SIMULATOR (D-222): the real leg of this contract is an IMAP
+     * provider; this provider ingests the message directly — ONE vault.append@1
+     * (ns email, meta.type message), folder inbox (or the caller's validated folder),
+     * to = the configured self address, flags unseen. READ by pack declaration:
+     * ingestion is vault-internal (the vault append itself is gated as vault.append@1
+     * MUTATION under this provider's principal, exactly like every internal append).
+     */
+    "message.receive@1": async (payload: unknown, ctx: PluginContext, meta: CallMeta) => {
+      const input = validateReceivePayload("message.receive@1", payload);
+      const id = newMessageId();
+      const message = buildReceivedMessage(input, { to: resolveFrom(ctx.config), id, sentAt: Date.now() });
+      const append = await vaultCall<VaultAppendResult>(ctx, "vault.append@1", {
+        ns: EMAIL_NS, id, data: message, meta: { type: MESSAGE_META_TYPE },
+      });
+      void meta; // causationId is stamped into the vault changelog by the vault itself
+      return { messageId: id, rev: append.rev, receivedAt: message.sentAt, folder: message.folder };
     },
 
     /**

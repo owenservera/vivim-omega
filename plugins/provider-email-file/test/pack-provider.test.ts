@@ -1,12 +1,13 @@
-// provider.email.file — test/pack-provider.test.ts (Ω5)
+// provider.email.file — test/pack-provider.test.ts (Ω5; v0.2.0 receive units — Ω10/Ω11b)
 // UNIT tests: the pure email-domain helpers in src/message.ts (no ports, no host).
 // The pack's ontology is the contract: the built Message must satisfy email.Message@1,
 // summaries must drop the body, and the two pure revisions (seen/move) must be
 // structural clones that never mutate the input.
 import { describe, test, expect } from "bun:test";
 import {
-  applyMove, applySeen, asMessage, buildMessage, DEFAULT_FOLDER, resolveFrom,
-  summarize, threadIdFor, validateMovePayload, validateSendPayload, type Message,
+  applyMove, applySeen, asMessage, buildMessage, buildReceivedMessage, DEFAULT_FOLDER,
+  RECEIVE_FOLDERS, resolveFrom, summarize, threadIdFor, validateMovePayload,
+  validateReceivePayload, validateSendPayload, type Message,
 } from "../src/message.ts";
 
 const TO = "river@omega.local";
@@ -113,5 +114,62 @@ describe("Ω5 move payload validation + sender config resolution", () => {
     expect(() => resolveFrom({ from: "not-an-email" })).toThrow(/config\.from/);
     expect(() => resolveFrom({ from: "" })).toThrow(/config\.from/);
     expect(() => resolveFrom({ from: 42 })).toThrow(/config\.from/);
+  });
+});
+
+describe("Ω10/Ω11b message.receive@1 payload validation (fail-closed)", () => {
+  const FROM = "peter.miller@omega.local";
+
+  test("from must contain '@'; subject non-empty; body a string (may be empty)", () => {
+    expect(validateReceivePayload("message.receive@1", { from: FROM, subject: "s", body: "b" }))
+      .toEqual({ from: FROM, subject: "s", body: "b" });
+    expect(validateReceivePayload("message.receive@1", { from: FROM, subject: "s", body: "" }))
+      .toEqual({ from: FROM, subject: "s", body: "" });
+    expect(() => validateReceivePayload("message.receive@1", { from: "not-an-email", subject: "s", body: "b" }))
+      .toThrow(/from must be an email address containing '@'/);
+    expect(() => validateReceivePayload("message.receive@1", { from: FROM, subject: "", body: "b" })).toThrow(/subject must be non-empty/);
+    expect(() => validateReceivePayload("message.receive@1", { from: FROM, subject: "s" })).toThrow(/body must be a string/);
+  });
+
+  test("payload must be an object; folder optional but validated when present (inbox|sent|archive|trash)", () => {
+    expect(() => validateReceivePayload("message.receive@1", null)).toThrow(/payload must be an object/);
+    expect(() => validateReceivePayload("message.receive@1", ["array"])).toThrow(/payload must be an object/);
+    for (const folder of RECEIVE_FOLDERS) {
+      expect(validateReceivePayload("message.receive@1", { from: FROM, subject: "s", body: "b", folder }))
+        .toEqual({ from: FROM, subject: "s", body: "b", folder });
+    }
+    expect(() => validateReceivePayload("message.receive@1", { from: FROM, subject: "s", body: "b", folder: "spam" }))
+      .toThrow(/folder must be one of inbox\|sent\|archive\|trash/);
+    expect(() => validateReceivePayload("message.receive@1", { from: FROM, subject: "s", body: "b", folder: "" }))
+      .toThrow(/folder must be non-empty/);
+  });
+});
+
+describe("Ω10/Ω11b received-message construction (email.Message@1 shape, the inbound leg)", () => {
+  const FROM = "peter.miller@omega.local";
+  const SELF = "demo@omega.local";
+
+  test("buildReceivedMessage: folder inbox by default, to = the configured self address, flags unseen", () => {
+    const m = buildReceivedMessage({ from: FROM, subject: "the report is ready", body: "numbers attached" }, { to: SELF, id: "msg_r1", sentAt: 4242 });
+    expect(Object.keys(m).sort()).toEqual(["body", "flags", "folder", "from", "id", "sentAt", "subject", "threadId", "to"]);
+    expect(m.folder).toBe("inbox");                        // the default inbound leg
+    expect(m.from).toBe(FROM);
+    expect(m.to).toBe(SELF);                               // the configured self address
+    expect(m.flags).toEqual({ seen: false, flagged: false, draft: false }); // unseen incoming
+    expect(m.sentAt).toBe(4242);
+  });
+
+  test("caller-supplied folder wins (a pre-filed inbound message); thread keys on the counterpart address", () => {
+    const m = buildReceivedMessage({ from: FROM, subject: "the report is ready", body: "b", folder: "archive" }, { to: SELF, id: "msg_r2", sentAt: 5 });
+    expect(m.folder).toBe("archive");
+    // conversation grouping mirrors the sent side: (subject, counterpart) — a sent
+    // message TO peter with the same subject shares the thread with a receive FROM peter
+    expect(m.threadId).toBe(threadIdFor("the report is ready", FROM));
+    expect(threadIdFor("the report is ready", FROM)).not.toBe(threadIdFor("the report is ready", SELF));
+  });
+
+  test("asMessage round-trips a built received message (the vault write is schema-clean)", () => {
+    const m = buildReceivedMessage({ from: FROM, subject: "s", body: "b" }, { to: SELF, id: "msg_r3", sentAt: 7 });
+    expect(asMessage("read", m)).toEqual(m);
   });
 });

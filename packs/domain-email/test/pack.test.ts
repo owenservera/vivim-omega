@@ -84,10 +84,10 @@ describe("Ω5 pack.domain-email — the manifest is a lawful plugin", () => {
     expect(fieldsOf("email.contact").find((f) => f.name === "displayName")).toMatchObject({ required: false });
   });
 
-  test("the five CONTRACT contributions are namespace-clean (message.*) and version-pinned @1", () => {
+  test("the six CONTRACT contributions are namespace-clean (message.*) and version-pinned @1 (v0.2.0 appended receive)", () => {
     const contracts = json.contributions.contract as Array<{ id: string; version: string }>;
     expect(contracts.map((c) => `${c.id}@${c.version}`)).toEqual([
-      "message.send@1", "message.list@1", "message.search@1", "message.read@1", "message.move@1",
+      "message.send@1", "message.list@1", "message.search@1", "message.read@1", "message.move@1", "message.receive@1",
     ]);
     for (const c of contracts) {
       expect(c.id.startsWith("message.")).toBe(true); // no foreign namespaces leak in
@@ -95,12 +95,13 @@ describe("Ω5 pack.domain-email — the manifest is a lawful plugin", () => {
     }
   });
 
-  test("contracts carry the right risk classes (send EXTERNAL_MUTATION, move MUTATION, the rest READ)", () => {
+  test("contracts carry the right risk classes (send EXTERNAL_MUTATION, move MUTATION, the rest READ — receive is READ: ingestion is vault-internal)", () => {
     expect(contractById("message.send").risk).toBe("EXTERNAL_MUTATION");
     expect(contractById("message.move").risk).toBe("MUTATION");
     expect(contractById("message.list").risk).toBe("READ");
     expect(contractById("message.search").risk).toBe("READ");
     expect(contractById("message.read").risk).toBe("READ");
+    expect(contractById("message.receive").risk).toBe("READ"); // D-222: vault-internal ingestion, simulator semantics in the provider doc
     // risk is DECLARED data on contract kind only — the sdk validator pins this too
     const m = parseManifest(raw);
     if (m.ok) expect(validateManifest(m.value).filter((i) => i.code === "RISK_NON_CONTRACT")).toEqual([]);
@@ -179,7 +180,7 @@ describe("Ω5 pack.domain-email — the manifest is a lawful plugin", () => {
     // every one of them explicitly, so a compile-time round-trip must be lossless:
     const m: PluginManifest = json;
     expect(m.contributions.schema?.length).toBe(4);
-    expect(m.contributions.contract?.length).toBe(5);
+    expect(m.contributions.contract?.length).toBe(6);
     expect(m.contributions.policy?.length).toBe(1);
     expect(m.contributions.test?.length).toBe(1);
     expect(m.runtime.tier).toBe("worker-thread");
