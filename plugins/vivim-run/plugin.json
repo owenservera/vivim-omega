@@ -1,0 +1,22 @@
+{
+  "manifestVersion": "1",
+  "id": "vivim.run",
+  "version": "0.1.0",
+  "description": "Ω3 spine: bounded task pool with a priority queue, per-task budgets and the freshness contract, plus compartment crash-loop quarantine. Scheduling POLICY only — transport (spawn/terminate/stats) stays with the µhost, administered through capability-gated host ops.",
+  "entry": "src/index.ts",
+  "publisher": { "keyId": "", "signature": "" },
+  "contributions": {
+    "contract": [
+      { "kind": "contract", "id": "run.submit", "version": "1", "risk": "READ" },
+      { "kind": "contract", "id": "run.stats", "version": "1", "risk": "READ" },
+      { "kind": "contract", "id": "run.health", "version": "1", "risk": "READ" }
+    ]
+  },
+  "dependencies": [],
+  "capabilities": {
+    "requested": ["host.compartment.admin", "port:echo.ping@1"],
+    "justification": "scheduled task execution: run executes granted ops on behalf of submitters under their deadlines (port:echo.ping@1), and observes compartment health + quarantines crash loops via host.compartment.admin"
+  },
+  "runtime": { "tier": "worker-thread", "budget": { "cpuMs": 500, "memMB": 128 } },
+  "contentHash": ""
+}

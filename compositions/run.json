@@ -1,0 +1,43 @@
+{
+  "_note": "Ω3 GATE composition. vivim.run's grant lists the host-op aliases (port:host.compartment.spawn/terminate/stats@1) BEFORE the host.compartment.admin capability they alias: the µhost's token table keys a token by the LAST alias name it registers (register() overwrites cap per key), so the admin capability must land last for ctx.port.call('host.compartment.*@1') to pass the B3 SCOPE check from inside the compartment. Same authority set as [host.compartment.admin, port:echo.ping@1] — the aliases ARE that capability, per HOST_OP_TO_CAP.",
+  "name": "run",
+  "entries": [
+    {
+      "id": "vivim.law",
+      "source": "../plugins/law-stub",
+      "bootPhase": 0,
+      "grant": {
+        "capabilities": ["host.journal.append"],
+        "contracts": ["law.check@1", "law.registry@1", "law.consent.grant@1"]
+      }
+    },
+    {
+      "id": "omega.echo",
+      "source": "../examples/plugin-echo",
+      "bootPhase": 1,
+      "grant": { "capabilities": [], "contracts": ["echo.ping@1"] }
+    },
+    {
+      "id": "omega.crashy",
+      "source": "../examples/plugin-crashy",
+      "bootPhase": 1,
+      "grant": { "capabilities": [], "contracts": ["crashy.please@1", "crashy.ping@1"] }
+    },
+    {
+      "id": "vivim.run",
+      "source": "../plugins/vivim-run",
+      "bootPhase": 1,
+      "grant": {
+        "capabilities": [
+          "port:host.compartment.spawn@1",
+          "port:host.compartment.terminate@1",
+          "port:host.compartment.stats@1",
+          "host.compartment.admin",
+          "port:echo.ping@1"
+        ],
+        "contracts": ["run.submit@1", "run.stats@1", "run.health@1"]
+      },
+      "config": { "capacity": 2 }
+    }
+  ]
+}
