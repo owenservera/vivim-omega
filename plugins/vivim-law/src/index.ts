@@ -1,20 +1,22 @@
 // vivim.law — index.ts (Ω1 spine)
-// The gate. Wiring: policy (data) + consent table + shadow amendment + registry,
-// exposed as five READ-risk contracts. Mutating host capabilities (journal append,
-// tokens revoke) are exercised ONLY through ports, and journaling is best-effort —
-// a law decision is never blocked by a journal failure.
+// The gate. Wiring: policy (data) + consent table + forbidden-action overlay +
+// shadow amendment + registry, exposed as six READ-risk contracts. Mutating host
+// capabilities (journal append, tokens revoke) are exercised ONLY through ports,
+// and journaling is best-effort — a law decision is never blocked by a journal failure.
 import { definePlugin, startPlugin } from "@vivim/omega-shim";
 import type { PluginContext, CallMeta } from "@vivim/omega-shim";
 import { HOST_OPS } from "@vivim/omega-contracts";
 import type { LawDecision, PortResult, ConsentGrant } from "@vivim/omega-contracts";
 import { LAW_POLICY_V1, evalPolicy, type PolicyDoc } from "./policy.ts";
 import { ConsentTable } from "./consent.ts";
+import { ForbiddenTable } from "./forbidden.ts";
 import { mintCap, attenuate } from "./tokens.ts";
 import { ShadowAmendment, AMENDMENT_SWAP_NOTE } from "./amendment.ts";
 import { LawRegistry } from "./registry.ts";
 
 // ---- shared law state (single compartment, single thread) ----
 const consentTable = new ConsentTable();
+const forbiddenTable = new ForbiddenTable();
 const shadow = new ShadowAmendment(LAW_POLICY_V1);
 const registry = new LawRegistry();
 const rootConsentCap = mintCap("law.consent"); // attenuated per grant — the algebra in live use
@@ -79,7 +81,17 @@ startPlugin(definePlugin({
       const op = str(p["op"]);
       const causationId = optStr(p["causationId"]) ?? meta.causationId;
 
-      const primary = resolve(LAW_POLICY_V1, principal, op);
+      let primary = resolve(LAW_POLICY_V1, principal, op);
+      // Forbidden-action overlay (D-310): a per-principal deny that precedes
+      // policy evaluation — forbidden holds regardless of what the token
+      // would otherwise permit. Memory-only; recipe amendment is durable.
+      if (forbiddenTable.isForbidden(principal, op)) {
+        primary = {
+          decision: "deny",
+          reason: `forbidden action for principal "${principal}" (behavior-contract policy overlay)`,
+          journal: true,
+        };
+      }
       const decision: LawDecision = {
         decision: primary.decision,
         reason: primary.reason,
@@ -193,6 +205,23 @@ startPlugin(definePlugin({
       // report (default): divergence ledger since shadow registration
       registry.countEvent();
       return { action: "report", report: shadow.report(), swap: AMENDMENT_SWAP_NOTE };
+    },
+
+    /** Forbidden-action overlay: replace a principal's forbidden op list (empty array clears).
+     *  Payload {principal, ops: string[]}. READ-risk like every law contract — the
+     *  enforcement lives in law.check@1, which denies matches before policy eval. */
+    "law.forbidden.set@1": async (payload: unknown, ctx: PluginContext | null, meta: CallMeta) => {
+      const p = asObj(payload);
+      // set() validates shape at runtime (fail-closed → DEGRADED); casts only satisfy the signature.
+      const entry = forbiddenTable.set(p["principal"] as string, p["ops"] as string[]);
+      bump();
+      registry.countEvent();
+      await journal(ctx, {
+        source: "vivim.law", op: "law.forbidden.set", action: "set",
+        principal: entry.principal, ops: entry.ops,
+        caller: meta.from, causationId: meta.causationId,
+      });
+      return { principal: entry.principal, ops: entry.ops, count: entry.ops.length, generation };
     },
   },
 }));

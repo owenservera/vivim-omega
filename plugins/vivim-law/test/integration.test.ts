@@ -251,3 +251,56 @@ describe("GATE-Ω1 — registry journal replay at boot (state survives reboots)"
     expect(detail.slice("consent required: ".length)).toBe(consentIdFor("root", "risky.op@1"));
   });
 });
+
+describe("D-310 — forbidden-action overlay through the real gate", () => {
+  let vault: string;
+  let host3: BootedHost;
+
+  beforeAll(async () => {
+    vault = join("/tmp/omega-law", `forbidden-${Date.now()}-${process.pid}`);
+    rmSync(vault, { recursive: true, force: true });
+    mkdirSync(vault, { recursive: true });
+    const { rootKey } = ensureVault(vault);
+    const { recipe, buildDir } = compileComposition(loadSpec(join(vault, "law-journal.jsonl")), join(SPEC, ".."), vault, rootKey);
+    host3 = await bootComposition(recipe, buildDir, vault);
+  });
+  afterAll(async () => { await host3.shutdown(); });
+
+  const call = (op: string, payload?: unknown) => host3.router.callAsRoot(op, payload ?? {});
+
+  test("set → law.check denies before policy; clear restores the baseline decision", async () => {
+    const principal = "agent:forbidden-probe";
+    const op = "risky.op@1";
+    // baseline first (self-calibrating: whatever the policy says without the overlay)
+    const before = await call("law.check@1", { principal, op });
+    expect(before.ok).toBe(true);
+    const baseline = before.ok ? (before.value as { decision: string }).decision : "unknown";
+
+    const set = await call("law.forbidden.set@1", { principal, ops: [op] });
+    expect(set.ok).toBe(true);
+    if (set.ok) expect((set.value as { count: number }).count).toBe(1);
+
+    const denied = await call("law.check@1", { principal, op });
+    expect(denied.ok).toBe(true);
+    if (denied.ok) {
+      const d = denied.value as { decision: string; reason: string };
+      expect(d.decision).toBe("deny");
+      expect(d.reason).toContain("forbidden action");
+    }
+    // sibling op for the same principal is unaffected
+    const sibling = await call("law.check@1", { principal, op: "risky.read@1" });
+    expect(sibling.ok).toBe(true);
+
+    // malformed set payloads fail closed (DEGRADED), table untouched
+    const bad = await call("law.forbidden.set@1", { principal, ops: [""] });
+    expect(bad.ok).toBe(false);
+    const stillDenied = await call("law.check@1", { principal, op });
+    expect(stillDenied.ok && (stillDenied.value as { decision: string }).decision).toBe("deny");
+
+    // clear restores the exact baseline decision
+    const cleared = await call("law.forbidden.set@1", { principal, ops: [] });
+    expect(cleared.ok).toBe(true);
+    const after = await call("law.check@1", { principal, op });
+    expect(after.ok && (after.value as { decision: string }).decision).toBe(baseline);
+  });
+});

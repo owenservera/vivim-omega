@@ -34,7 +34,10 @@
         "version": "1",
         "fields": [
           { "name": "id", "type": "string", "required": true, "doc": "deterministic path id: 'n' + child-index path from the root ('n0', 'n0.3.2')" },
-          { "name": "kind", "type": "enum", "required": true, "doc": "control | field | button | list | container" },
+          {           "name": "kind",
+          "type": "enum",
+          "required": true,
+          "doc": "control | field | button | list | container | menu | menu-item (menu kinds added D-311 for VariationChannel MENU_PATH)" },
           { "name": "label", "type": "string", "required": true, "doc": "aria-label → own text → placeholder → first descendant text → id → tag(:role) fallback, whitespace-collapsed, capped at 60 chars" },
           { "name": "selectorHint", "type": "string", "required": true, "doc": "'#id' when the DOM node has an id; else a CSS path of tag:nth-of-type(k) segments from the capture root" },
           { "name": "evidence", "type": "array", "required": true, "doc": "discovery.evidence-ref@1[] — every claim node cites capture bytes (≥1 ref, constitutional)" }

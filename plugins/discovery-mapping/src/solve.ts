@@ -30,6 +30,9 @@ export interface CandidateLike {
   evidence?: Array<{ ns: string; id: string; rev: number }>;
   confidence?: number;
   status?: string;
+  /** Explicit variation channel hint ("KEYBOARD", "MENU_PATH", ...). Absent →
+   *  variations.ts defaults to UI_ELEMENT (no inference without evidence). */
+  channel?: string;
 }
 
 export interface Binding {

@@ -1,0 +1,15 @@
+{
+  "name": "@vivim/plugins-vivim-agent",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@vivim/omega-shim": "workspace:*",
+    "@vivim/omega-contracts": "workspace:*"
+  },
+  "devDependencies": {
+    "@vivim/omega-sdk": "workspace:*",
+    "@vivim/omega-testkit": "workspace:*",
+    "@vivim/omega-host": "workspace:*"
+  }
+}

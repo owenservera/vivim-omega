@@ -1,0 +1,25 @@
+{
+  "manifestVersion": "1",
+  "id": "vivim.agent",
+  "version": "0.1.0",
+  "description": "Ω Control Plane v0 (D-309): agent identity, lineage, and behavioral contracts as vault data. Spawns validate authority via the vendored scope algebra (subset of the parent's recorded scope, or of the composition grants for root spawns), never by minting host tokens. Forbidden actions register into vivim.law before the identity exists. All expected-but-negative results return Outcome<T>; throws are malformed-payload/failed-port only (DEGRADED).",
+  "entry": "src/index.ts",
+  "publisher": { "keyId": "", "signature": "" },
+  "contributions": {
+    "engine": [
+      { "kind": "engine", "id": "agent.spawn", "version": "1", "doc": "spawn {parentId?, behaviorContractId, requestedScope, task?} → Outcome<{identity, scope, rev}> — behavior contract must be active; requested scope must sit inside the parent's recorded scope (or the composition grants for root spawns) and cover the contract's requiredCapabilities; forbiddenActions register into law before the identity appends." },
+      { "kind": "engine", "id": "agent.describe", "version": "1", "doc": "describe {agentId} → Outcome<{identity, contract}> — the self-description slice: identity plus its resolved behavior contract." },
+      { "kind": "engine", "id": "behavior.propose", "version": "1", "doc": "propose {id, version, preconditions, invariants, forbiddenActions, requiredCapabilities, recovery, provenance?} → Outcome<{rev, id, state}> — state forced staged, never live by construction." },
+      { "kind": "engine", "id": "behavior.promote", "version": "1", "doc": "promote {contractId, evidence: VaultProvenanceRef[]} → Outcome<{rev}> — staged→active only with non-empty, resolving evidence (D-303 for behaviors: confidence never promotes alone)." },
+      { "kind": "engine", "id": "behavior.rollback", "version": "1", "doc": "rollback {contractId} → Outcome<{quarantinedRev, reactivatedRev, rev}> — quarantines the active head, reactivates the newest staged|verified rev below it. Append-only: nothing deleted, both stay fetchable by rev." },
+      { "kind": "engine", "id": "decision.record", "version": "1", "doc": "record {decisionId, subject, priorState, proposedState, actor, evidence?, parentDecisions} → Outcome<{rev, decisionId}> — genealogy as ordinary vault objects with refs; every parent must resolve (no dangling refs, G0 §4)." }
+    ]
+  },
+  "dependencies": [],
+  "capabilities": {
+    "requested": ["port:vault.append@1", "port:vault.get@1", "port:vault.query@1", "port:law.forbidden.set@1"],
+    "justification": "Reads/writes agent, behavior, and decision vault objects (append/get/query); registers behavior-contract forbidden actions into vivim.law at spawn (forbidden.set). No host capabilities; no write path outside the vault. Granted per-composition by the user-signed Recipe, never by this manifest."
+  },
+  "runtime": { "tier": "worker-thread", "budget": { "cpuMs": 500, "memMB": 64 } },
+  "contentHash": ""
+}

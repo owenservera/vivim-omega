@@ -33,7 +33,7 @@ export interface PageCapture {
 
 // ---- the ApplicationGraph model (mirror of the SCHEMA contributions) ---------
 
-export const NODE_KINDS = ["control", "field", "button", "list", "container"] as const;
+export const NODE_KINDS = ["control", "field", "button", "list", "container", "menu", "menu-item"] as const;
 export type NodeKind = (typeof NODE_KINDS)[number];
 
 export interface EvidenceRef {
@@ -70,9 +70,10 @@ export interface ApplicationGraph {
 
 // ---- classification -----------------------------------------------------------
 
-/** Roles that make a node interactive (implicit ARIA semantics beyond button/list/field). */
+/** Roles that make a node interactive (implicit ARIA semantics beyond button/list/field/menu).
+ *  menuitem* roles are NOT here — they classify as menu-item explicitly below. */
 const INTERACTIVE_ROLES = new Set([
-  "link", "menuitem", "menuitemcheckbox", "menuitemradio", "tab",
+  "link", "tab",
   "checkbox", "radio", "switch", "option", "combobox", "slider", "treeitem",
 ]);
 
@@ -80,12 +81,15 @@ const INTERACTIVE_ROLES = new Set([
  * Classify one DOM node. Returns null for nodes that are NOT graph material:
  * leaf, non-interactive elements (plain text spans/headings) — they are label
  * material, not claims. Kind precedence: explicit role mapping → tag mapping →
- * interactive role → container (has children).
+ * interactive role → container (has children). Menu roles (D-311) classify
+ * before the tag switch so a <div role="menu"> is a menu, not a container.
  */
 export function classifyKind(n: DomNode): NodeKind | null {
   if (n.role === "button") return "button";
   if (n.role === "list") return "list";
   if (n.role === "textbox" || n.role === "searchbox") return "field";
+  if (n.role === "menu") return "menu";
+  if (n.role === "menuitem" || n.role === "menuitemcheckbox" || n.role === "menuitemradio") return "menu-item";
   switch (n.tag) {
     case "button": return "button";
     case "input": return "field";
@@ -95,6 +99,7 @@ export function classifyKind(n: DomNode): NodeKind | null {
     case "a": return "control";
     case "select": return "control";
     case "option": return "control";
+    case "menu": return "menu";
   }
   if (n.role && INTERACTIVE_ROLES.has(n.role)) return "control";
   if (n.children && n.children.length > 0) return "container";

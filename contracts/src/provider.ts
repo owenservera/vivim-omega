@@ -16,14 +16,25 @@
 //   PROMOTION_INVARIANT← ./vocabulary.ts (confidence-ranks / proof-promotes)
 //   EvidenceRef        ← HERE            (minimal G0 provenance shape, see
 //                        docs/VOCABULARY-CONTRACT-G0.md §4)
+//   Variation(All)     ← ./variation.ts  (D-308 — re-exported for the one surface)
+//   Agent(All)         ← ./agent.ts      (D-309)
+//   Outcome(All)       ← ./outcome.ts    (D-312)
 
 import type { ProviderClass } from "./manifest.ts";
-import type { RealizationStatus } from "./vocabulary.ts";
+import type { RealizationStatus, VaultProvenanceRef } from "./vocabulary.ts";
+import { PROMOTION_INVARIANT } from "./vocabulary.ts";
 import type { RiskClass } from "./manifest.ts";
+import type { Variation, VariationChannel } from "./variation.ts";
+import type { AgentIdentity, BehaviorContract, DecisionRecord } from "./agent.ts";
+import type { Outcome, OutcomeStatus } from "./outcome.ts";
 
 export type { ProviderClass };
-export type { RealizationStatus };
+export type { RealizationStatus, VaultProvenanceRef };
+export { PROMOTION_INVARIANT };
 export type { RiskClass };
+export type { Variation, VariationChannel };
+export type { AgentIdentity, BehaviorContract, DecisionRecord };
+export type { Outcome, OutcomeStatus };
 
 /**
  * ProviderClass defines how a realization's ops execute.

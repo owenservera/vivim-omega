@@ -53,6 +53,18 @@ describe("Ω7 perception unit — DOM classification (src/model.ts)", () => {
     expect(classifyKind({ tag: "nav", role: "navigation" })).toBe(null); // no children → not even a container
   });
 
+  test("classifyKind (D-311): menu roles and the menu tag classify as menu/menu-item, before container fallback", () => {
+    expect(classifyKind({ tag: "div", role: "menu" })).toBe("menu");
+    expect(classifyKind({ tag: "menu" })).toBe("menu");
+    expect(classifyKind({ tag: "div", role: "menuitem" })).toBe("menu-item");
+    expect(classifyKind({ tag: "div", role: "menuitemcheckbox" })).toBe("menu-item");
+    expect(classifyKind({ tag: "div", role: "menuitemradio" })).toBe("menu-item");
+    // role mapping precedes the container fallback: a menu WITH children is still a menu
+    expect(classifyKind({ tag: "div", role: "menu", children: [{ tag: "div", role: "menuitem", text: "x" }] })).toBe("menu");
+    // menubar itself is not a menu kind — it is a plain container of menus
+    expect(classifyKind({ tag: "div", role: "menubar", children: [{ tag: "div" }] })).toBe("container");
+  });
+
   test("label precedence: aria-label → own text → placeholder → first descendant text → id → tag(:role)", () => {
     expect(labelFor({ tag: "button", text: "x", ariaLabel: "Do it" })).toBe("Do it");
     expect(labelFor({ tag: "input", text: "typed", placeholder: "Ph" })).toBe("typed");
@@ -197,6 +209,32 @@ describe("GATE-Ω7 perception — boot compositions/discovery.json (law + vault 
     expect(r.nodeCount).toBeGreaterThan(15);
     expect(r.edgeCount).toBe(0);
     expect(r.graphId).toEqual({ ns: "discovery", id: "graph:webmail-inbox", rev: 1, cid: expect.stringMatching(/^[0-9a-f]{64}$/) });
+  });
+
+  test("perceive webmail-menu (D-311) → 10 nodes incl. menu/menu-item kinds, evidence resolves", async () => {
+    const r = await root<PerceiveResult>(host, "discovery.perceive@1", { fixture: { name: "webmail-menu" } });
+    expect(r.nodeCount).toBe(10);
+    expect(r.edgeCount).toBe(0);
+    expect(r.graphId).toEqual({ ns: "discovery", id: "graph:webmail-menu", rev: 1, cid: expect.stringMatching(/^[0-9a-f]{64}$/) });
+    const pageJsonText = readFileSync(join(FIXTURES, "webmail-menu/page.json"), "utf-8");
+    const graph = await root<VaultGet>(host, "vault.get@1", { ns: "discovery", id: "graph:webmail-menu" });
+    const nodes = (graph.data as ApplicationGraph).nodes as GraphNode[];
+    const kinds = new Set(nodes.map((n) => n.kind));
+    expect(kinds).toEqual(new Set(["container", "menu", "menu-item", "button"]));
+    const bySelector = new Map(nodes.map((n) => [n.selectorHint, n] as const));
+    expect(bySelector.get("#menu-file")!.kind).toBe("menu");
+    expect(bySelector.get("#menu-file")!.label).toBe("File");
+    expect(bySelector.get("#mi-archive")!.kind).toBe("menu-item");
+    expect(bySelector.get("#archive-btn")!.kind).toBe("button");
+    // every node cites the capture bytes (same constitutional guarantee as webmail-inbox)
+    for (const node of nodes) {
+      expect(node.evidence.length).toBeGreaterThanOrEqual(1);
+      for (const ref of node.evidence) {
+        const { ns, id, rev } = parseCasRef(ref.casRef);
+        const capture = await root<VaultGet>(host, "vault.get@1", { ns, id, rev });
+        expect(capture.data).toBe(pageJsonText);
+      }
+    }
   });
 
   test("EVERY node cites capture bytes: each evidence ref resolves via vault.get@1 to the exact page.json bytes", async () => {

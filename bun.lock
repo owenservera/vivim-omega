@@ -152,6 +152,19 @@
         "@vivim/omega-shim": "workspace:*",
       },
     },
+    "plugins/vivim-agent": {
+      "name": "@vivim/plugins-vivim-agent",
+      "version": "0.1.0",
+      "dependencies": {
+        "@vivim/omega-contracts": "workspace:*",
+        "@vivim/omega-shim": "workspace:*",
+      },
+      "devDependencies": {
+        "@vivim/omega-host": "workspace:*",
+        "@vivim/omega-sdk": "workspace:*",
+        "@vivim/omega-testkit": "workspace:*",
+      },
+    },
     "plugins/vivim-director": {
       "name": "@vivim/plugins-vivim-director",
       "version": "0.1.0",
@@ -359,6 +372,8 @@
     "@vivim/plugins-provider-email-file": ["@vivim/plugins-provider-email-file@workspace:plugins/provider-email-file"],
 
     "@vivim/plugins-provider-llm": ["@vivim/plugins-provider-llm@workspace:plugins/provider-llm"],
+
+    "@vivim/plugins-vivim-agent": ["@vivim/plugins-vivim-agent@workspace:plugins/vivim-agent"],
 
     "@vivim/plugins-vivim-director": ["@vivim/plugins-vivim-director@workspace:plugins/vivim-director"],
 

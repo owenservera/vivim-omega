@@ -3,6 +3,7 @@
 import { describe, test, expect } from "bun:test";
 import { mintCap, attenuate, isSubset, parseScope, canonicalScope } from "../src/tokens.ts";
 import { ConsentTable, consentIdFor } from "../src/consent.ts";
+import { ForbiddenTable } from "../src/forbidden.ts";
 import { LAW_POLICY_V1, evalPolicy, normalizeShadowSpec } from "../src/policy.ts";
 import { ShadowAmendment } from "../src/amendment.ts";
 
@@ -193,5 +194,29 @@ describe("Ω1 amendment — shadow mode observes, never swaps", () => {
     expect(doc.riskDefaults.MUTATION.decision).toBe("allow"); // inherited from primary
     expect(doc.riskDefaults.EXTERNAL_MUTATION.decision).toBe("deny"); // overridden
     expect(() => normalizeShadowSpec(LAW_POLICY_V1, { policy: { policyId: "x", version: "1", riskTable: [], defaultRisk: "MUTATION", riskDefaults: {} as never, rules: [] } })).toThrow(/riskDefaults/);
+  });
+});
+
+describe("D-310 forbidden-action overlay — exact-match deny table", () => {
+  test("set / isForbidden / clear / list; replace semantics; validation fail-closed", () => {
+    const t = new ForbiddenTable();
+    expect(t.isForbidden("agent:x", "message.send@1")).toBe(false);
+    const e = t.set("agent:x", ["message.send@1", "vault.append@1"]);
+    expect(e).toEqual({ principal: "agent:x", ops: ["message.send@1", "vault.append@1"] });
+    expect(t.isForbidden("agent:x", "message.send@1")).toBe(true);
+    expect(t.isForbidden("agent:x", "message.list@1")).toBe(false); // exact match — siblings unaffected
+    expect(t.isForbidden("agent:y", "message.send@1")).toBe(false); // other principals unaffected
+    // replace (not merge)
+    t.set("agent:x", ["message.list@1"]);
+    expect(t.isForbidden("agent:x", "message.send@1")).toBe(false);
+    expect(t.isForbidden("agent:x", "message.list@1")).toBe(true);
+    // empty array clears
+    t.set("agent:x", []);
+    expect(t.list()).toEqual([]);
+    // fail-closed on shape
+    expect(() => t.set("", ["a@1"])).toThrow(/principal/);
+    expect(() => t.set("agent:x", "a@1" as never)).toThrow(/array/);
+    expect(() => t.set("agent:x", [""])).toThrow(/non-empty/);
+    expect(t.clear("agent:missing")).toBe(false);
   });
 });

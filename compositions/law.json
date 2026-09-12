@@ -17,6 +17,7 @@
           "law.registry@1",
           "law.consent.grant@1",
           "law.tokens.revoke@1",
+          "law.forbidden.set@1",
           "law.amendment@1"
         ]
       },

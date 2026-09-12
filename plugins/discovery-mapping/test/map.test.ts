@@ -234,6 +234,7 @@ describe("Ω8 discovery.mapping — manifest declarations", () => {
     const m = JSON.parse(raw);
     expect(m.contributions.engine).toEqual([
       expect.objectContaining({ kind: "engine", id: "discovery.map", version: "1" }),
+      expect.objectContaining({ kind: "engine", id: "discovery.variations", version: "1" }),
     ]);
     expect(m.capabilities.requested).toEqual(["port:vault.append@1"]);
   });

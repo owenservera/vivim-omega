@@ -2,7 +2,7 @@
   "manifestVersion": "1",
   "id": "vivim.law",
   "version": "0.1.0",
-  "description": "Ω1 law spine: the gate (law.check), consent grants, capability-handle algebra, registry (journal replay), and shadow amendment. Replaces the Ω0 law-stub via recipe re-compile + atomic pin swap (D-213).",
+  "description": "Ω1 law spine: the gate (law.check), consent grants, capability-handle algebra, registry (journal replay), per-principal forbidden-action overlay (law.forbidden.set, D-310), and shadow amendment. Replaces the Ω0 law-stub via recipe re-compile + atomic pin swap (D-213).",
   "entry": "src/index.ts",
   "publisher": { "keyId": "", "signature": "" },
   "contributions": {
@@ -11,6 +11,7 @@
       { "kind": "contract", "id": "law.registry", "version": "1", "risk": "READ" },
       { "kind": "contract", "id": "law.consent.grant", "version": "1", "risk": "READ" },
       { "kind": "contract", "id": "law.tokens.revoke", "version": "1", "risk": "READ" },
+      { "kind": "contract", "id": "law.forbidden.set", "version": "1", "risk": "READ" },
       { "kind": "contract", "id": "law.amendment", "version": "1", "risk": "READ" }
     ]
   },

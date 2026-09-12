@@ -1,8 +1,11 @@
-// discovery.mapping — index.ts (Ω8), the ENGINE plugin wiring.
+// discovery.mapping — index.ts (Ω8 + D-308), the ENGINE plugin wiring.
 //
-// Op exposed (ENGINE contribution, see plugin.json):
+// Ops exposed (ENGINE contributions, see plugin.json):
 //   discovery.map@1 {candidates, blueprint?, runId?, candidatesRef?}
 //     → {satisfied, bindings[], gaps[], surplus[], stats, vaultRef}
+//   discovery.variations@1 {candidates, providerId, runId?, discoveredAt?}
+//     → {variations[], byContract, vaultRef} — same candidates grouped by
+//     canonical contract id as co-promotable Variations (D-308)
 //
 // INPUT: `candidates` is the discovery.infer@1 result — accepted as the bare
 // array OR the whole result object ({runId, candidates, ...}) — and `blueprint`
@@ -26,6 +29,7 @@ import { readFileSync } from "node:fs";
 import { isAbsolute, resolve } from "node:path";
 import { normalizeBlueprint, type Blueprint } from "./blueprint.ts";
 import { solveMapping, type CandidateLike, type MappingReport } from "./solve.ts";
+import { deriveVariations, groupVariations } from "./variations.ts";
 
 export const DISCOVERY_NS = "discovery";
 
@@ -76,6 +80,8 @@ function normalizeCandidates(v: unknown): CandidateLike[] {
       : [];
     const confidence = typeof o.confidence === "number" && Number.isFinite(o.confidence) ? o.confidence : undefined;
     out.push({ id: o.id, op: o.op, selector, riskHint, evidence, confidence });
+    if (typeof o.channel === "string" && o.channel.length > 0) out[out.length - 1]!.channel = o.channel;
+    if (typeof o.status === "string" && o.status.length > 0) out[out.length - 1]!.status = o.status;
   }
   return out;
 }
@@ -157,6 +163,44 @@ export const def = definePlugin({
         engine: "discovery.map@1",
         ...report,
         vaultRef: { ns: DISCOVERY_NS, id: `mapping:${runId}`, rev: append.rev },
+      };
+    },
+
+    "discovery.variations@1": async (payload: unknown, ctx: PluginContext, _meta: CallMeta) => {
+      const p = requirePayloadObject(payload);
+      const runId = optionalRunId(p.runId);
+      const providerId = typeof p.providerId === "string" && p.providerId.length > 0
+        ? p.providerId
+        : (() => { throw new Error("discovery.variations@1: providerId must be a non-empty string (whose candidates these are)"); })();
+      const candidates = normalizeCandidates(p.candidates);
+      const discoveredAt = typeof p.discoveredAt === "string" && p.discoveredAt.length > 0
+        ? p.discoveredAt
+        : new Date().toISOString();
+      const variations = deriveVariations(candidates, { providerId, discoveredAt });
+      const byContract = groupVariations(variations);
+      const refs: EvidenceRefShape[] = [];
+      const seen = new Set<string>();
+      for (const v of variations) {
+        for (const r of v.evidence) {
+          const key = `${r.ns}|${r.id}|${r.rev}`;
+          if (seen.has(key)) continue;
+          seen.add(key);
+          refs.push({ ns: r.ns, id: r.id, rev: r.rev });
+        }
+      }
+      const append = await vaultCall<VaultAppendResult>(ctx, "vault.append@1", {
+        ns: DISCOVERY_NS,
+        id: `variations:${runId}`,
+        data: { runId, engine: "discovery.variations@1", providerId, discoveredAt, variations },
+        meta: { type: "variations", runId },
+        refs,
+      });
+      return {
+        runId,
+        engine: "discovery.variations@1",
+        variations,
+        byContract,
+        vaultRef: { ns: DISCOVERY_NS, id: `variations:${runId}`, rev: append.rev },
       };
     },
   },

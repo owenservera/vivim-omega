@@ -2,7 +2,7 @@
   "manifestVersion": "1",
   "id": "discovery.mapping",
   "version": "0.1.0",
-  "description": "Ω8 discovery engine — mapping. CONSTRAINT SOLVING of inferred SurfaceContracts (discovery.infer@1 output) against a domain pack blueprint (the pack's CONTRACT contributions: passed as payload — e.g. the parsed packs/domain-email/plugin.json — or read from a fixed path in config). Each blueprint op must bind to exactly one candidate (op-name match, non-empty selector, risk-class compatibility: blueprint EXTERNAL_MUTATION needs candidate riskHint EXTERNAL_MUTATION); unbindable blueprint op → UNSAT with a gap report; extra candidates → recorded as surplus, never an error. The mapping report is persisted to the user's vault.",
+  "description": "Ω8 discovery engine — mapping. CONSTRAINT SOLVING of inferred SurfaceContracts (discovery.infer@1 output) against a domain pack blueprint (the pack's CONTRACT contributions: passed as payload — e.g. the parsed packs/domain-email/plugin.json — or read from a fixed path in config). Each blueprint op must bind to exactly one candidate (op-name match, non-empty selector, risk-class compatibility: blueprint EXTERNAL_MUTATION needs candidate riskHint EXTERNAL_MUTATION); unbindable blueprint op → UNSAT with a gap report; extra candidates → recorded as surplus, never an error. D-308 adds discovery.variations@1: the same candidates grouped by canonical contract id as co-promotable Variations (one op, many live realizations). Reports persist to the user's vault.",
   "entry": "src/index.ts",
   "publisher": { "keyId": "", "signature": "" },
   "contributions": {
@@ -12,6 +12,12 @@
         "id": "discovery.map",
         "version": "1",
         "doc": "map {candidates, blueprint?, blueprintPath?, runId?, candidatesRef?} → {satisfied, bindings[], gaps[], surplus[], vaultRef} — blueprint = a pack manifest object (contributions.contract[] is extracted) or a normalized {ops:[{op, risk}]} doc; falls back to ctx.config.blueprintPath when the payload omits it. Semantic risk class: READ (mapping solves a constraint problem; risk fields are legal on contract-kind contributions only per the pinned manifest grammar)."
+      },
+      {
+        "kind": "engine",
+        "id": "discovery.variations",
+        "version": "1",
+        "doc": "variations {candidates, providerId, runId?, discoveredAt?} → {variations[], byContract, vaultRef} — group candidates by canonical contract id into Variation rows (channel/status/evidence per realization; several Variations per contractId may sit at PROMOTED simultaneously). Persisted to ns discovery as variations:<runId>."
       }
     ]
   },

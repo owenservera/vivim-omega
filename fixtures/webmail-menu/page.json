@@ -1,0 +1,50 @@
+{
+  "fixture": "webmail-menu",
+  "capturedAt": 1735689600000,
+  "url": "https://mail.example.local/inbox",
+  "viewport": { "width": 1280, "height": 800 },
+  "root": {
+    "tag": "div",
+    "id": "app",
+    "classes": ["webmail-app"],
+    "children": [
+      {
+        "tag": "div",
+        "id": "menubar",
+        "role": "menubar",
+        "classes": ["menu-bar"],
+        "children": [
+          {
+            "tag": "div",
+            "id": "menu-file",
+            "role": "menu",
+            "ariaLabel": "File",
+            "classes": ["menu"],
+            "children": [
+              { "tag": "div", "id": "mi-new", "role": "menuitem", "text": "New message", "classes": ["menu-item"] },
+              { "tag": "div", "id": "mi-archive", "role": "menuitem", "text": "Archive", "classes": ["menu-item"] },
+              { "tag": "div", "id": "mi-print", "role": "menuitemcheckbox", "text": "Print", "classes": ["menu-item"] }
+            ]
+          },
+          {
+            "tag": "div",
+            "id": "menu-edit",
+            "role": "menu",
+            "ariaLabel": "Edit",
+            "classes": ["menu"],
+            "children": [
+              { "tag": "div", "id": "mi-undo", "role": "menuitem", "text": "Undo", "classes": ["menu-item"] },
+              { "tag": "div", "id": "mi-redo", "role": "menuitemradio", "text": "Redo", "classes": ["menu-item"] }
+            ]
+          }
+        ]
+      },
+      {
+        "tag": "button",
+        "id": "archive-btn",
+        "text": "Archive",
+        "classes": ["toolbar-btn"]
+      }
+    ]
+  }
+}
