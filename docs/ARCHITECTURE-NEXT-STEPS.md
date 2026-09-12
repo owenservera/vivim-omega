@@ -180,6 +180,11 @@ Each phase gates on `omega:gate` + a D-row (PROPOSED → RATIFIED only on green)
 
 ## 7. Open decisions for the owner
 
+> Tracked as decision records under the Decision Contract (`docs/decisions/README.md`,
+> enforced by the gate's `decisions` stage): D-313 agent runtime, D-314 DB conformance,
+> D-315 quarantine, D-316 flagship, D-317 wall-time, D-318 placement. The prose below
+> is the summary; the records are the contract.
+
 1. **Agent runtime (G2):** registry-only (descriptive) vs acting loop (alternative (a)/(b) above)? B1a is scoped to produce evidence for this fork rather than debate it further — but the fork itself is still yours.
 2. **DB-track conformance strength (G12):** recommend human-attested checklist now, fixture test only when Phase A writers exist *and* the DB side publishes something to diff. Confirm the checklist is sufficient for this wave.
 3. **Quarantine semantics:** RESOLVED POSITION — hard blocker on B1a shipping past fixture-replay (finish-task vs halt must be decided before scope widens, not before B1a is written). Confirm or override.

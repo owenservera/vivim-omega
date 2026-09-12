@@ -73,7 +73,15 @@ try {
   else fail("fresh-tree", `legacy touched or imported (imports: ${legacyImports}) ${JSON.stringify(detail)}`);
 } catch (e) { fail("fresh-tree", String(e)); }
 
-// 3 · tests (gate evidence)
+// 3 · decisions: D-register ↔ detail-record contract (docs/decisions/README.md)
+try {
+  const { checkDecisions } = await import("./decisions.ts");
+  const d = await checkDecisions(ROOT);
+  if (d.ok) pass("decisions", d.detail);
+  else fail("decisions", d.issues.join("; "));
+} catch (e) { fail("decisions", String(e)); }
+
+// 4 · tests (gate evidence)
 const tests = await sh(["bun", "test"]);
 const passMatch = tests.out.match(/^\s*(\d+) pass/m);
 const failMatch = tests.out.match(/^\s*(\d+) fail/m);
@@ -82,7 +90,7 @@ const testFail = parseInt(failMatch?.[1] ?? "0");
 if (tests.code === 0 && testFail === 0) pass("tests", { pass: testPass, fail: testFail });
 else fail("tests", `${testPass} pass / ${testFail} fail`);
 
-// 4 · attest: boot the demo composition, round-trip, recovery drill (existence proof)
+// 5 · attest: boot the demo composition, round-trip, recovery drill (existence proof)
 try {
   const { attest } = await import("./attest.ts");
   const a = await attest();
@@ -90,13 +98,15 @@ try {
   else fail("attest", a.reason ?? "unknown");
 } catch (e) { fail("attest", String(e)); }
 
-// 5 · emit status.json (console feed) + gates.log line
+// 6 · emit status.json (console feed) + gates.log line
 const { emitStatus } = await import("./status.ts");
 await emitStatus({ gate, hostLoc, tests: { pass: testPass, fail: testFail } });
 
 const summary = { ok: failed === 0, failed, hostLoc, tests: { pass: testPass, fail: testFail }, at: gate.startedAt };
 console.log(JSON.stringify(summary, null, 2));
+// gates.log line (append BEFORE exit — anything after process.exit never runs)
+try {
+  const { appendFileSync: _append } = await import("node:fs");
+  _append(join(ROOT, "build", "gates.log"), `${JSON.stringify(summary)}\n`);
+} catch { /* best-effort audit trail */ }
 process.exit(failed === 0 ? 0 : 1);
-// gates.log line (append after status emit)
-import { appendFileSync as _append } from "node:fs";
-try { _append(join(ROOT, "build", "gates.log"), `${JSON.stringify(summary)}\n`); } catch {}

@@ -18,6 +18,7 @@
   "scripts": {
     "omega:test": "bun test",
     "omega:gate": "bun run tooling/gates/gate.ts",
+    "omega:decisions": "bun run tooling/gates/decisions.ts",
     "omega:bench": "bun run tooling/bench/bench.ts",
     "omega:status": "bun run tooling/gates/status.ts",
     "omega:demo": "bun run tooling/demo/demo.ts",

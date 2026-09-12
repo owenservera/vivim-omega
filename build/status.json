@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-09-12T14:12:38.376Z",
+  "generatedAt": "2026-09-12T15:33:03.220Z",
   "repo": "vivim-omega",
   "branch": "omega",
-  "head": "2fb5b5d",
+  "head": "c3376c9",
   "waves": [
     {
       "id": "Ω0",
@@ -90,7 +90,7 @@
     }
   ],
   "gate": {
-    "startedAt": "2026-09-12T14:11:24.391Z",
+    "startedAt": "2026-09-12T15:31:50.308Z",
     "checks": {
       "host-loc": {
         "ok": true,
@@ -113,18 +113,27 @@
           "legacyImports": 0
         }
       },
+      "decisions": {
+        "ok": true,
+        "detail": {
+          "rows": 32,
+          "records": 6,
+          "ratified": 0,
+          "grandfatherBelow": 313
+        }
+      },
       "tests": {
         "ok": true,
         "detail": {
-          "pass": 516,
+          "pass": 522,
           "fail": 0
         }
       },
       "attest": {
         "ok": true,
         "detail": {
-          "compileMs": 77,
-          "bootMs": 173,
+          "compileMs": 34,
+          "bootMs": 192,
           "echo": true,
           "counterBump": true,
           "counterValue": {
@@ -147,7 +156,7 @@
   },
   "hostLoc": 834,
   "tests": {
-    "pass": 516,
+    "pass": 522,
     "fail": 0
   },
   "benchmarks": {

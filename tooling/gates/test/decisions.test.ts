@@ -1,0 +1,94 @@
+// tooling/gates — test/decisions.test.ts: the Decision Contract checker, unit-tested
+// on inline fixtures (no repo I/O) plus one self-hosting run against the real tree.
+import { describe, test, expect } from "bun:test";
+import { join } from "node:path";
+import { checkDecisions, parseIndexRows, parseRecord, validateRecord } from "../decisions.ts";
+
+const GOOD = `# D-999 — Example
+
+## Status
+
+PROPOSED
+
+## Context
+
+Something forces a choice.
+
+## Options
+
+| Criterion | (a) Left | (b) Right |
+|---|---|---|
+| Cost | Low | High |
+
+## Decision
+
+**Decision:** (a) Left — cheaper and reversible.
+
+## Consequences
+
+- Left is easy to undo.
+
+## Evidence
+
+- Analysis in chat (proposed; ratification needs a gate run).
+`;
+
+describe("decisions checker — record shape", () => {
+  const shaExists = () => false;
+  test("well-formed PROPOSED record validates clean", () => {
+    const doc = parseRecord(999, "docs/decisions/D-999-x.md", GOOD);
+    expect(doc.sections).toEqual(["Status", "Context", "Options", "Decision", "Consequences", "Evidence"]);
+    expect(doc.status).toBe("PROPOSED");
+    expect(validateRecord(doc, shaExists)).toEqual([]);
+  });
+
+  test("missing section / bad status / unordered sections flagged", () => {
+    const missing = parseRecord(999, "f", GOOD.replace("## Evidence\n\n- Analysis", "## Proof\n\n- x"));
+    expect(validateRecord(missing, shaExists).join(";")).toMatch(/missing ## Evidence/);
+    const swapped = parseRecord(999, "f", GOOD.replace("## Context", "## Decision").replace(/^## Decision\n\n\*\*Decision:\*\*.*$/m, "## Context\n\nx"));
+    expect(validateRecord(swapped, shaExists).join(";")).toMatch(/out of order/);
+    const bad = parseRecord(999, "f", GOOD.replace("PROPOSED", "MAYBE"));
+    expect(validateRecord(bad, shaExists).join(";")).toMatch(/illegal status/);
+  });
+
+  test("matrix table + Decision line rules (incl. TBD-only-if-PROPOSED)", () => {
+    const noTable = parseRecord(999, "f", GOOD.replace(/\| Criterion.*\n(\|---.*\n\|.*\n)+/, "no table here\n"));
+    expect(validateRecord(noTable, shaExists).join(";")).toMatch(/no matrix table/);
+    const noDecision = parseRecord(999, "f", GOOD.replace("**Decision:** (a) Left — cheaper and reversible.", "no verdict"));
+    expect(validateRecord(noDecision, shaExists).join(";")).toMatch(/no \*\*Decision:\*\* line/);
+    const strayOpt = parseRecord(999, "f", GOOD.replace("(a) Left — cheaper", "(c) Elsewhere — cheaper"));
+    expect(validateRecord(strayOpt, shaExists).join(";")).toMatch(/absent from the Options matrix/);
+    const tbdRatified = parseRecord(999, "f", GOOD.replace("PROPOSED", "RATIFIED").replace("**Decision:** (a) Left", "**Decision:** TBD — (a) Left"));
+    const issues = validateRecord(tbdRatified, () => true);
+    expect(issues.join(";")).toMatch(/TBD decision is only legal while PROPOSED/);
+  });
+
+  test("RATIFIED requires a resolvable SHA; SUPERSEDED requires a pointer", () => {
+    const rat = parseRecord(999, "f", GOOD.replace("PROPOSED", "RATIFIED"));
+    expect(validateRecord(rat, () => false).join(";")).toMatch(/no resolvable commit SHA/);
+    const ratSha = parseRecord(999, "f", GOOD.replace("PROPOSED", "RATIFIED").replace("- Analysis in chat", "- landed in abc1234"));
+    expect(validateRecord(ratSha, (s) => s === "abc1234")).toEqual([]);
+    const sup = parseRecord(999, "f", GOOD.replace("PROPOSED", "SUPERSEDED"));
+    expect(validateRecord(sup, shaExists).join(";")).toMatch(/Superseded-By/);
+  });
+});
+
+describe("decisions checker — index parsing", () => {
+  test("rows parse with statuses; duplicates are the full checker's job", () => {
+    const rows = parseIndexRows("| **D-313** | x | **PROPOSED** | y |\n| **D-314** | x | **RATIFIED** | y |\n");
+    expect(rows).toEqual([
+      { n: 313, status: "PROPOSED", line: 1 },
+      { n: 314, status: "RATIFIED", line: 2 },
+    ]);
+  });
+});
+
+describe("decisions checker — self-hosting run against the real tree", () => {
+  test("the live register + records validate clean (D-313..318 PROPOSED, pre-313 grandfathered)", async () => {
+    const root = join(import.meta.dir, "../../..");
+    const r = await checkDecisions(root, { shaExists: () => false });
+    expect(r.issues).toEqual([]);
+    expect(r.ok).toBe(true);
+    expect((r.detail.records as number)).toBeGreaterThanOrEqual(6);
+  });
+});
