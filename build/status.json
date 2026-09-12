@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-09-12T17:17:25.910Z",
+  "generatedAt": "2026-09-12T19:58:33.952Z",
   "repo": "vivim-omega",
   "branch": "omega",
-  "head": "9e211d7",
+  "head": "c311217",
   "waves": [
     {
       "id": "Ω0",
@@ -90,7 +90,7 @@
     }
   ],
   "gate": {
-    "startedAt": "2026-09-12T17:15:42.093Z",
+    "startedAt": "2026-09-12T19:56:58.059Z",
     "checks": {
       "host-loc": {
         "ok": true,
@@ -118,34 +118,33 @@
         "detail": {
           "rows": 35,
           "records": 9,
-          "ratified": 0,
+          "ratified": 4,
           "grandfatherBelow": 313,
           "openQuestions": {
-            "count": 9,
+            "count": 5,
             "ids": [
               313,
               314,
               315,
               316,
-              317,
-              318,
-              319,
-              320,
-              321
+              317
             ],
             "board": "stale"
           }
         }
       },
       "tests": {
-        "ok": false,
-        "detail": "532 pass / 2 fail"
+        "ok": true,
+        "detail": {
+          "pass": 534,
+          "fail": 0
+        }
       },
       "attest": {
         "ok": true,
         "detail": {
-          "compileMs": 116,
-          "bootMs": 355,
+          "compileMs": 87,
+          "bootMs": 293,
           "echo": true,
           "counterBump": true,
           "counterValue": {
@@ -168,8 +167,8 @@
   },
   "hostLoc": 843,
   "tests": {
-    "pass": 532,
-    "fail": 2
+    "pass": 534,
+    "fail": 0
   },
   "benchmarks": {
     "at": "2026-09-11T02:27:42.745Z",

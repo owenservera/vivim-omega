@@ -39,7 +39,22 @@ export function casPut(dataDir: string, data: unknown): string {
   writeFileSync(tmp, text);
   const fd = openSync(tmp, "r+");
   try { fsyncSync(fd); } finally { closeSync(fd); }
-  renameSync(tmp, final);
+  // The rename is the atomic durability boundary — never bypassed, but retried:
+  // transient OS locks (AV/indexer, SMB/NFS contention, lazy handle release on
+  // Windows) surface as EPERM/EBUSY/EACCES. Bounded retry with backoff, same
+  // discipline as host atomicWrite (canon.ts); anything else throws immediately.
+  // (No spin-wait: Bun.sleepSync yields the thread; the boundary stays atomic.)
+  let last: unknown = null;
+  for (let i = 0; i < 10; i++) {
+    try { renameSync(tmp, final); break; }
+    catch (e) {
+      const code = (e as { code?: string }).code;
+      if (code !== "EPERM" && code !== "EBUSY" && code !== "EACCES") throw e;
+      last = e;
+      Bun.sleepSync(10 * (i + 1));
+    }
+    if (i === 9) throw last;
+  }
   dirFsync(shard);
   return cid;
 }
