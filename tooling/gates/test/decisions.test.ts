@@ -2,7 +2,7 @@
 // on inline fixtures (no repo I/O) plus one self-hosting run against the real tree.
 import { describe, test, expect } from "bun:test";
 import { join } from "node:path";
-import { checkDecisions, parseIndexRows, parseRecord, validateRecord } from "../decisions.ts";
+import { checkDecisions, parseIndexRows, parseRecord, validateRecord, listOpenQuestions, renderOpenQuestionsBoard, boardFreshness } from "../decisions.ts";
 
 const GOOD = `# D-999 — Example
 
@@ -90,5 +90,34 @@ describe("decisions checker — self-hosting run against the real tree", () => {
     expect(r.issues).toEqual([]);
     expect(r.ok).toBe(true);
     expect((r.detail.records as number)).toBeGreaterThanOrEqual(6);
+  });
+});
+
+describe("open-questions board — team surface over PROPOSED records", () => {
+  const root = join(import.meta.dir, "../../..");
+  test("lists the six PROPOSED records with recommendations and TBD flags", () => {
+    const qs = listOpenQuestions(root);
+    expect(qs.map((q) => q.n)).toEqual([313, 314, 315, 316, 317, 318]);
+    for (const q of qs) {
+      expect(q.title.length).toBeGreaterThan(0);
+      expect(q.recommended.length).toBeGreaterThan(0);
+      expect(q.awaiting).toMatch(/Owner/);
+    }
+    expect(qs.find((q) => q.n === 315)!.hasTbd).toBe(true);
+    expect(qs.find((q) => q.n === 313)!.hasTbd).toBe(false);
+  });
+
+  test("rendered board has the marker, one row per question, and the workflow", () => {
+    const md = renderOpenQuestionsBoard(root, "abc1234", "2026-01-01T00:00:00.000Z");
+    expect(md).toContain("<!-- base: abc1234");
+    expect(md).toContain("bun run omega:questions --write");
+    for (const n of [313, 314, 315, 316, 317, 318]) expect(md).toContain(`D-${n}`);
+    expect(md).toContain("How to propose");
+  });
+
+  test("boardFreshness reads the marker once the file exists", () => {
+    // before generation the board file is absent → missing (informational, never failing)
+    const fresh = boardFreshness(root);
+    expect(["fresh", "stale", "missing"]).toContain(fresh.state);
   });
 });

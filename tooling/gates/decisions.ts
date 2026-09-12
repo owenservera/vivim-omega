@@ -155,14 +155,147 @@ export async function checkDecisions(
       issues.push(`D-${r.n}: index row with no docs/decisions/D-${r.n}-*.md record file`);
     }
   }
-  const detail = { rows: rows.length, records: byId.size, ratified, grandfatherBelow: GRANDFATHER_BELOW };
+  const detail: Record<string, unknown> = { rows: rows.length, records: byId.size, ratified, grandfatherBelow: GRANDFATHER_BELOW };
+  try {
+    detail.openQuestions = summarizeOpenQuestions(root);
+  } catch { /* board summary is informational — never fails the contract check */ }
   return { ok: issues.length === 0, detail, issues };
+}
+
+// ---- open-questions board (team surface over PROPOSED records) ----
+
+export interface OpenQuestion {
+  n: number;
+  file: string;        // repo-relative record path
+  title: string;       // record `#` heading
+  recommended: string; // Decision-line body (may contain TBD)
+  hasTbd: boolean;     // semantically open, not just unconfirmed
+  awaiting: string;    // who acts next
+}
+
+/** Every PROPOSED record is an open question by definition. Sorted by D-number. */
+export function listOpenQuestions(root: string): OpenQuestion[] {
+  const dir = join(root, "docs/decisions");
+  let files: string[] = [];
+  try {
+    files = readdirSync(dir).filter((f) => /^D-\d+-.+\.md$/.test(f));
+  } catch {
+    return [];
+  }
+  const out: OpenQuestion[] = [];
+  for (const f of files) {
+    const n = Number(/^D-(\d+)-/.exec(f)![1]);
+    if (n < GRANDFATHER_BELOW) continue;
+    let text: string;
+    try {
+      text = readFileSync(join(dir, f), "utf-8");
+    } catch {
+      continue;
+    }
+    const doc = parseRecord(n, `docs/decisions/${f}`, text);
+    if (doc.status !== "PROPOSED") continue;
+    const titleLine = text.split("\n").find((l) => l.startsWith("# ")) ?? `# D-${n}`;
+    const recommended = doc.decisionLine.replace(/^\*\*Decision:\*\*/, "").trim() || "(no Decision line — record invalid, see gate)";
+    const hasTbd = /\bTBD\b/.test(recommended);
+    out.push({
+      n, file: `docs/decisions/${f}`, title: titleLine.replace(/^#\s*/, ""), recommended, hasTbd,
+      awaiting: hasTbd ? "Owner decision — TBD open" : "Owner confirmation",
+    });
+  }
+  return out.sort((a, b) => a.n - b.n);
+}
+
+function headSha(root: string): string {
+  try {
+    const p = Bun.spawnSync(["git", "rev-parse", "HEAD"], { cwd: root });
+    const sha = p.exitCode === 0 ? p.stdout.toString().trim() : "";
+    return /^[0-9a-f]{7,40}$/.test(sha) ? sha : "unknown";
+  } catch {
+    return "unknown";
+  }
+}
+
+/** Board freshness vs HEAD: "fresh" | "stale" | "missing" (informational only).
+ *  Fresh means the marker is an ancestor of HEAD AND no decision inputs changed
+ *  since (board content would regenerate byte-identical modulo its header) —
+ *  so committing the board itself never marks it stale. */
+export function boardFreshness(root: string): { state: "fresh" | "stale" | "missing"; base: string; head: string } {
+  const head = headSha(root);
+  let base = "";
+  try {
+    const text = readFileSync(join(root, "docs/decisions/OPEN-QUESTIONS.md"), "utf-8");
+    base = /<!--\s*base:\s*([0-9a-f]{7,40})\s*-->/.exec(text)?.[1] ?? "";
+  } catch {
+    return { state: "missing", base: "", head };
+  }
+  if (base === "" || head === "unknown") return { state: "stale", base, head };
+  try {
+    const ancestor = Bun.spawnSync(["git", "merge-base", "--is-ancestor", base, "HEAD"], { cwd: root });
+    if (ancestor.exitCode !== 0) return { state: "stale", base, head };
+    const committed = Bun.spawnSync(
+      ["git", "diff", "--quiet", `${base}..HEAD`, "--",
+        "docs/decisions", "docs/BUILD-DECISIONS.md", ":(exclude)docs/decisions/OPEN-QUESTIONS.md"],
+      { cwd: root },
+    );
+    if (committed.exitCode !== 0) return { state: "stale", base, head };
+    // uncommitted worktree edits to decision inputs also stale the board
+    const worktree = Bun.spawnSync(["git", "status", "--porcelain", "--", "docs/decisions", "docs/BUILD-DECISIONS.md"], { cwd: root });
+    const dirty = worktree.exitCode === 0
+      ? worktree.stdout.toString().split("\n").some((l) => l.trim() && !l.endsWith("OPEN-QUESTIONS.md"))
+      : true;
+    return { state: dirty ? "stale" : "fresh", base, head };
+  } catch {
+    return { state: "stale", base, head };
+  }
+}
+
+function summarizeOpenQuestions(root: string): { count: number; ids: number[]; board: string } {
+  const qs = listOpenQuestions(root);
+  const fresh = boardFreshness(root);
+  return { count: qs.length, ids: qs.map((q) => q.n), board: fresh.state };
+}
+
+/** Render the team board. Generated file — do not hand-edit (see header). */
+export function renderOpenQuestionsBoard(root: string, baseSha: string, generatedAt: string): string {
+  const qs = listOpenQuestions(root);
+  const rows = qs.map((q) => {
+    const short = q.title.replace(/^D-\d+\s*[—–-]\s*/, ""); // ID has its own column
+    return `| **D-${q.n}** | ${short} | ${q.recommended} | ${q.awaiting} | [record](${q.file.split("/").pop()}) |`;
+  });
+  return `# Open Questions (decision backlog)
+
+<!-- base: ${baseSha} generated: ${generatedAt} — generated by \`bun run omega:questions --write\`. Do not hand-edit; edit the records, regenerate. -->
+
+${qs.length === 0
+    ? "No open questions. Every decision record is RATIFIED, SUPERSEDED, or REJECTED."
+    : `_${qs.length} PROPOSED decision${qs.length === 1 ? "" : "s"} awaiting owner calls. Each row links to its record — the matrix, criteria, and evidence live there, not here._`}
+
+| ID | Question | Recommended position | Awaiting | Record |
+|---|---|---|---|---|
+${rows.join("\n")}
+
+## How to propose (team workflow)
+
+1. Pick a row and read its record (Options matrix first — propose *against* the criteria, not past them).
+2. To argue an option: reply in the PR/discussion citing the record's criteria by name. New evidence goes under the record's domain (vault refs, gate runs, benchmarks).
+3. To change the matrix itself (new option, new criterion): edit the record file in a branch so the gate's decisions stage validates the shape, then regenerate this board (\`bun run omega:questions --write\`) in the same branch.
+4. Ratification flips Status + index row together, with evidence (commit SHA) — the checker enforces it; no drive-by RATIFIEDs.
+`;
 }
 
 if (import.meta.main) {
   const root = join(import.meta.dir, "../..");
-  checkDecisions(root).then((r) => {
-    console.log(JSON.stringify(r.ok ? { ok: true, ...r.detail } : { ok: false, issues: r.issues }, null, 2));
-    process.exit(r.ok ? 0 : 1);
-  });
+  if (process.argv.includes("--write")) {
+    const head = headSha(root);
+    const md = renderOpenQuestionsBoard(root, head, new Date().toISOString());
+    const dest = join(root, "docs/decisions/OPEN-QUESTIONS.md");
+    await Bun.write(dest, md);
+    const n = listOpenQuestions(root).length;
+    console.log(`wrote docs/decisions/OPEN-QUESTIONS.md (${n} open, base ${head})`);
+  } else {
+    checkDecisions(root).then((r) => {
+      console.log(JSON.stringify(r.ok ? { ok: true, ...r.detail } : { ok: false, issues: r.issues }, null, 2));
+      process.exit(r.ok ? 0 : 1);
+    });
+  }
 }

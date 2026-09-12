@@ -65,3 +65,27 @@ PROPOSED ──(owner confirms / gate green on the change)──▶ RATIFIED
 What it deliberately does NOT check: whether the decision was *wise*. That is the
 owner's job and the reviewer's job. The contract guarantees the decision is
 *legible* — options visible, criteria explicit, evidence cited — so wisdom is auditable.
+
+## Team surface: open questions board
+
+`docs/decisions/OPEN-QUESTIONS.md` is the generated, browsable view of every PROPOSED
+record — the set of open questions, each with its recommended position and what it's
+awaiting. Regenerate it after any record change:
+
+```bash
+bun run omega:questions --write   # renders the board from the records at HEAD
+bun run omega:decisions           # validates index ↔ record contract (gate stage)
+```
+
+The file carries a `<!-- base: <sha> -->` marker; the gate's `decisions` stage reports
+board freshness (`fresh`/`stale`/`missing`) in its detail output — informational only,
+never failing. A stale board means someone changed records without regenerating.
+
+## How to propose (team workflow)
+
+1. Read `OPEN-QUESTIONS.md`, pick a row, read its record — Options matrix first.
+2. Argue *against the criteria by name* (PR/discussion). New evidence goes where the
+   record's domain lives (vault refs, gate runs, benchmarks) and gets cited.
+3. To change the matrix itself (new option/criterion): edit the record in a branch —
+   the checker's shape rules apply — and regenerate the board in the same branch.
+4. Ratification flips Status + index row together with evidence; the checker enforces it.
