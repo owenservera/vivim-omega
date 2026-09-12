@@ -1,8 +1,12 @@
 # VIVIM-Ω — Architecture Notes: Where We Are, What's Next
 
 **Author posture:** principal architect, writing for the owner and the upgrade agent.
-**Baseline:** `omega` @ `9be5877` — gate green (`bun test` 516/516, `omega:gate` ok:true), host 834/1000 LOC, D-312 ratified.
+**Baseline:** `omega` @ `597d567` — gate green (`bun test` 516/516, `omega:gate` ok:true), host 834/1000 LOC, D-312 ratified.
 **Scope of this doc:** planning reference only. It ratifies nothing and builds nothing.
+**Revision note (post external review):** an independent review (`upgrades/New/PROPOSED-NEXT-STEPS.md`)
+verified this doc's claims against source, corrected one factual error (verification *is* wired
+in `discovery-mind.json` — see G1), and its adopted recommendations are folded in below
+marked **[review-adopted]**. Points where this doc deliberately differs are marked **[differs]** with reasons.
 
 ---
 
@@ -39,8 +43,25 @@ The pattern: **vocabulary leads implementation by roughly one wave.** That is de
 ### G1. The status lifecycle has readers but no writers (most important)
 `RealizationStatus` transitions (DRAFT→TESTING→PROMOTED→…) are specified in two places (`vocabulary.ts`, `provider.ts` facade, plus the G0 doc's ownership table) and *written* in zero places. No vault namespace holds realizations; `vivim.providers` defaults everything to `DRAFT` over an empty set; `discovery.verify@1` evaluates probes but records no status. **A vocabulary with no writers is a wish.** Closing this loop is the single highest-value next wave: define ns `providers` realization objects, have verification write PROMOTED/REQUIRES_REDISCOVERY, healing write DEGRADED/TESTING, and make the providers registry read them for real. Until then, D-307 conformance is conformance to a dictionary.
 
+Verified concrete shape of the gap **[review-adopted]**: the three providers ops are self-labeled
+placeholders in source (`{ entries: [] }`, "would read from vault"); `deriveRegistry()` is fully
+typed with **zero callers tree-wide**; `vivim.providers` ships in **no** composition and has **no**
+tests. Correction to an earlier draft of this doc: `discovery.verification` *is* wired in
+`discovery-mind.json` (infer→map→verify already share one pipeline composition) — so the
+composition question for Phase A is narrower than "where does verification live": it is where
+`vivim.providers` joins and where realization writes get routed (decision: extend
+`discovery-mind.json`, not a new file — see Phase A).
+
 ### G2. Agents are data, not actors
 Control plane v0 mints identities, but nothing ever *acts as* an agent principal: `meta.from` is always a plugin id or root, and `forbiddenActions` therefore has enforcement machinery with no real traffic (its only exercise is tests). Two coherent futures: (a) an **agent runtime** — a compartment or surface that calls with `principal: agent:<id>`, making the whole v0 apparatus live; (b) an explicit decision that agents stay descriptive records and enforcement moves to composition grants. The worst outcome is the current middle: machinery that looks alive. Recommend (a), scoped to a single `agent.exec`-style loop with the existing consent/fired-ledger discipline — but it is a real wave, not a patch.
+
+Refinement **[review-adopted]**: split the first slice to B1a — one op replaying a single
+already-PROMOTED realization against a fixture under `principal: agent:<id>`, existing grant
+grammar only, result ledgered like a director tick. Note what B1a actually proves: *not*
+principal traversal (a non-plugin principal already traverses `law.check@1` end to end —
+the D-310 integration test does exactly this with `agent:forbidden-probe`), but
+**realization→execution wiring**: a PROMOTED record causing a gated op call under an agent
+principal. Frame B1a's test around the chain, not the traversal.
 
 ### G3. The spawn-authority grammar seam is v0-grade
 `port:<op>@<v>` grants vs `path:constraint` scopes are different namespaces joined by a mapping function (`portCapToScope`). It is correct, tested, and least-privilege — but it is also where a future misunderstanding will breed (e.g., someone assuming a port grant covers a scope it doesn't). If a third grammar ever appears, stop and unify rather than adding a third mapping. Watch item, not action item.
@@ -49,7 +70,7 @@ Control plane v0 mints identities, but nothing ever *acts as* an agent principal
 Every derived Variation without explicit evidence is `UI_ELEMENT`/`DRAFT` by documented default. That honesty is correct, but it means Upgrade-1's headline case (keyboard + toolbar co-PROMOTED) has no producer yet: inference emits no channel evidence, perception's ontology beyond menu is deferred by design. The loop closes when a fixture exercises a real multi-channel capture — propose one fixture per channel before any channel-inference code.
 
 ### G5. Ω14.3 (CDP substrate) arrives into a system that is ready for it
-D-300 (Bun-native WS+fetch) and D-301 (attach-only) fit the current shape well: observation already consumes fixtures *as if* they were CDP snapshots (`page.json` ≈ snapshot, `events.jsonl` ≈ trace). Recommendation for the receiving review: the first CDP provider should produce byte-identical shapes to the fixtures (a live capture must be substitutable for `webmail-inbox/page.json` with zero classifier changes). If it can't, the fixture format — not the provider — gets fixed first.
+D-300 (Bun-native WS+fetch) and D-301 (attach-only) fit the current shape well: observation already consumes fixtures *as if* they were CDP snapshots (`page.json` ≈ snapshot, `events.jsonl` ≈ trace). Recommendation for the receiving review: the first CDP provider should produce byte-identical shapes to the fixtures (a live capture must be substitutable for `webmail-inbox/page.json` with zero classifier changes). If it can't, the fixture format — not the provider — gets fixed first. Prerequisite **[review-adopted]**: write down what "byte-identical" means *before* the substitution test is coded — identical after canonicalization, or identical modulo a documented allowlist of volatile fields (timestamps, session ids, DOM ordering)? A live snapshot will differ from a static fixture for reasons unrelated to classifier correctness; debugging the test's definition of success instead of the provider is the failure mode to avoid.
 
 ### G6. Namespace sprawl needs a registry before it becomes folklore
 Vault namespaces in live use: `email`, `automation`, `nlcl`, `discovery`, `probe`, `agent`, `behavior`, `decision`, (`providers` reserved, `variation` implicit via discovery). Ownership, retention, and compaction interaction per namespace currently live in scattered comments. One doc (`docs/VAULT-NAMESPACES.md`) with a row per namespace — owner plugin, object shapes, who writes, retention/compaction rules — prevents the next wave from guessing.
@@ -61,7 +82,7 @@ Old ops still throw-into-DEGRADED for expected negatives. Do NOT retrofit wholes
 Restart drops it; re-registration depends on spawns re-occurring. Acceptable for v0 (documented in code), but the failure mode is *silent permissiveness*, which is the wrong direction to fail. Two mitigations in order: (1) log overlay cardinality at law boot so emptiness is visible; (2) when an agent composition boots, re-register from vault agent records (a boot-time reconciliation pass — small, deterministic). Durable policy remains recipe amendment.
 
 ### G9. Composition sprawl (13 files)
-`law, vault, spine, email, discovery, discovery-mind, console, demo, agent, healing, llm, notes, run` — plus per-test inline specs (good). Risk: two compositions quietly diverging on the same plugin's grants (already happened once: `law.json` vs others on the forbidden op). Mitigation: a conformance test that loads every shipped composition and asserts each granted contract is declared and each entry's source resolves. Cheap, high-value, long overdue.
+`law, vault, spine, email, discovery, discovery-mind, console, demo, agent, healing, llm, notes, run` — plus per-test inline specs (good). Risk: two compositions quietly diverging on the same plugin's grants (already happened once: `law.json` vs others on the forbidden op). Mitigation **[review-adopted, pulled forward to warm-up]**: a conformance check over all shipped compositions (each granted contract/port declared by the resolving manifest; cross-composition grant drift flagged with an allowlist for intentional scope differences), wired into the gate as a read-only stage. Zero blast radius, no dependencies — land it before Phase A so every composition touched later is born inside the net.
 
 ### G10. Test runtime and the flake budget
 516 tests, ~90–150s per full run, green on Windows *with discipline* (explicit spawn budgets, platform-scoped p99). The budget is spent, not saved: the next timing-sensitive test must either be hermetic (fake ports, like mapping/variations) or carry its own ceiling. Prefer hermetic for all pure logic; reserve real boots for ceremony tests. Also: full-suite wall time will cross 5 minutes within two more waves — plan sharding (`--max-concurrency` discipline or file-group lanes) before it becomes a tax on every change.
@@ -77,27 +98,59 @@ D-307 declares Omega's vocabulary the reference, but nothing checks conformance 
 ## 4. Proposed sequencing
 
 ```
-Phase A — close the realization loop (G1 + G6)
-  A1. ns `providers` realization objects (shape in registry.ts already exists — persist it)
-  A2. verification writes PROMOTED / REQUIRES_REDISCOVERY (proof-gated, existing probes)
-  A3. healing writes DEGRADED / TESTING(probation) on drift
-  A4. providers registry reads vault (replace the empty-stub derivation)
-  A5. docs/VAULT-NAMESPACES.md (do it here while namespaces are being touched)
-        ↓
-Phase B — agent runtime v1 (G2 + G8)
-  B1. Single acting loop presenting agent principals (reuses director tick discipline)
-  B2. Boot-time forbidden re-registration from vault agent records
-  B3. Live-agent-under-quarantine rule (the open question from two assessments ago — decide: finish-task vs halt)
+Warm-up (no dependencies — ships first, each green-gated alone)
+  W1. Composition-conformance gate stage (G9): read-only check over all
+      shipped compositions; new stage in omega:gate before tests.
+  W2. Batch base-sha mechanization (§6.1): batches declare `assumes base`,
+      checked mechanically. D-register linkage stays a norm (not mechanized —
+      no well-defined mapping exists yet).
+      **[differs: review proposed mechanizing both; the D-status linkage has no
+      well-defined status.json mapping and would false-positive on docs-only
+      commits — base-sha only]**
+
+Phase A — close the realization loop (G1)
+  A0. Composition placement: DECIDED — extend discovery-mind.json (it already
+      hosts infer→map→verify; a 14th file buys separation at the cost of a new
+      drift surface). Revisit only if the W1 net exposes a collision.
+      **[differs: review recommended A0b on the premise verification lives
+      nowhere; source shows it wired at discovery-mind.json:44-51, which
+      reverses the tradeoff]**
+  A1. Wire vivim.providers into discovery-mind.json; boot test only, no logic
+      change (cheap canary surfacing grant/manifest issues first).
+  A2. providers.realization.get@1 for real (vault.get ns providers; {realization: null}
+      on miss — shape unchanged, body stops being a stub).
+  A3. Verification writes PROMOTED | REQUIRES_REDISCOVERY records to ns providers
+      ALONGSIDE (never instead of) the existing discovery-ns promotion event:
+      audit log (append-only forever) vs current-state record (latest-wins) have
+      different retention needs — the first worked example for the namespaces doc.
+  A4. Healing writes DEGRADED (drift) / TESTING (probation) to the same objects.
+  A5. providers.registry@1 reads vault via deriveRegistry() (its first real caller;
+      test asserts reachability from the handler, not just pure logic).
+  A6. docs/VAULT-NAMESPACES.md alongside A3/A4, using the A3 split as its
+      worked example.
+  Gate: end-to-end fixture run perceive→observe→infer→map→verify asserting a
+  non-empty PROMOTED registry entry from a real vault read. Note the fixture
+  chain itself is most of A3's work — budget accordingly.
+
+Phase B — agent runtime v1 (G2)
+  B1a. Single-op fixture replay under agent:<id> principal (existing grant
+       grammar only); proves realization→execution wiring with ledgering.
+  B1b. Wider acting loop (scheduling, retries, more op types) — only after B1a green.
+  B2/B3. Boot-time forbidden re-registration; quarantine semantics — the latter
+       is a HARD BLOCKER on B1a shipping past fixture-replay (not a sub-item):
+       decide finish-task vs halt before scope widens.
         ↓ (independent of B, do in parallel)
 Phase C — receive Ω14.3 / CDP (G5)
-  C1. Byte-identical live captures vs fixtures (substitution test FIRST)
-  C2. attach-only provider behind ProviderClass BROWSER_MEDIATED
-  C3. First real MENU_PATH variation from a live capture (closes G4's loop for one channel)
+  C0. Define "byte-identical" (canonicalization vs volatile-field allowlist) first.
+  C1. Substitution test: live capture for webmail-inbox fixture bytes.
+  C2. Attach-only provider behind ProviderClass BROWSER_MEDIATED.
+  C3. First real MENU_PATH variation from a live capture (closes one Upgrade-1 channel).
         ↓
-Phase D — structural hygiene (G7, G9, G10, G12)
-  D1. Composition conformance test (all shipped compositions)
-  D2. DB-track conformance fixture test (needs G1 done first)
-  D3. Test-lane discipline before wall time crosses 5 min
+Phase D — structural hygiene (G7, G10, G12; G9 already delivered as W1)
+  D1. (delivered as W1)
+  D2. DB-track conformance: human-attested checklist now; fixture test only when
+      Phase A writers exist AND the other side publishes a status enum to diff.
+  D3. Test-lane discipline when count crosses ~700 (wall time is machine-dependent).
 ```
 
 Each phase gates on `omega:gate` + a D-row (PROPOSED → RATIFIED only on green), same as every prior wave.
@@ -117,7 +170,7 @@ Each phase gates on `omega:gate` + a D-row (PROPOSED → RATIFIED only on green)
 
 ## 6. Process recommendations (earned the hard way)
 
-1. **Batches declare their base.** Every upgrade batch arrives stale eventually. Require a header line — `assumes base: <sha>` — so misapplication is mechanically detectable (`git merge-base --is-ancestor`) instead of discovered mid-conflict. Three rounds in a row integrated stale specs by judgment; judgment doesn't scale.
+1. **Batches declare their base.** Every upgrade batch arrives stale eventually. Require a header line — `assumes base: <sha>` — so misapplication is mechanically detectable (`git merge-base --is-ancestor`) instead of discovered mid-conflict. Three rounds in a row integrated stale specs by judgment; judgment doesn't scale. Agreed mechanization **[review-adopted]**: a gate/CI check enforcing the declaration (warm-up W2). D-register linkage stays a human norm — no well-defined status.json mapping exists to mechanize it against.
 2. **Pre-flight is load-bearing, not ceremonial.** The one round that skipped nothing went green fastest. Keep the 10-check pattern and extend it per §3 of each new plan (exports map, op inventory, rev-type discipline).
 3. **Windows is a first-class gate now.** The suite is green here *with* the portability fixes; any batch that hardcodes POSIX paths, `/tmp` semantics, or symlink assumptions will be caught locally before push. The upgrade agent should assume its output runs here, not just on its sandbox.
 4. **D-register discipline held** (PROPOSED → RATIFIED on green, never pre-ratified) — keep it. The one deviation to avoid repeating: the round-3 batch arrived with statuses pre-filled RATIFIED; status is earned by the gate, not asserted by the author.
@@ -127,11 +180,12 @@ Each phase gates on `omega:gate` + a D-row (PROPOSED → RATIFIED only on green)
 
 ## 7. Open decisions for the owner
 
-1. **Agent runtime (G2):** registry-only (descriptive) vs acting loop (alternative (a)/(b) above)? This is the largest fork in the doc — everything in Phase B depends on it.
-2. **DB-track conformance strength (G12):** checklist, fixture test, or shared package — and who owns the DB side of the handshake?
-3. **Quarantine semantics for live agents:** when a behavior contract is quarantined mid-flight, do running agents finish, halt, or migrate? (Carried forward — still unanswered after two assessments.)
-4. **Composition flagship:** is `console.json` the product surface and the rest fixtures-of-convenience, or do we support N first-class compositions long-term? (Determines how much D1 conformance machinery is worth.)
-5. **Test wall-time budget:** at what runtime do we shard lanes — 5 minutes, or accept slower gates as the suite grows past ~700 tests?
+1. **Agent runtime (G2):** registry-only (descriptive) vs acting loop (alternative (a)/(b) above)? B1a is scoped to produce evidence for this fork rather than debate it further — but the fork itself is still yours.
+2. **DB-track conformance strength (G12):** recommend human-attested checklist now, fixture test only when Phase A writers exist *and* the DB side publishes something to diff. Confirm the checklist is sufficient for this wave.
+3. **Quarantine semantics:** RESOLVED POSITION — hard blocker on B1a shipping past fixture-replay (finish-task vs halt must be decided before scope widens, not before B1a is written). Confirm or override.
+4. **Composition flagship:** DEFERRED by agreement — W1's net serves either answer; no need to resolve before the safety net ships.
+5. **Test wall-time budget:** RESOLVED POSITION — act at ~700 tests, not at a clock reading. Confirm.
+6. **Composition placement for Phase A (new):** recommended A0a (extend `discovery-mind.json`, corrected premise above). Confirm, or direct A0b (new `providers.json`) with reasons.
 
 ---
 
@@ -140,5 +194,5 @@ Each phase gates on `omega:gate` + a D-row (PROPOSED → RATIFIED only on green)
 1. **Another vocabulary-without-writers wave.** The failure mode of this program is now naming-first, runtime-later. G1 must precede any new contract file.
 2. **Tick-step-7-class invariants hiding in new code.** The late-rule race took a full debug cycle because the invariant lived in one `if`. New stateful loops (agent runtime, healing probation) need their ledger-equivalent stated *in the design* before code.
 3. **Ambient-load flakes returning.** The Windows budgets cover today's box; a slower CI box or a busier laptop reopens them. Hermetic-by-default for pure logic is the durable fix.
-4. **Stale-baseline integration.** Without base-declared batches (§6.1), a future round will mis-merge silently. Process, not code.
+4. **Stale-baseline integration.** Without base-declared batches (§6.1), a future round will mis-merge silently. Mitigation agreed (warm-up W2); until it lands, process, not code.
 5. **Host LOC creep.** 166 lines of headroom with four rounds of "no host changes needed" behind us — the discipline is working; the risk is one plausible-sounding exception.
