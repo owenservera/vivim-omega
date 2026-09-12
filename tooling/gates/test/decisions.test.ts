@@ -1,6 +1,7 @@
 // tooling/gates — test/decisions.test.ts: the Decision Contract checker, unit-tested
 // on inline fixtures (no repo I/O) plus one self-hosting run against the real tree.
 import { describe, test, expect } from "bun:test";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { checkDecisions, parseIndexRows, parseRecord, validateRecord, listOpenQuestions, renderOpenQuestionsBoard, boardFreshness } from "../decisions.ts";
 
@@ -84,12 +85,12 @@ describe("decisions checker — index parsing", () => {
 });
 
 describe("decisions checker — self-hosting run against the real tree", () => {
-  test("the live register + records validate clean (D-313..318 PROPOSED, pre-313 grandfathered)", async () => {
+  test("the live register + records validate clean (mixed PROPOSED/RATIFIED, pre-313 grandfathered)", async () => {
     const root = join(import.meta.dir, "../../..");
-    const r = await checkDecisions(root, { shaExists: () => false });
+    const r = await checkDecisions(root); // real git for SHA resolution (RATIFIED evidence must resolve)
     expect(r.issues).toEqual([]);
     expect(r.ok).toBe(true);
-    expect((r.detail.records as number)).toBeGreaterThanOrEqual(6);
+    expect((r.detail.records as number)).toBeGreaterThanOrEqual(9);
   });
 });
 
@@ -99,7 +100,12 @@ describe("open-questions board — team surface over PROPOSED records", () => {
     const qs = listOpenQuestions(root);
     const ids = qs.map((q) => q.n);
     expect(ids).toEqual([...ids].sort((a, b) => a - b)); // D-number order, append-proof
-    for (const known of [313, 314, 315, 316, 317, 318]) expect(ids).toContain(known);
+    for (const known of [313, 314, 315, 316, 317]) expect(ids).toContain(known);
+    // everything listed is genuinely PROPOSED in its record (no ratified stragglers on the board)
+    for (const q of qs) {
+      const text = readFileSync(join(root, q.file), "utf-8");
+      expect(parseRecord(q.n, q.file, text).status).toBe("PROPOSED");
+    }
     for (const q of qs) {
       expect(q.title.length).toBeGreaterThan(0);
       expect(q.recommended.length).toBeGreaterThan(0);

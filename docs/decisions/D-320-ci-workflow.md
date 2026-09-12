@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -32,5 +32,7 @@ CI needs an honest fresh-tree story.
 
 ## Evidence
 
+- Landed in 1bcae72: `.github/workflows/ci.yml` (ubuntu-required gate, windows-informational
+  test) + loud fresh-tree skip (`○`, recorded `skipped:true` — never silent green).
 - `upgrades/New/VIVIM-OMEGA-INDEPENDENT-REVIEW.md` §2 Priority 4 (origin of the ask).
 - Absent siblings verified: clean-clone gate fails fresh-tree by construction (pre-change behavior).

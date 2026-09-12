@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -36,6 +36,8 @@ but the capability-security pitch invites the assumption, which is the honesty g
 
 ## Evidence
 
-- `upgrades/New/VIVIM-OMEGA-INDEPENDENT-REVIEW.md` §2 Priority 2 (origin; this record corrects Buffer-methodology caveat).
-- `host/src/worker.ts` header (the documenting comment).
+- Landed in 1bcae72: `host/src/worker.ts` header documents the verified gap
+  (217MB heap in a 32MB-capped worker, Bun 1.3.14, old-gen object pressure —
+  Buffer-based probes are vacuous on every runtime).
+- `upgrades/New/VIVIM-OMEGA-INDEPENDENT-REVIEW.md` §2 Priority 2 (origin of the ask).
 - Probe method: worker_threads + `resourceLimits.maxOldGenerationSizeMb: 32` + object-graph pressure to ~217MB, no error.

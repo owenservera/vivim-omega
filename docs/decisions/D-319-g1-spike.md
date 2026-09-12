@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -33,5 +33,11 @@ pass beyond the namespaces minimum) lands. Smaller blast radius per gate run.
 
 ## Evidence
 
+- Landed in 1bcae72: A1 (providers entry in discovery-mind.json + boot canary), A2
+  (realization.get vault read), A3 (verify PROMOTED/REQUIRES_REDISCOVERY/TESTING
+  writes citing the promotion event), A5-minimal (registry reads via deriveRegistry),
+  A6 (`docs/VAULT-NAMESPACES.md`).
+- End-to-end fixture test green: map → verify → registry returns non-empty PROMOTED
+  rows sourced from real vault reads (`plugins/vivim-providers/test/providers.test.ts`).
 - `ARCHITECTURE-NEXT-STEPS.md` §4 Phase A (as resequenced post-review).
 - `upgrades/New/PROPOSED-NEXT-STEPS.md` §2 (concurs on spike-first; this record adds the A6-at-merge guardrail).

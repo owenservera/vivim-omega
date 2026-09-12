@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -30,10 +30,11 @@ and mapping, which reverses the tradeoff. Prior question Q6, now a record.
 
 - Phase A1's boot canary runs against `discovery-mind.json`, not a new file.
 - If a future wave needs the realization lifecycle bootable *without* the discovery engines, split then — with this record as the documented reason for the original colocation.
-- Owner nod still required: PROPOSED until confirmed (reversal cost is one moved entry, so confirmation is low-ceremony).
+- Owner confirmed via wave approval (2026-09-12); reversal remains one moved entry.
 
 ## Evidence
 
+- Implemented + gated in 1bcae72: `discovery-mind.json` carries the `vivim.providers` entry; end-to-end boot canary green (shipped-file boot asserts all six compartments active).
 - `compositions/discovery-mind.json:44-51` (verification wired — the correcting fact).
 - `ARCHITECTURE-NEXT-STEPS.md` §4 Phase A (A0), §7 Q6.
 - `upgrades/New/PROPOSED-NEXT-STEPS.md` §1 (A0a/A0b analysis; this record adopts A0a against its recommendation, with the source cited).
