@@ -42,8 +42,14 @@ The pattern: **vocabulary leads implementation by roughly one wave.** That is de
 
 ## 3. Gaps, ordered by architectural significance
 
-### G1. The status lifecycle has readers but no writers (most important)
-`RealizationStatus` transitions (DRAFT→TESTING→PROMOTED→…) are specified in two places (`vocabulary.ts`, `provider.ts` facade, plus the G0 doc's ownership table) and *written* in zero places. No vault namespace holds realizations; `vivim.providers` defaults everything to `DRAFT` over an empty set; `discovery.verify@1` evaluates probes but records no status. **A vocabulary with no writers is a wish.** Closing this loop is the single highest-value next wave: define ns `providers` realization objects, have verification write PROMOTED/REQUIRES_REDISCOVERY, healing write DEGRADED/TESTING, and make the providers registry read them for real. Until then, D-307 conformance is conformance to a dictionary.
+### G1. The status lifecycle has readers but no writers (most important) — SPIKE LANDED, loop half-closed
+As written, `RealizationStatus` transitions were specified (`vocabulary.ts`, `provider.ts`
+facade, G0 ownership table) and written nowhere. The D-319 spike (RATIFIED) closed the
+happy path: ns `providers` records exist, verification writes PROMOTED / REQUIRES_REDISCOVERY /
+TESTING, the registry reads them for real (end-to-end fixture test green). REMAINDER (still
+open): healing writes DEGRADED / TESTING-probation (A4) — the status vocabulary is whole
+on the promotion side, unwritten on the healing side. D-307 conformance stays vacuous until
+at least one live drift writes DEGRADED.
 
 Verified concrete shape of the gap **[review-adopted]**: the three providers ops are self-labeled
 placeholders in source (`{ entries: [] }`, "would read from vault"); `deriveRegistry()` is fully
@@ -110,29 +116,17 @@ Warm-up (no dependencies — ships first, each green-gated alone)
       well-defined status.json mapping and would false-positive on docs-only
       commits — base-sha only]**
 
-Phase A — close the realization loop (G1)
+Phase A — close the realization loop (G1) — SPIKE LANDED (D-319 RATIFIED); A4 healing writes remain
   A0. Composition placement: DECIDED — extend discovery-mind.json (it already
       hosts infer→map→verify; a 14th file buys separation at the cost of a new
       drift surface). Revisit only if the W1 net exposes a collision.
       **[differs: review recommended A0b on the premise verification lives
       nowhere; source shows it wired at discovery-mind.json:44-51, which
       reverses the tradeoff]**
-  A1. Wire vivim.providers into discovery-mind.json; boot test only, no logic
-      change (cheap canary surfacing grant/manifest issues first).
-  A2. providers.realization.get@1 for real (vault.get ns providers; {realization: null}
-      on miss — shape unchanged, body stops being a stub).
-  A3. Verification writes PROMOTED | REQUIRES_REDISCOVERY records to ns providers
-      ALONGSIDE (never instead of) the existing discovery-ns promotion event:
-      audit log (append-only forever) vs current-state record (latest-wins) have
-      different retention needs — the first worked example for the namespaces doc.
-  A4. Healing writes DEGRADED (drift) / TESTING (probation) to the same objects.
-  A5. providers.registry@1 reads vault via deriveRegistry() (its first real caller;
-      test asserts reachability from the handler, not just pure logic).
-  A6. docs/VAULT-NAMESPACES.md alongside A3/A4, using the A3 split as its
-      worked example.
-  Gate: end-to-end fixture run perceive→observe→infer→map→verify asserting a
-  non-empty PROMOTED registry entry from a real vault read. Note the fixture
-  chain itself is most of A3's work — budget accordingly.
+      Landed: entry added, boot canary green.
+  A1–A3, A5-minimal, A6: landed (verify writes, registry reads, namespaces doc).
+  A4 (healing DEGRADED/TESTING writes): specified, unwritten — next receiver of this loop.
+  ( Landed detail lives in D-319's record; the pre-landing step list is not repeated here. )
 
 Phase B — agent runtime v1 (G2)
   B1a. Single-op fixture replay under agent:<id> principal (existing grant
@@ -188,11 +182,14 @@ Each phase gates on `omega:gate` + a D-row (PROPOSED → RATIFIED only on green)
 > is the summary; the records are the contract.
 
 1. **Agent runtime (G2):** registry-only (descriptive) vs acting loop (alternative (a)/(b) above)? B1a is scoped to produce evidence for this fork rather than debate it further — but the fork itself is still yours.
-2. **DB-track conformance strength (G12):** recommend human-attested checklist now, fixture test only when Phase A writers exist *and* the DB side publishes something to diff. Confirm the checklist is sufficient for this wave.
+2. **DB-track conformance strength (G12):** recommend human-attested checklist
+now, fixture test as soon as the DB side publishes something to diff (our-side
+writers landed with D-319 — that precondition is met). Confirm the checklist
+is sufficient for this wave.
 3. **Quarantine semantics:** RESOLVED POSITION — hard blocker on B1a shipping past fixture-replay (finish-task vs halt must be decided before scope widens, not before B1a is written). Confirm or override.
 4. **Composition flagship:** DEFERRED by agreement — W1's net serves either answer; no need to resolve before the safety net ships.
 5. **Test wall-time budget:** RESOLVED POSITION — act at ~700 tests, not at a clock reading. Confirm.
-6. **Composition placement for Phase A (new):** recommended A0a (extend `discovery-mind.json`, corrected premise above). Confirm, or direct A0b (new `providers.json`) with reasons.
+6. **Composition placement for Phase A (new):** recommended A0a (extend `discovery-mind.json`, corrected premise above). RATIFIED as D-318 — implemented this wave; reversal remains one moved entry.
 
 ---
 
