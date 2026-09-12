@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -35,7 +35,8 @@ already proves the long-lived shape; the CLI has no equivalent. Target restateme
 
 ## Evidence
 
-- `surfaces/daemon` + `surfaces/daemon-client` packages; CLI thin-client with `--no-daemon` escape hatch.
+- Landed + gated in babd879: `surfaces/daemon` + `surfaces/daemon-client`, CLI
+  thin-client with `--no-daemon` escape hatch, gate green 542/542 (all five stages).
 - Bench split (daemon RTT vs cold wall) appended to `BENCHMARKS.md` by `bun run omega:bench`:
   daemon call RTT p50 2.42ms over 50 protocol calls (≤5ms falsifier MET, VLC-loaded box);
   cold CLI wall 401ms for one echo call (the spawn floor, reported separately).
