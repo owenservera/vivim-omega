@@ -1,0 +1,35 @@
+# VIVIM-Ω CI — independent confirmation of the numbers the repo self-reports.
+#
+# fresh-tree will report SKIPPED here (sibling legacy repos live outside this tree
+# and their pins don't exist in public snapshots) — loud in the summary, never green.
+# The import scan still runs in every layout.
+name: omega-gate
+
+on:
+  push:
+    branches: ["omega"]
+  pull_request:
+
+jobs:
+  gate-ubuntu:
+    name: gate (ubuntu, required)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install
+      - run: bun run omega:gate
+
+  test-windows:
+    name: bun test (windows, informational)
+    runs-on: windows-latest
+    # Informational on purpose: 2-core CI runners shake the timing budgets that
+    # are tuned for bigger boxes (see D-317). Signal without blocking — the
+    # required gate is ubuntu. Promote to required only with runner sizing that
+    # matches the budgets.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install
+      - run: bun test

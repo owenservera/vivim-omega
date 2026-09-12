@@ -361,3 +361,64 @@ describe("Ω8 discovery.verification — manifest declarations", () => {
     expect(m.capabilities.requested).toEqual(["port:vault.append@1", "port:vault.get@1"]);
   });
 });
+
+describe("D-319 verification — ns providers realization writes (additive, alongside the audit event)", () => {
+  test("provider supplied: PROMOTED → record; proof-failed → REQUIRES_REDISCOVERY; unprobed → no record", async () => {
+    const { ctx, calls } = fakeCtx();
+    const probes = [...probesFor("sc-1", 3), ...probesFor("sc-5", 3, { failAt: [0, 1, 2] })];
+    const r = await def.ops!["discovery.verify@1"]!({
+      mapping: mapResult(), probes, runId: "verify-r1",
+      provider: { id: "provider.email.file" },
+    }, ctx, META);
+    const v = r as {
+      promoted: string[]; realizations: Array<{ id: string; status: string; rev: number }>; realizationsWritten: number;
+    };
+    expect(v.promoted).toEqual(["sc-1"]);
+    expect(v.realizationsWritten).toBe(2);
+    const provAppends = calls.filter((c) => c.op === "vault.append@1" && (c.payload as { ns: string }).ns === "providers");
+    expect(provAppends).toHaveLength(2);
+    const send = provAppends.find((c) => (c.payload as { id: string }).id === "realization:message.send:provider.email.file")!;
+    const sendData = (send.payload as { data: Record<string, unknown> }).data;
+    expect(sendData.status).toBe("PROMOTED");
+    expect(sendData.providerClass).toBe("SIMULATOR"); // defaulted (class omitted)
+    expect(sendData.archetypeSlug).toBe("message.send");
+    expect(sendData.createdAt).toEqual(expect.any(Number));
+    // cites the promotion event as its proof link (audit log ↔ current state)
+    expect((send.payload as { refs: unknown[] }).refs).toContainEqual({ ns: "discovery", id: "promotion:verify-r1", rev: 3 });
+    const search = provAppends.find((c) => (c.payload as { id: string }).id === "realization:message.search:provider.email.file")!;
+    expect((search.payload as { data: Record<string, unknown> }).data.status).toBe("REQUIRES_REDISCOVERY");
+  });
+
+  test("binding with zero probes gets no record (absence reads as DRAFT downstream)", async () => {
+    const { ctx, calls } = fakeCtx();
+    const r = await def.ops!["discovery.verify@1"]!({
+      mapping: mapResult(), probes: [...probesFor("sc-1", 3)], runId: "verify-r2",
+      provider: { id: "provider.email.file", class: "API_NATIVE" },
+    }, ctx, META);
+    const v = r as { realizationsWritten: number; realizations: Array<{ id: string }> };
+    expect(v.realizationsWritten).toBe(1);
+    expect(v.realizations.map((x) => x.id)).toEqual(["realization:message.send:provider.email.file"]);
+    expect(calls.filter((c) => (c.payload as { ns: string }).ns === "providers")).toHaveLength(1);
+  });
+
+  test("no provider supplied: behavior identical to before (no providers-ns writes)", async () => {
+    const { ctx, calls } = fakeCtx();
+    const r = await def.ops!["discovery.verify@1"]!({
+      mapping: mapResult(), probes: [...probesFor("sc-1", 3)], runId: "verify-r3",
+    }, ctx, META);
+    const v = r as { realizationsWritten: number; realizations: unknown[] };
+    expect(v.realizationsWritten).toBe(0);
+    expect(v.realizations).toEqual([]);
+    expect(calls.filter((c) => (c.payload as { ns: string }).ns === "providers")).toHaveLength(0);
+  });
+
+  test("malformed provider fails closed (DEGRADED via throw)", async () => {
+    const { ctx } = fakeCtx();
+    await expect(def.ops!["discovery.verify@1"]!({ mapping: mapResult(), probes: [], runId: "x", provider: { id: "" } }, ctx, META))
+      .rejects.toThrow(/provider\.id/);
+    await expect(def.ops!["discovery.verify@1"]!({ mapping: mapResult(), probes: [], runId: "x", provider: { id: "p", class: "NOPE" } }, ctx, META))
+      .rejects.toThrow(/provider\.class/);
+    await expect(def.ops!["discovery.verify@1"]!({ mapping: mapResult(), probes: [], runId: "x", provider: "p" }, ctx, META))
+      .rejects.toThrow(/provider must be/);
+  });
+});

@@ -28,6 +28,10 @@ const checks = gate.checks as Record<string, any>;
 let failed = 0;
 const fail = (name: string, detail: string) => { checks[name] = { ok: false, detail }; failed++; console.error(`✗ ${name}: ${detail}`); };
 const pass = (name: string, detail: unknown) => { checks[name] = { ok: true, detail }; console.log(`✓ ${name}`); };
+// Skipped is NEITHER pass nor fail: recorded loudly in status.json, never rendered
+// as green. Only for checks that are definitionally inapplicable in this layout
+// (never for making a red check go away).
+const skip = (name: string, detail: unknown) => { checks[name] = { ok: true, skipped: true, detail }; console.log(`○ ${name}: skipped`); };
 
 // 1 · host-loc (B5 — the boredom budget is law)
 const hostLoc = countLoc(join(ROOT, "host/src"));
@@ -35,27 +39,21 @@ if (hostLoc <= 1000) pass("host-loc", { loc: hostLoc, budget: 1000 });
 else fail("host-loc", `µhost is ${hostLoc} LOC (budget 1000) — move the creep into a plugin`);
 
 // 2 · fresh-tree: legacy repos untouched + no legacy imports anywhere in the fresh tree
+// Clean-clone/CI honesty (D-320): with NO sibling repos present there is nothing to
+// verify untouched — skip loudly (○, recorded in status.json) rather than failing a
+// tree that cannot satisfy the check or, worse, passing vacuously. The import scan
+// below still runs in every layout. One sibling present and the other absent is
+// layout drift → fail, not skip.
 try {
   const legacy = [
     { name: "vivim-final-enhanced", pin: "abb6add" },
     { name: "vivim-final-program", pin: "4a5eb84" },
   ];
-  let legacyOk = true; const detail: Record<string, unknown> = {};
-  for (const repo of legacy) {
-    // Layout-aware: the fresh tree may sit one level deeper (e.g. inside a
-    // MASTER/ handback dir) than the sandbox layout. Probe both; absence fails.
-    const dir = [join(ROOT, "..", repo.name), join(ROOT, "..", "..", repo.name)]
-      .find((d) => existsSync(join(d, ".git")));
-    if (!dir) { legacyOk = false; detail[repo.name] = { missing: true }; continue; }
-    const head = (await sh(["git", "-C", dir, "rev-parse", "--short", "HEAD"])).out.trim();
-    const status = (await sh(["git", "-C", dir, "status", "--porcelain"])).out.trim();
-    // The pin is enforceable only where that object exists (the sandbox lineage).
-    // Elsewhere the legacies are read-only snapshots — "untouched" = clean status.
-    const pinKnown = (await sh(["git", "-C", dir, "cat-file", "-t", repo.pin])).out.trim() === "commit";
-    const pinOk = pinKnown ? head === repo.pin : true;
-    if (!pinOk || status !== "") { legacyOk = false; detail[repo.name] = { head, status, pin: pinKnown ? repo.pin : "(foreign lineage — clean-only)" }; }
-    else detail[repo.name] = { head, clean: true };
-  }
+  const located = legacy.map((repo) => ({
+    ...repo,
+    dir: [join(ROOT, "..", repo.name), join(ROOT, "..", "..", repo.name)]
+      .find((d) => existsSync(join(d, ".git"))),
+  }));
   // scan for actual import statements from the legacy trees (string literals alone are fine)
   let legacyImports = 0;
   const IMPORT_RE = /(from\s+["'].*vivim-final-|import\(\s*["'].*vivim-final-|require\(\s*["'].*vivim-final-)/;
@@ -69,8 +67,24 @@ try {
     }
   };
   walk(ROOT);
-  if (legacyOk && legacyImports === 0) pass("fresh-tree", { ...detail, legacyImports });
-  else fail("fresh-tree", `legacy touched or imported (imports: ${legacyImports}) ${JSON.stringify(detail)}`);
+  if (located.every((r) => !r.dir)) {
+    skip("fresh-tree", { reason: "no sibling legacy repos present (clean clone / CI) — nothing to verify untouched", legacyImports });
+  } else {
+    let legacyOk = true; const detail: Record<string, unknown> = {};
+    for (const repo of located) {
+      if (!repo.dir) { legacyOk = false; detail[repo.name] = { missing: true }; continue; }
+      const head = (await sh(["git", "-C", repo.dir, "rev-parse", "--short", "HEAD"])).out.trim();
+      const status = (await sh(["git", "-C", repo.dir, "status", "--porcelain"])).out.trim();
+      // The pin is enforceable only where that object exists (the sandbox lineage).
+      // Elsewhere the legacies are read-only snapshots — "untouched" = clean status.
+      const pinKnown = (await sh(["git", "-C", repo.dir, "cat-file", "-t", repo.pin])).out.trim() === "commit";
+      const pinOk = pinKnown ? head === repo.pin : true;
+      if (!pinOk || status !== "") { legacyOk = false; detail[repo.name] = { head, status, pin: pinKnown ? repo.pin : "(foreign lineage — clean-only)" }; }
+      else detail[repo.name] = { head, clean: true };
+    }
+    if (legacyOk && legacyImports === 0) pass("fresh-tree", { ...detail, legacyImports });
+    else fail("fresh-tree", `legacy touched or imported (imports: ${legacyImports}) ${JSON.stringify(detail)}`);
+  }
 } catch (e) { fail("fresh-tree", String(e)); }
 
 // 3 · decisions: D-register ↔ detail-record contract (docs/decisions/README.md)

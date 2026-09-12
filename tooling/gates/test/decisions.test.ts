@@ -95,9 +95,11 @@ describe("decisions checker — self-hosting run against the real tree", () => {
 
 describe("open-questions board — team surface over PROPOSED records", () => {
   const root = join(import.meta.dir, "../../..");
-  test("lists the six PROPOSED records with recommendations and TBD flags", () => {
+  test("lists the PROPOSED records with recommendations and TBD flags", () => {
     const qs = listOpenQuestions(root);
-    expect(qs.map((q) => q.n)).toEqual([313, 314, 315, 316, 317, 318]);
+    const ids = qs.map((q) => q.n);
+    expect(ids).toEqual([...ids].sort((a, b) => a - b)); // D-number order, append-proof
+    for (const known of [313, 314, 315, 316, 317, 318]) expect(ids).toContain(known);
     for (const q of qs) {
       expect(q.title.length).toBeGreaterThan(0);
       expect(q.recommended.length).toBeGreaterThan(0);
@@ -111,7 +113,9 @@ describe("open-questions board — team surface over PROPOSED records", () => {
     const md = renderOpenQuestionsBoard(root, "abc1234", "2026-01-01T00:00:00.000Z");
     expect(md).toContain("<!-- base: abc1234");
     expect(md).toContain("bun run omega:questions --write");
-    for (const n of [313, 314, 315, 316, 317, 318]) expect(md).toContain(`D-${n}`);
+    const qs = listOpenQuestions(root);
+    expect(qs.length).toBeGreaterThan(0);
+    for (const q of qs) expect(md).toContain(`D-${q.n}`);
     expect(md).toContain("How to propose");
   });
 

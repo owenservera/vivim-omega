@@ -1,5 +1,14 @@
 // µhost — worker.ts: one worker_threads compartment per plugin (B2: shared-nothing).
 // The host owns TRANSPORT only; lifecycle policy belongs to vivim.run (via host.compartment.admin).
+//
+// ISOLATION HONESTY (verified 2026-09: a 32MB-capped worker grew to 217MB heap
+// without error on Bun): worker_threads gives separate V8 isolates (no shared
+// heap — accidental coupling is impossible), but memory/CPU EXHAUSTION by a
+// compartment is NOT bounded on this runtime (`resourceLimits` are not enforced
+// by Bun). So compartments are isolated against each other, not against starving
+// the process. Do not rely on this layer against an actively adversarial plugin;
+// the crash-loop quarantine in vivim.run covers crashes, not consumption.
+// (Watchdog design deferred — see the resourceLimits decision record.)
 import { Worker } from "node:worker_threads";
 import type { PortResult } from "@vivim/omega-contracts";
 import { join } from "node:path";

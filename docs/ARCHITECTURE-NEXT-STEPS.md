@@ -3,10 +3,12 @@
 **Author posture:** principal architect, writing for the owner and the upgrade agent.
 **Baseline:** `omega` @ `597d567` — gate green (`bun test` 516/516, `omega:gate` ok:true), host 834/1000 LOC, D-312 ratified.
 **Scope of this doc:** planning reference only. It ratifies nothing and builds nothing.
-**Revision note (post external review):** an independent review (`upgrades/New/PROPOSED-NEXT-STEPS.md`)
+**Revision note (post external review):** an independent review (`upgrades/New/PROPOSED-NEXT-STEPS.md`,
+plus `VIVIM-OMEGA-INDEPENDENT-REVIEW.md`)
 verified this doc's claims against source, corrected one factual error (verification *is* wired
 in `discovery-mind.json` — see G1), and its adopted recommendations are folded in below
 marked **[review-adopted]**. Points where this doc deliberately differs are marked **[differs]** with reasons.
+Decision records D-313–D-321 carry the live state of §7; this prose is the summary.
 
 ---
 

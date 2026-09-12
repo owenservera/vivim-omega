@@ -1,6 +1,6 @@
 {
   "name": "discovery-mind",
-  "_note": "Ω8 GATE composition — the discovery mind pipeline: real vivim.law (phase 0) + vivim.vault + the three discovery engines (phase 1, ordinary plugins whose only outputs are candidates/mappings/promotions + evidence in the user's vault). discovery.mapping reads its blueprint from config.blueprintPath (cwd-relative from the host process; absolute paths pass through) — the pack's CONTRACT declarations consumed as DATA. Engine ops are ENGINE contributions: risk lives on contract-kind contributions only (pinned manifest grammar), so the ops route ungated and the semantic READ class is documented on the contributions. The engines' vault appends ARE gated (vault.append@1 = MUTATION → allow-and-journal under each engine's principal).",
+  "_note": "Ω8 GATE composition — the discovery mind pipeline: real vivim.law (phase 0) + vivim.vault + the three discovery engines (phase 1, ordinary plugins whose only outputs are candidates/mappings/promotions + evidence in the user's vault) + vivim.providers (D-319: realization registry over ns providers, fed by verification writes). discovery.mapping reads its blueprint from config.blueprintPath (cwd-relative from the host process; absolute paths pass through) — the pack's CONTRACT declarations consumed as DATA. Engine ops are ENGINE contributions: risk lives on contract-kind contributions only (pinned manifest grammar), so the ops route ungated and the semantic READ class is documented on the contributions. The engines' vault appends ARE gated (vault.append@1 = MUTATION → allow-and-journal under each engine's principal).",
   "entries": [
     {
       "id": "vivim.law",
@@ -8,7 +8,7 @@
       "bootPhase": 0,
       "grant": {
         "capabilities": ["host.journal.append", "host.tokens.revoke"],
-        "contracts": ["law.check@1", "law.registry@1", "law.consent.grant@1", "law.tokens.revoke@1", "law.amendment@1"]
+        "contracts": ["law.check@1", "law.registry@1", "law.consent.grant@1", "law.tokens.revoke@1", "law.forbidden.set@1", "law.amendment@1"]
       }
     },
     {
@@ -36,7 +36,7 @@
       "bootPhase": 1,
       "grant": {
         "capabilities": ["port:vault.append@1"],
-        "contracts": ["discovery.map@1"]
+        "contracts": ["discovery.map@1", "discovery.variations@1"]
       },
       "config": { "blueprintPath": "packs/domain-email/plugin.json" }
     },
@@ -47,6 +47,15 @@
       "grant": {
         "capabilities": ["port:vault.append@1", "port:vault.get@1"],
         "contracts": ["discovery.verify@1"]
+      }
+    },
+    {
+      "id": "vivim.providers",
+      "source": "../plugins/vivim-providers",
+      "bootPhase": 1,
+      "grant": {
+        "capabilities": ["port:vault.append@1", "port:vault.get@1", "port:vault.query@1", "port:law.registry@1"],
+        "contracts": ["providers.registry@1", "providers.realization.get@1", "providers.session.start@1"]
       }
     }
   ]

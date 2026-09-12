@@ -19,6 +19,7 @@
 //   Variation(All)     ← ./variation.ts  (D-308 — re-exported for the one surface)
 //   Agent(All)         ← ./agent.ts      (D-309)
 //   Outcome(All)       ← ./outcome.ts    (D-312)
+//   ProviderRealization← HERE            (canonical ns "providers" record shape)
 
 import type { ProviderClass } from "./manifest.ts";
 import type { RealizationStatus, VaultProvenanceRef } from "./vocabulary.ts";
@@ -81,4 +82,53 @@ export interface EvidenceRef {
   ns: string;
   id: string;
   rev: number;
+}
+
+/** Canonical vault object id for a provider realization record (ns "providers").
+ *  Shared by writers (discovery.verify appends) and readers (providers registry
+ *  queries) so the convention lives in exactly one place. */
+export function providerRealizationId(archetypeSlug: string, providerId: string): string {
+  if (typeof archetypeSlug !== "string" || archetypeSlug.length === 0) {
+    throw new Error("providerRealizationId: archetypeSlug must be a non-empty string");
+  }
+  if (typeof providerId !== "string" || providerId.length === 0) {
+    throw new Error("providerRealizationId: providerId must be a non-empty string");
+  }
+  if (archetypeSlug.includes(":") || providerId.includes(":")) {
+    throw new Error("providerRealizationId: neither part may contain ':' (id grammar)");
+  }
+  return `realization:${archetypeSlug}:${providerId}`;
+}
+
+/** Canonical archetype slug for a routable op: the bare op name ("message.send@1" → "message.send").
+ *  Identical semantics to mapping's local baseOp (last "@" wins); centralized here so
+ *  writers (verification) and readers (providers registry) derive the same slug. */
+export function archetypeSlugForOp(op: string): string {
+  if (typeof op !== "string" || op.length === 0) throw new Error("archetypeSlugForOp: op must be a non-empty string");
+  const at = op.lastIndexOf("@");
+  return at > 0 ? op.slice(0, at) : op;
+}
+
+/**
+ * ProviderRealization: the current-state record for one provider's realization of one
+ * archetype (vault ns "providers", id `realization:<archetypeSlug>:<providerId>`).
+ * Written by discovery.verify@1 (PROMOTED / REQUIRES_REDISCOVERY) and discovery.healing
+ * (DEGRADED / TESTING); read by vivim.providers. This is the CURRENT state — the
+ * ns "discovery" promotion events are the audit log (append-only forever); realization
+ * records are latest-wins. The two must never be collapsed into one write.
+ */
+export interface ProviderRealization {
+  archetypeSlug: string;
+  providerId: string;
+  providerClass: ProviderClass;
+  status: RealizationStatus;
+  discoverySessionRef: VaultProvenanceRef | null;
+  opMapRef: VaultProvenanceRef | null;
+  entityMapRef: VaultProvenanceRef | null;
+  streamRefs: Array<{ capabilitySlug: string; ref: VaultProvenanceRef }>;
+  evidenceRefs: VaultProvenanceRef[];
+  supersedes: VaultProvenanceRef | null;
+  createdAt: number;
+  /** Vault record revision — absent on writes, filled by readers (vault.get rev). Not stored. */
+  rev?: number;
 }

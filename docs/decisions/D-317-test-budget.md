@@ -35,3 +35,7 @@ is not. The trigger for test-lane sharding should be the stable metric.
 - `ARCHITECTURE-NEXT-STEPS.md` §3 G10, §7 Q5.
 - `upgrades/New/PROPOSED-NEXT-STEPS.md` §8 Q5 (concurs).
 - Observed: 87s quiet vs 300s+ saturated for the same suite on one box.
+- 2026-09-12: `bun test --max-concurrency 4 --timeout 60000` → 534/534 in 64s on a
+  VLC-saturated 4-core box, while default-concurrency plain runs flaked with varying
+  culprits (533/1, 532/2) — contention, not regressions (all flake suspects green in
+  isolation and in the constrained run). Thrash dominates past core count.

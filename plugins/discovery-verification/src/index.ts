@@ -1,8 +1,12 @@
 // discovery.verification — index.ts (Ω8), the ENGINE plugin wiring: THE PROMOTION GATE.
 //
 // Op exposed (ENGINE contribution, see plugin.json):
-//   discovery.verify@1 {mapping, probes, runId?, candidates?, candidatesRef?, mappingRef?}
-//     → {runId, policy, results[], promoted[], stillDraft[], orphanProbes[], candidates?, vaultRef}
+//   discovery.verify@1 {mapping, probes, runId?, candidates?, candidatesRef?, mappingRef?, provider?}
+//     → {runId, policy, results[], promoted[], stillDraft[], orphanProbes[], candidates?, vaultRef,
+//        realizations[], realizationsWritten}
+//   provider?: {id, class?} enables ns-"providers" current-state writes (PROMOTED /
+//   REQUIRES_REDISCOVERY per evaluated binding, each citing the promotion event);
+//   absent provider disables them (verify behaves exactly as before).
 //
 // THE INVARIANT (the hallucination cure): a DRAFT SurfaceContract becomes
 // PROMOTED only through caller-supplied postcondition probes with recorded
@@ -29,11 +33,13 @@
 // Handlers throw on bad payloads / failed appends — DEGRADED at the boundary.
 import { definePlugin, startPlugin } from "@vivim/omega-shim";
 import type { PluginContext, CallMeta } from "@vivim/omega-shim";
-import type { PortResult } from "@vivim/omega-contracts";
+import type { PortResult, ProviderClass, ProviderRealization, RealizationStatus } from "@vivim/omega-contracts";
+import { archetypeSlugForOp, providerRealizationId } from "@vivim/omega-contracts";
 import { loadPromotionPolicy, POLICY_SOURCE, type PromotionPolicy } from "./policy.ts";
 import { evaluatePromotion, isValidProbe, refKey, type Probe, type BindingLike } from "./evaluate.ts";
 
 export const DISCOVERY_NS = "discovery";
+export const PROVIDERS_NS = "providers";
 
 interface VaultAppendResult { rev: number; cid: string; seq: number }
 interface VaultGetResult { rev: number; cid: string; data: unknown; meta: unknown; refs: unknown }
@@ -131,6 +137,29 @@ function optionalRunId(v: unknown): string {
   return v;
 }
 
+const PROVIDER_CLASSES = ["SIMULATOR", "API_NATIVE", "BROWSER_MEDIATED"] as const;
+
+/** Optional realization writer identity: {id, class?} (class defaults SIMULATOR).
+ *  Absent (undefined/null) disables ns-providers writes entirely. */
+function normalizeProvider(v: unknown): { id: string; class: ProviderClass } | null {
+  if (v === undefined || v === null) return null;
+  if (typeof v !== "object" || Array.isArray(v)) {
+    throw new Error("discovery.verify@1: provider must be {id, class?}");
+  }
+  const o = v as Record<string, unknown>;
+  if (typeof o.id !== "string" || o.id.length === 0) {
+    throw new Error("discovery.verify@1: provider.id must be a non-empty string");
+  }
+  if (o.id.includes(":")) {
+    throw new Error("discovery.verify@1: provider.id must not contain ':' (realization id grammar)");
+  }
+  const cls = o.class === undefined ? "SIMULATOR" : o.class;
+  if (!(PROVIDER_CLASSES as readonly string[]).includes(cls as string)) {
+    throw new Error(`discovery.verify@1: provider.class must be one of ${PROVIDER_CLASSES.join("|")}`);
+  }
+  return { id: o.id, class: cls as ProviderClass };
+}
+
 /** Rewrite candidate statuses in the RETURNED report (copies; the vault object is append-only). */
 function rewriteCandidates(candidates: unknown, promoted: Set<string>): unknown {
   if (!Array.isArray(candidates)) return undefined;
@@ -203,12 +232,61 @@ export const def = definePlugin({
         refs,
       });
 
+      // A3 (D-319): current-state realization records, ALONGSIDE the audit-log
+      // promotion event above — never instead of it. Optional payload
+      // provider?: {id, class?}: absent means verify behaves exactly as before
+      // (realizations: [], realizationsWritten: 0). Status per binding:
+      // PROMOTED (proven) | REQUIRES_REDISCOVERY (probes ran and some failed)
+      // | TESTING (probes all pass so far but proof incomplete — still under
+      // evaluation). Never-probed bindings get no record (absence reads as
+      // DRAFT downstream, matching the registry default).
+      const provider = normalizeProvider(p.provider);
+      const realizations: Array<{ id: string; status: RealizationStatus; rev: number }> = [];
+      if (provider !== null) {
+        for (const r of evaluation.results) {
+          const failed = r.probeCount - r.passed;
+          const status: RealizationStatus | null =
+            r.status === "PROMOTED" ? "PROMOTED"
+            : r.probeCount === 0 ? null
+            : failed > 0 ? "REQUIRES_REDISCOVERY" : "TESTING";
+          if (status === null) continue;
+          const slug = archetypeSlugForOp(r.blueprintOp);
+          const id = providerRealizationId(slug, provider.id);
+          const refs = probes
+            .filter((pr) => pr.candidateId === r.candidateId)
+            .flatMap((pr) => pr.evidence.map((e) => ({ ns: e.ns, id: e.id, rev: e.rev })));
+          const record: ProviderRealization = {
+            archetypeSlug: slug,
+            providerId: provider.id,
+            providerClass: provider.class,
+            status,
+            discoverySessionRef: null,
+            opMapRef: null,
+            entityMapRef: null,
+            streamRefs: [],
+            evidenceRefs: refs,
+            supersedes: null,
+            createdAt: Date.now(),
+          };
+          const w = await vaultCall<VaultAppendResult>(ctx, "vault.append@1", {
+            ns: PROVIDERS_NS,
+            id,
+            data: record,
+            meta: { type: "realization", archetype: slug, provider: provider.id, status },
+            refs: [...refs, { ns: DISCOVERY_NS, id: `promotion:${runId}`, rev: append.rev }],
+          });
+          realizations.push({ id, status, rev: w.rev });
+        }
+      }
+
       return {
         runId,
         engine: "discovery.verify@1",
         ...reportData,
         ...(candidatesOut !== undefined ? { candidates: candidatesOut } : {}),
         vaultRef: { ns: DISCOVERY_NS, id: `promotion:${runId}`, rev: append.rev },
+        realizations,
+        realizationsWritten: realizations.length,
       };
     },
   },
