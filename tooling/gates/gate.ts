@@ -2,6 +2,7 @@
 // A wave ends only when this is green (D-205 existence law).
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
+import { cpus } from "node:os";
 
 const ROOT = join(import.meta.dir, "../..");
 
@@ -96,13 +97,23 @@ try {
 } catch (e) { fail("decisions", String(e)); }
 
 // 4 · tests (gate evidence)
-const tests = await sh(["bun", "test"]);
+// Concurrency is capped by box size (D-317): past core count, worker-heavy test
+// files thrash instead of parallelizing — measured 64s green at 4-wide vs
+// 300s+ flaking at default-20 on a loaded 4-core box. Same tests, same
+// assertions, same per-test budgets (--timeout stays default; tests own theirs).
+// The cap value is recorded in status.json so any run is interpretable.
+const testMaxConc = Math.max(4, Math.min(20, cpus().length));
+const tests = await sh(["bun", "test", "--max-concurrency", String(testMaxConc)]);
 const passMatch = tests.out.match(/^\s*(\d+) pass/m);
 const failMatch = tests.out.match(/^\s*(\d+) fail/m);
 const testPass = parseInt(passMatch?.[1] ?? "0");
 const testFail = parseInt(failMatch?.[1] ?? "0");
-if (tests.code === 0 && testFail === 0) pass("tests", { pass: testPass, fail: testFail });
-else fail("tests", `${testPass} pass / ${testFail} fail`);
+// failing test names (ANSI-stripped) straight into the gate record — no more
+// mystery single-fail runs; the names are what the next action needs.
+const failingTests = [...tests.out.replace(/\x1b\[[0-9;]*m/g, "").matchAll(/\(fail\) (.+?) \[\d[\d.,]*m?s\]/g)]
+  .map((m) => m[1].trim().slice(0, 160));
+if (tests.code === 0 && testFail === 0) pass("tests", { pass: testPass, fail: testFail, maxConcurrency: testMaxConc });
+else fail("tests", `${testPass} pass / ${testFail} fail — failing: ${JSON.stringify(failingTests)}`);
 
 // 5 · attest: boot the demo composition, round-trip, recovery drill (existence proof)
 try {

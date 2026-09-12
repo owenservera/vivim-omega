@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-09-12T19:58:33.952Z",
+  "generatedAt": "2026-09-12T23:21:52.405Z",
   "repo": "vivim-omega",
   "branch": "omega",
-  "head": "c311217",
+  "head": "51b1177",
   "waves": [
     {
       "id": "Ω0",
@@ -90,7 +90,7 @@
     }
   ],
   "gate": {
-    "startedAt": "2026-09-12T19:56:58.059Z",
+    "startedAt": "2026-09-12T23:19:53.265Z",
     "checks": {
       "host-loc": {
         "ok": true,
@@ -116,18 +116,19 @@
       "decisions": {
         "ok": true,
         "detail": {
-          "rows": 35,
-          "records": 9,
+          "rows": 36,
+          "records": 10,
           "ratified": 4,
           "grandfatherBelow": 313,
           "openQuestions": {
-            "count": 5,
+            "count": 6,
             "ids": [
               313,
               314,
               315,
               316,
-              317
+              317,
+              322
             ],
             "board": "stale"
           }
@@ -136,15 +137,16 @@
       "tests": {
         "ok": true,
         "detail": {
-          "pass": 534,
-          "fail": 0
+          "pass": 542,
+          "fail": 0,
+          "maxConcurrency": 8
         }
       },
       "attest": {
         "ok": true,
         "detail": {
-          "compileMs": 87,
-          "bootMs": 293,
+          "compileMs": 67,
+          "bootMs": 240,
           "echo": true,
           "counterBump": true,
           "counterValue": {
@@ -167,27 +169,33 @@
   },
   "hostLoc": 843,
   "tests": {
-    "pass": 534,
+    "pass": 542,
     "fail": 0
   },
   "benchmarks": {
-    "at": "2026-09-11T02:27:42.745Z",
-    "bootMs": 27,
+    "at": "2026-09-12T22:21:53.721Z",
+    "bootMs": 114,
     "portRtt": {
       "n": 200,
-      "p50": 0.03,
-      "p99": 0.7,
+      "p50": 0.12,
+      "p99": 12.58,
       "unit": "ms"
     },
     "interCompartmentRtt": {
       "n": 50,
-      "p50": 0.14,
+      "p50": 0.41,
       "unit": "ms"
     },
     "envelope": {
       "rttP99Max": 50,
       "bootMax": 500,
       "unit": "ms"
-    }
+    },
+    "daemonCallRtt": {
+      "n": 50,
+      "p50": 2.42,
+      "unit": "ms"
+    },
+    "coldCliCallMs": 401
   }
 }

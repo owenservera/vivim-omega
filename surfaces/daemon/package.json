@@ -1,8 +1,9 @@
 {
-  "name": "@vivim/surfaces-cli",
+  "name": "@vivim/surfaces-daemon",
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "exports": { ".": "./src/daemon.ts" },
   "dependencies": { "@vivim/omega-shim": "workspace:*", "@vivim/omega-contracts": "workspace:*", "@vivim/omega-host": "workspace:*", "@vivim/daemon-client": "workspace:*" }
 }
 

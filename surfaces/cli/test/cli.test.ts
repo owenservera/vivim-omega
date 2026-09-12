@@ -6,6 +6,8 @@
 import { describe, test, expect } from "bun:test";
 import { mkdirSync, rmSync, existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { startDaemon, type DaemonHandle } from "../../daemon/src/daemon.ts";
+import { callDaemon, readDaemonInfo } from "@vivim/daemon-client";
 
 const CLI = join(import.meta.dir, "../src/cli.ts");
 const ECHO_SPEC = join(import.meta.dir, "fixtures/echo.json");
@@ -29,8 +31,13 @@ interface CliRun { stdout: string; stderr: string; code: number }
  */
 const SPAWN_BUDGET_MS = 30_000;
 
-async function runCli(args: string[], timeoutMs = 30_000): Promise<CliRun> {
-  const proc = Bun.spawn(["bun", "run", CLI, ...args], { stdin: "ignore", stdout: "pipe", stderr: "pipe" });
+async function runCli(args: string[], timeoutMs = 30_000, opts: { daemon?: boolean } = {}): Promise<CliRun> {
+  // --no-daemon ALWAYS in this suite (except the explicit warm-parity test below):
+  // these tests are gate evidence for the COLD path, and must never silently
+  // route warm (which would also leak a persistent daemon per temp vault).
+  // Pass { daemon: true } ONLY to deliberately exercise the warm path.
+  const fullArgs = opts.daemon || args.includes("--no-daemon") || args[0] === "daemon" ? args : [...args, "--no-daemon"];
+  const proc = Bun.spawn(["bun", "run", CLI, ...fullArgs], { stdin: "ignore", stdout: "pipe", stderr: "pipe" });
   const [stdout, stderr, code] = await Promise.all([
     new Response(proc.stdout).text(),
     new Response(proc.stderr).text(),
@@ -222,4 +229,35 @@ describe("GATE-Ω6 — CLI msg sugar over the real email composition (Ω5 wave)"
     expect(r.stdout).toContain("ok message.list@1");
     expect(r.stdout).toContain("messages");
   }, SPAWN_BUDGET_MS);
+});
+
+describe("GATE-Ω6 — CLI via warm daemon (D-322): same stdout as cold, served warm", () => {
+  test("daemon-served call prints exactly the cold shape; callsServed proves the path; --no-daemon proves cold", async () => {
+    const vault = tempVault("daemon-warm");
+    const handle: DaemonHandle = await startDaemon({ vaultDir: vault, specPath: ECHO_SPEC, idleMs: 300_000 });
+    try {
+      const info = readDaemonInfo(vault)!;
+      const servedBefore = async (): Promise<number> => {
+        const s = await callDaemon(info, "status", {}, 10000);
+        return (s.value as { daemon: { callsServed: number } }).daemon.callsServed;
+      };
+      expect(await servedBefore()).toBe(0);
+      // warm: identical stdout contract to the cold path (same op, same pretty print)
+      const warm = await runCli(["call", "echo.ping@1", '{"hello":"warm"}', "--vault", vault, "--composition", ECHO_SPEC], 30_000, { daemon: true });
+      expect(warm.code).toBe(0);
+      expect(warm.stdout).toContain("ok echo.ping@1");
+      expect(warm.stdout).toContain('"hello": "warm"');
+      expect(warm.stderr).toContain("via warm daemon"); // diagnostics ride stderr, never stdout
+      expect(await servedBefore()).toBe(1); // the daemon (not a cold boot) served it
+      // --no-daemon forces the cold path even with a live daemon present
+      const cold = await runCli(["call", "echo.ping@1", '{"hello":"cold"}', "--vault", vault, "--composition", ECHO_SPEC, "--no-daemon"]);
+      expect(cold.code).toBe(0);
+      expect(cold.stdout).toContain("ok echo.ping@1");
+      expect(cold.stderr).not.toContain("via warm daemon");
+      expect(await servedBefore()).toBe(1); // unchanged — cold boot served it
+    } finally {
+      await handle.close();
+      rmSync(vault, { recursive: true, force: true });
+    }
+  }, 60_000);
 });

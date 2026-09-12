@@ -16,10 +16,14 @@
 //
 // A surface compartment (a plugin granted stdio) is post-v1; until then surfaces
 // are workspace scripts trusted like the demo.
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import type { PortResult, PluginManifest } from "@vivim/omega-contracts";
 import { bootSurface, SurfaceBootError } from "./boot.ts";
 import type { SurfaceBoot } from "./boot.ts";
+import {
+  callDaemon, daemonStatus, ensureDaemon, stopDaemon,
+  type DaemonInfo,
+} from "@vivim/daemon-client";
 
 const REPO_ROOT = join(import.meta.dir, "..", "..", "..");
 const DEFAULT_COMPOSITION = join(REPO_ROOT, "compositions", "spine.json");
@@ -53,8 +57,9 @@ function parseArgs(argv: string[]): ParsedArgs {
   let help = false;
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i] as string;
-    if (a === "--json") { json = true; continue; }
-    if (a === "-h" || a === "--help") { help = true; continue; }
+  if (a === "--json") { json = true; continue; }
+  if (a === "-h" || a === "--help") { help = true; continue; }
+  if (a === "--no-daemon") { flags["no-daemon"] = "1"; continue; }
     if (VALUE_FLAGS.has(a)) {
       const v = argv[i + 1];
       if (v === undefined || v.startsWith("--")) usageError(`flag ${a} requires a value`);
@@ -88,11 +93,13 @@ commands:
   msg list [json-args]             sugar for message.list@1
   msg search <query>               sugar for message.search@1
   status                           router status JSON
+  daemon start|stop|status         warm-path daemon for this vault (start reuses a live one)
 
 flags:
   --vault <dir>            vault directory (default: ${DEFAULT_VAULT})
   --composition <file>     composition spec to compile + boot (default: compositions/spine.json)
   --recipe <file>          boot an already-compiled recipe instead of a spec
+  --no-daemon              always cold-boot in this process (skip the warm daemon path)
   --deadline <ms>          per-call port deadline (default: ${DEFAULT_DEADLINE_MS})
   --consent <consentId>    (call) grant the consent first, then perform the call — one process
   --json                   machine-readable single JSON document on stdout
@@ -169,7 +176,8 @@ CONSENT REQUIRED — the law gate wants an explicit user grant for this op.
 interface CallCmd { kind: "call"; op: string; payload: unknown; consentId?: string; argsRaw?: string }
 interface ConsentCmd { kind: "consent"; consentId: string }
 interface MsgCmd { kind: "msg"; sub: "send" | "list" | "search"; payload: unknown; query?: string; consentId?: string }
-type Command = CallCmd | ConsentCmd | MsgCmd | { kind: "plugins" } | { kind: "status" };
+interface DaemonCmd { kind: "daemon"; sub: "start" | "stop" | "status" }
+type Command = CallCmd | ConsentCmd | MsgCmd | DaemonCmd | { kind: "plugins" } | { kind: "status" };
 
 function parseDeadline(f: Record<string, string>): number {
   const raw = f["deadline"];
@@ -203,6 +211,12 @@ function parseCommand(positionals: string[], flags: Record<string, string>): Com
     case "status":
       if (rest.length > 0) usageError("status takes no arguments");
       return { kind: "status" };
+    case "daemon": {
+      const sub = rest[0];
+      if (sub !== "start" && sub !== "stop" && sub !== "status") usageError("daemon requires a subcommand: daemon start|stop|status");
+      if (rest.length > 1) usageError("daemon takes exactly one subcommand");
+      return { kind: "daemon", sub };
+    }
     case "call": {
       const op = rest[0];
       if (!op) usageError("call requires an op: call <op> [json-args]");
@@ -257,7 +271,7 @@ interface CompartmentRow {
   routedOps: string[];
 }
 
-function compartmentRows(boot: SurfaceBoot): CompartmentRow[] {
+function compartmentRows(boot: BootView): CompartmentRow[] {
   const st = boot.host.router.status();
   const compartments = st.compartments as Record<string, { state?: string }>;
   const rows: CompartmentRow[] = [];
@@ -276,7 +290,7 @@ function compartmentRows(boot: SurfaceBoot): CompartmentRow[] {
   return rows;
 }
 
-async function cmdPlugins(boot: SurfaceBoot, json: boolean): Promise<number> {
+async function cmdPlugins(boot: BootView, json: boolean): Promise<number> {
   const st = boot.host.router.status();
   const rows = compartmentRows(boot);
   if (json) {
@@ -298,7 +312,7 @@ async function cmdPlugins(boot: SurfaceBoot, json: boolean): Promise<number> {
   return 0;
 }
 
-async function cmdCall(boot: SurfaceBoot, cmd: CallCmd, ctx: RunCtx, json: boolean): Promise<number> {
+async function cmdCall(boot: BootView, cmd: CallCmd, ctx: RunCtx, json: boolean): Promise<number> {
   const deadlineMs = parseDeadline(ctx.flags);
   // optional one-shot consent ceremony (same process): grant first, then call.
   if (cmd.consentId) {
@@ -317,7 +331,7 @@ async function cmdCall(boot: SurfaceBoot, cmd: CallCmd, ctx: RunCtx, json: boole
   return printCallResult({ ...ctx, flags }, cmd.op, r, ms, json, cmd.consentId ? { consentGranted: cmd.consentId } : undefined);
 }
 
-async function cmdConsent(boot: SurfaceBoot, cmd: ConsentCmd, ctx: RunCtx, json: boolean): Promise<number> {
+async function cmdConsent(boot: BootView, cmd: ConsentCmd, ctx: RunCtx, json: boolean): Promise<number> {
   const deadlineMs = parseDeadline(ctx.flags);
   const r = await boot.host.router.callAsRoot("law.consent.grant@1", { consentId: cmd.consentId }, deadlineMs);
   if (!r.ok && r.detail?.includes("no routed implementation")) {
@@ -338,7 +352,7 @@ function pickOp(routed: string[], base: string): string | undefined {
   return routed.find((op) => op.startsWith(`${base}@`));
 }
 
-async function cmdMsg(boot: SurfaceBoot, cmd: MsgCmd, ctx: RunCtx, json: boolean): Promise<number> {
+async function cmdMsg(boot: BootView, cmd: MsgCmd, ctx: RunCtx, json: boolean): Promise<number> {
   const routed = boot.host.router.status().routedOps;
   const messageOps = routed.filter((op) => op.startsWith("message."));
   if (messageOps.length === 0) {
@@ -371,11 +385,116 @@ async function cmdMsg(boot: SurfaceBoot, cmd: MsgCmd, ctx: RunCtx, json: boolean
   return printCallResult(ctx, op, r, Date.now() - t0, json, { command: "msg", sub: cmd.sub, ...(cmd.consentId ? { consentGranted: cmd.consentId } : {}) });
 }
 
-async function cmdStatus(boot: SurfaceBoot, json: boolean): Promise<number> {
+async function cmdStatus(boot: BootView, json: boolean): Promise<number> {
   // status is JSON by contract (pretty by default, compact with --json)
   const st = boot.host.router.status();
   writeOut(json ? JSON.stringify(st) : JSON.stringify(st, null, 2) + "\n");
   return 0;
+}
+
+async function cmdDaemon(cmd: DaemonCmd, ctx: RunCtx, json: boolean): Promise<number> {
+  const vault = resolve(ctx.vault);
+  if (cmd.sub === "stop") {
+    const stopped = await stopDaemon(vault);
+    if (json) writeOut(JSON.stringify({ command: "daemon", sub: "stop", stopped }));
+    else writeOut(stopped ? `daemon stopped for vault ${vault}\n` : `no live daemon for vault ${vault}\n`);
+    return stopped ? 0 : 1;
+  }
+  if (cmd.sub === "status") {
+    const st = await daemonStatus(vault);
+    if (json) writeOut(JSON.stringify({ command: "daemon", sub: "status", ...st }));
+    else if (!st.live) writeOut(`no live daemon for vault ${vault}\n`);
+    else writeOut(`daemon live — pid ${st.info!.pid} port ${st.info!.port} calls ${(st.detail as { callsServed?: number }).callsServed ?? "?"} spec ${st.info!.specPath ?? "(recipe)"}\n`);
+    return st.live ? 0 : 1;
+  }
+  // start: ensure (reuses a live daemon when one answers) and report it
+  const specPath = ctx.flags["composition"] ? resolve(ctx.flags["composition"]) : undefined;
+  const recipePath = ctx.flags["recipe"] ? resolve(ctx.flags["recipe"]) : undefined;
+  const info = await ensureDaemon(vault, { ...(specPath ? { specPath } : {}), ...(recipePath ? { recipePath } : {}) });
+  if (!info) {
+    if (json) writeOut(JSON.stringify({ command: "daemon", sub: "start", started: false }));
+    else process.stderr.write("daemon failed to start — use the command without `daemon start` for a cold boot\n");
+    return 1;
+  }
+  if (json) writeOut(JSON.stringify({ command: "daemon", sub: "start", started: true, port: info.port, pid: info.pid }));
+  else writeOut(`daemon live — pid ${info.pid} port ${info.port} for vault ${vault}\n`);
+  return 0;
+}
+
+// ---- warm path: thin client over a daemon, cold-boot fallback ------------------
+// The remote facade satisfies the same SurfaceBoot shape the command handlers
+// already program against: router.callAsRoot + router.status + recipe +
+// manifests + shutdown. Differences, all documented:
+// - status() is a snapshot taken once per invocation (no compartment churns
+//   mid-command in any CLI flow — all mutations here are single calls whose
+//   results print directly, never re-reads of status).
+// - shutdown() is a no-op: the daemon outlives the CLI by design (idle timeout
+//   owns its lifetime, `daemon stop` ends it explicitly).
+//
+// Both SurfaceBoot (cold) and RemoteBoot (warm) satisfy BootView — the command
+// handlers program against BootView and never know which path served them.
+export interface BootView {
+  host: {
+    router: {
+      callAsRoot(op: string, payload?: unknown, deadlineMs?: number): Promise<PortResult>;
+      status(): { compartments: unknown; generation: number; routedOps: string[] };
+    };
+    recipe: { name: string; composition: Array<{ id: string; bootPhase: number; grant: { capabilities: string[]; contracts: string[] } }> };
+    manifests: Map<string, PluginManifest>;
+    shutdown(): Promise<void>;
+  };
+  report: { booted: boolean; source: string; cleanedStaleSwap: boolean };
+  specPath: string | null;
+}
+interface RemoteBoot extends BootView {}
+
+async function tryDaemonBoot(
+  vault: string, opts: { composition?: string; recipe?: string; defaultComposition: string },
+): Promise<RemoteBoot | null> {
+  const vaultDir = resolve(vault);
+  // Mirror the cold path's spec resolution exactly (default composition when
+  // none is given) so warm and cold always agree on what "the composition" is.
+  const specPath = opts.composition ? resolve(opts.composition) : undefined;
+  const recipePath = opts.recipe ? resolve(opts.recipe) : undefined;
+  const info = await ensureDaemon(vaultDir, {
+    ...(specPath ? { specPath } : !recipePath ? { specPath: resolve(opts.defaultComposition) } : {}),
+    ...(recipePath ? { recipePath } : {}),
+  });
+  if (!info) return null;
+  const use = await callDaemon(info, "use", {
+    ...(specPath ? { specPath } : !recipePath ? { specPath: resolve(opts.defaultComposition) } : {}),
+    ...(recipePath ? { recipePath } : {}),
+  }, 30000).catch(() => null);
+  if (!use || !use.ok) return null;
+  const st = await callDaemon(info, "status", {}, 10000).catch(() => null);
+  if (!st || !st.ok) return null;
+  const v = st.value as {
+    router: { compartments: unknown; generation: number; routedOps: string[] };
+    recipe: RemoteBoot["host"]["recipe"];
+    manifests: Record<string, { version: string; description: string }>;
+  };
+  const manifests = new Map<string, PluginManifest>();
+  for (const [id, m] of Object.entries(v.manifests)) {
+    manifests.set(id, { manifestVersion: "1", id, version: m.version, description: m.description } as PluginManifest);
+  }
+  const snapshot = v.router;
+  return {
+    host: {
+      router: {
+        callAsRoot: async (op: string, payload?: unknown, deadlineMs?: number): Promise<PortResult> => {
+          const r = await callDaemon(info, "call", { op, payload: payload ?? null, deadlineMs }, (deadlineMs ?? 5000) + 5000);
+          if (!r.ok) throw new Error(`daemon call failed: ${r.error}: ${r.detail ?? ""}`);
+          return (r.value as { result: PortResult }).result;
+        },
+        status: () => snapshot,
+      },
+      recipe: v.recipe,
+      manifests,
+      shutdown: async () => {},
+    },
+    report: { booted: true, source: "daemon", cleanedStaleSwap: false },
+    specPath: opts.composition ? resolve(opts.composition) : null,
+  };
 }
 
 // ---- main -------------------------------------------------------------------------
@@ -391,20 +510,41 @@ async function main(): Promise<number> {
   const vault = flags["vault"] ?? DEFAULT_VAULT;
   const ctx: RunCtx = { vault, flags };
 
-  let boot: SurfaceBoot;
-  try {
-    boot = await bootSurface(vault, {
+  // `daemon` manages the warm path itself — it never boots a composition.
+  if (cmd.kind === "daemon") return cmdDaemon(cmd, ctx, json);
+
+  let boot: BootView;
+  if (flags["no-daemon"] === undefined) {
+    const warm = await tryDaemonBoot(vault, {
       ...(flags["composition"] ? { composition: flags["composition"] } : {}),
       ...(flags["recipe"] ? { recipe: flags["recipe"] } : {}),
       defaultComposition: DEFAULT_COMPOSITION,
-    });
-  } catch (e) {
-    if (e instanceof SurfaceBootError) {
-      process.stderr.write(JSON.stringify({ booted: false, vault, report: e.report }) + "\n");
-      return 1;
+    }).catch(() => null);
+    if (warm) {
+      process.stderr.write("[vivim] via warm daemon (cold fallback with --no-daemon)\n");
+      boot = warm;
+    } else {
+      boot = await coldBoot();
     }
-    process.stderr.write(`boot failed: ${String(e)}\n`);
-    return 1;
+  } else {
+    boot = await coldBoot();
+  }
+
+  async function coldBoot(): Promise<SurfaceBoot> {
+    try {
+      return await bootSurface(vault, {
+        ...(flags["composition"] ? { composition: flags["composition"] } : {}),
+        ...(flags["recipe"] ? { recipe: flags["recipe"] } : {}),
+        defaultComposition: DEFAULT_COMPOSITION,
+      });
+    } catch (e) {
+      if (e instanceof SurfaceBootError) {
+        process.stderr.write(JSON.stringify({ booted: false, vault, report: e.report }) + "\n");
+        process.exit(1);
+      }
+      process.stderr.write(`boot failed: ${String(e)}\n`);
+      process.exit(1);
+    }
   }
 
   let code: number;
@@ -414,6 +554,7 @@ async function main(): Promise<number> {
     case "consent": code = await cmdConsent(boot, cmd, ctx, json); break;
     case "msg": code = await cmdMsg(boot, cmd, ctx, json); break;
     case "status": code = await cmdStatus(boot, json); break;
+    case "daemon": code = await cmdDaemon(cmd, ctx, json); break;
   }
 
   await boot.host.shutdown();
@@ -424,3 +565,4 @@ main().then((code) => process.exit(code)).catch((e) => {
   process.stderr.write(`fatal: ${String(e)}\n`);
   process.exit(1);
 });
+

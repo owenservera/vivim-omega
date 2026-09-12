@@ -50,6 +50,7 @@ bun run surfaces/cli/src/cli.ts <command> [args] --vault <dir> [--composition <f
 | `consent <consentId>` | grants a pending consent through `law.consent.grant@1` |
 | `msg send\|list\|search` | sugar for the `message.*` contracts — only if an email provider (provider.email.file) is routed; otherwise prints `not in composition` |
 | `status` | the router status JSON |
+| `daemon start\|stop\|status` | warm-path daemon for this vault (start reuses a live one); `--no-daemon` forces cold boot |
 
 Exit codes: `0` ok · `1` refused/failed/boot-failed (JSON report on stderr) ·
 `2` usage error (all argument validation happens *before* the composition boots).
@@ -88,6 +89,25 @@ bun run surfaces/mcp/src/mcp.ts --vault <dir> [--composition <file>]
 
 stdout is the protocol stream and nothing else may ever write to it: the surface
 redirects host/compartment log lines to stderr before booting.
+
+## The daemon warm path (`surfaces/daemon`, D-322)
+
+One long-lived host process per vault, spoken to over TCP 127.0.0.1 — the CLI's
+expensive half (process start, compile, verify, worker spawn) happens once here
+instead of per invocation. Same root-principal authority as the CLI (every call
+is `router.callAsRoot` inside the daemon); same gate on every call.
+
+- `daemon start|stop|status` (CLI) manages the daemon for a `--vault`. Start
+  reuses a live daemon; the CLI otherwise boots cold automatically unless
+  `--no-daemon` is given. Cold fallback is silent on stdout (a stderr note names it).
+- Trust: the daemon secret lives in `<vault>/daemon.json` — anyone who can read
+  the vault dir already holds its root keys, so no new trust assumption is made.
+- Staleness: every request restats the running composition's plugin sources
+  (mtime+size, never a content rehash) and reboots on drift; a different spec or
+  recipe always reboots. Idle timeout (default 10 min) bounds lifetime.
+- CLI output is byte-identical warm vs cold (gated by test) — the warm path is a
+  performance layer, never a behavior fork. `status()` is a per-invocation
+  snapshot (no compartment churns mid-command in any CLI flow).
 
 ## The credential law
 
