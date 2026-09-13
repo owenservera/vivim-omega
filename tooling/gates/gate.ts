@@ -47,7 +47,7 @@ else fail("host-loc", `µhost is ${hostLoc} LOC (budget 1000) — move the creep
 // layout drift → fail, not skip.
 try {
   const legacy = [
-    { name: "vivim-final-enhanced", pin: "abb6add" },
+    { name: "vivim-final-enhanced", pin: "afebe00" },
     { name: "vivim-final-program", pin: "4a5eb84" },
   ];
   const located = legacy.map((repo) => ({
