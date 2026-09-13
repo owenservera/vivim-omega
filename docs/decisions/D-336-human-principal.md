@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -35,3 +35,4 @@ arrives, or sessions get bolted on outside the law gate.
 
 - D-310/D-325 (per-principal forbidden overlay, vault-journaled) + D-315 combination rule (identity.state × contract.state pattern to extend).
 - `Migration/M-TRIAGE-01.md` T-11/T-16 (session shapes + confirmation semantics).
+- Ratification: owner directive 2026-09-13 (proceed on the record's recommendation); landed PROPOSED in c09c140; full `bun run omega:gate` GREEN on c09c140 (612/612, host 984/1000) — ratified on that evidence.

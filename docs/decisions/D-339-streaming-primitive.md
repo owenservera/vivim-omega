@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -36,3 +36,4 @@ the host budget.
 
 - `Migration/M-TRIAGE-01.md` T-04 (sse-parser harvest) + T-03 (stream-config shapes).
 - D-329 placement precedent (interface/hook split held the wall at 984/1000) + D-322 additive-with-fallback precedent.
+- Ratification: owner directive 2026-09-13 (proceed on the record's recommendation); landed PROPOSED in c09c140; full `bun run omega:gate` GREEN on c09c140 (612/612, host 984/1000) — ratified on that evidence. Scope ratified; `echo.stream@1` falsifier still pending (M1 engineering).

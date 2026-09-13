@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -35,3 +35,4 @@ the pilot, not during it.
 
 - D-216 (determinism law) + D-323 (`resolve.classify@1` + PROBABILISTIC branch, tested) + D-303 (confidence ranks, proof gates).
 - `Migration/M-TRIAGE-01.md` T-09/T-10 (resolver split + capability taxonomy input).
+- Ratification: owner directive 2026-09-13 (proceed on the record's recommendation); landed PROPOSED in c09c140; full `bun run omega:gate` GREEN on c09c140 (612/612, host 984/1000) — ratified on that evidence.

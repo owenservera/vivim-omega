@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -36,3 +36,4 @@ but the answer can be a decision with an explicit ceiling, not new machinery.
 - `Migration/M-TRIAGE-01.md` T-03/T-11 (17 harvestable provider/session/conversation shapes; Prisma runtime REMOVE).
 - `docs/VAULT-NAMESPACES.md` open question (email retention undecided, no pressure yet) — this record scopes the pilot under it.
 - Vault scale posture is gate-proven every run (attest round-trip + FTS search over the shared fixture DB).
+- Ratification: owner directive 2026-09-13 (proceed on the record's recommendation); landed PROPOSED in c09c140; full `bun run omega:gate` GREEN on c09c140 (612/612, host 984/1000) — ratified on that evidence.

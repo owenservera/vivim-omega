@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -36,3 +36,4 @@ very mechanism it claims to prove.
 
 - `contracts/src/manifest.ts` (`ProviderClass` reserves the member; nothing implements it) + `plugins/vivim-providers` registry (class-typed, status-carrying).
 - `Migration/M-TRIAGE-01.md` T-05/T-06/T-07/T-08 (§3 pilot-provider ordering).
+- Ratification: owner directive 2026-09-13 (proceed on the record's recommendation); landed PROPOSED in c09c140; full `bun run omega:gate` GREEN on c09c140 (612/612, host 984/1000) — ratified on that evidence. Scope ratified; implementation falsifier still pending (M0 engineering).
