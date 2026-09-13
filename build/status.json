@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-09-13T11:19:17.510Z",
+  "generatedAt": "2026-09-13T12:46:51.919Z",
   "repo": "vivim-omega",
   "branch": "omega",
-  "head": "10f9c07",
+  "head": "ce8e25c",
   "waves": [
     {
       "id": "Ω0",
@@ -90,12 +90,12 @@
     }
   ],
   "gate": {
-    "startedAt": "2026-09-13T11:17:13.873Z",
+    "startedAt": "2026-09-13T12:43:58.403Z",
     "checks": {
       "host-loc": {
         "ok": true,
         "detail": {
-          "loc": 950,
+          "loc": 984,
           "budget": 1000
         }
       },
@@ -118,26 +118,17 @@
         "detail": {
           "rows": 46,
           "records": 20,
-          "ratified": 5,
+          "ratified": 14,
           "grandfatherBelow": 313,
           "openQuestions": {
-            "count": 15,
+            "count": 6,
             "ids": [
               313,
               314,
               315,
               316,
               317,
-              323,
-              324,
-              325,
-              326,
-              327,
-              328,
-              329,
-              330,
-              331,
-              332
+              329
             ],
             "board": "stale"
           }
@@ -194,7 +185,7 @@
       "tests": {
         "ok": true,
         "detail": {
-          "pass": 601,
+          "pass": 612,
           "fail": 0,
           "maxConcurrency": 8
         }
@@ -202,8 +193,8 @@
       "attest": {
         "ok": true,
         "detail": {
-          "compileMs": 43,
-          "bootMs": 168,
+          "compileMs": 68,
+          "bootMs": 221,
           "echo": true,
           "counterBump": true,
           "counterValue": {
@@ -224,23 +215,23 @@
       }
     }
   },
-  "hostLoc": 950,
+  "hostLoc": 984,
   "tests": {
-    "pass": 601,
+    "pass": 612,
     "fail": 0
   },
   "benchmarks": {
-    "at": "2026-09-12T22:21:53.721Z",
-    "bootMs": 114,
+    "at": "2026-09-13T12:39:39.856Z",
+    "bootMs": 166,
     "portRtt": {
       "n": 200,
-      "p50": 0.12,
-      "p99": 12.58,
+      "p50": 0.17,
+      "p99": 30.66,
       "unit": "ms"
     },
     "interCompartmentRtt": {
       "n": 50,
-      "p50": 0.41,
+      "p50": 0.86,
       "unit": "ms"
     },
     "envelope": {
@@ -250,9 +241,9 @@
     },
     "daemonCallRtt": {
       "n": 50,
-      "p50": 2.42,
+      "p50": 7.58,
       "unit": "ms"
     },
-    "coldCliCallMs": 401
+    "coldCliCallMs": 655
   }
 }

@@ -34,29 +34,7 @@ in the plan.
 ## Evidence
 
 - Spec: `upgrades/OMEGA-FINAL-UPGRADE-PLAN.md` §5 (V2.5-B); dependency chain from `OMEGA-19X-LATENCY-DESIGN.md` (Upgrade B).
-- DEFERRED BY THE WALL (not by value): the in-PR LOC count decides placement
-  (Options row above), and the count forbids landing. `host/src` stands at
-  949/1000 after D-331; the minimal honest pool (generic-bootstrap entry +
-  checkout/checkin/refill/stats + `spawnCompartment` pool-aware checkout with
-  cold fallback) is ~62 lines → ~1011/1000, a G11 breach. Compartments are
-  host-owned, so no compliant placement exists outside `host/src`. Cramming it
-  to 997 would obey the letter while violating the wall's spirit ("a wall, not
-  a budget") — refused explicitly.
-- Measurements (the value case, for the resequencing decision): worker-thread
-  creation p50 ~26ms (n=10, isolated bench); dormant-first-touch `echo.ping@1`
-  78–83ms end-to-end (thread + import + init) with D-331 live and no pool.
-  Lazy + daemon already capture most of B's single-tenant value; the pool's
-  remaining prize is first-touch thread time (~26ms/checkout) at multi-tenant
-  spawn churn — real, but not worth a wall breach today.
-- Design (frozen for the resequencing PR): pool of generic-bootstrap isolates
-  (`assign {entry}` → dynamic import → `assigned` ack); checkout assigns,
-  checkin TERMINATES (never recycle — a recycled worker needs the adversarial
-  bleed proof, a fresh isolate needs none) + background refill; cold fallback
-  when empty; stats (checkouts/hits/cold/refills). The adversarial
-  state-bleed suite (no `globalThis`/closure/timer leakage) stays the
-  ship-blocker, not a follow-up.
-- Resequencing condition (either): (a) owner amends G11 (wall relief is an
-  owner decision, not an engineering shortcut), or (b) future host refactors
-  reclaim ≥70 LOC of honest budget. Until then D-329 stays PROPOSED with
-  design + data — vocabulary with a design is a plan, not a relapse (no
-  `contracts/` surface was added for it, so D-332 stays silent correctly).
+- Placement (how the wall held): ~34 lines in `host/src` (hook interface + setter + `checkoutCompartment` + `wrapWorker` extract in `worker.ts`; two call-site swaps in `boot.ts`) → host 984/1000, nothing trimmed. The pool proper — idle queue, refill-to-N bound, generic `poolboot.ts` bootstrap (`assign {entry}` → dynamic import → `assigned` ack), stats — lives in `surfaces/daemon` (the process lifecycle the pool belongs inside). The host never imports surfaces: the pool is INJECTED via `setPoolHook`, mirroring the `onDemandSpawn` injection. No compliant placement existed *inside* `host/src` for the whole pool; splitting interface (host) from implementation (daemon) is what fits.
+- History note: this record previously deferred landing (949 + ~62 > 1000 for a host-resident pool). The deferral was correct for that placement and is superseded by this one — the wall was met by placement, not by cramming (host delta auditable in the land commit).
+- `surfaces/daemon/test/pool.test.ts`: mechanics (size-0/shutdown nulls, assign-failure refill, entry-per-assignment init→ready, 6-way concurrent soak) + the ADVERSARIAL ship-blocker (tenant pollutes `globalThis`/timers/closures/module cache → terminated → same slot serves inspector → all four channels pristine + distinct threadIds) + checkout-latency distribution + daemon integration (pooled hits serve boot + first touch, status reports stats, poolSize 0 disables honestly). `host/test/pool.test.ts`: hook-absent/throwing/null all degrade to cold spawn; plain `spawnCompartment` untouched.
+- Falsifier run: pooled checkout n=12 min 8.1ms p50 ~52–60ms max ~105–163ms vs cold thread-spawn p50 26.5ms on record (numbers in `BENCHMARKS.md`); full `bun run omega:gate` pending at record time (ratification flips on the land-commit SHA).

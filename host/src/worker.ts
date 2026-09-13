@@ -61,8 +61,7 @@ export interface CompartmentHandle {
   terminate(): Promise<void>;
 }
 
-export function spawnCompartment(pluginId: string, sourceDir: string, entry: string): CompartmentHandle {
-  const worker = new Worker(join(sourceDir, entry));
+export function wrapWorker(pluginId: string, worker: Worker): CompartmentHandle {
   const handle: CompartmentHandle = {
     pluginId,
     state: "booting",
@@ -99,4 +98,39 @@ export function spawnCompartment(pluginId: string, sourceDir: string, entry: str
     },
   };
   return handle;
+}
+
+export function spawnCompartment(pluginId: string, sourceDir: string, entry: string): CompartmentHandle {
+  return wrapWorker(pluginId, new Worker(join(sourceDir, entry)));
+}
+
+/** Pool hook (D-329): the warm pool lives OUTSIDE host/src (the daemon surface
+ *  owns it) — the host never imports surfaces, so the pool is INJECTED here.
+ *  acquire() hands over a parked generic isolate assigned to entryAbs, or null
+ *  (pool empty/shut down/assign failed) for cold fallback. Assignment is
+ *  single-use: the host terminates assigned workers via the handle (never
+ *  recycled), so pool slots turn over but isolates never do — B2 holds
+ *  structurally, and correctness never depends on the pool. */
+export interface WorkerPoolHook {
+  acquire(entryAbs: string): Promise<Worker | null>;
+}
+
+let poolHook: WorkerPoolHook | null = null;
+
+/** Install (or clear) the pool hook. Module-global by necessity: compartments
+ *  spawn from boot paths with no shared owner. Daemon surfaces set it at
+ *  startup and clear it on shutdown; tests set stub hooks per case. */
+export function setPoolHook(hook: WorkerPoolHook | null): void {
+  poolHook = hook;
+}
+
+/** Pool-aware checkout: a parked isolate when the pool has one (plugin code
+ *  still loads per assignment — the isolate is pooled, never the code), cold
+ *  spawn otherwise. Any hook failure degrades to cold, never to an error. */
+export async function checkoutCompartment(pluginId: string, sourceDir: string, entry: string): Promise<CompartmentHandle> {
+  if (poolHook) {
+    const parked = await poolHook.acquire(join(sourceDir, entry)).catch(() => null);
+    if (parked) return wrapWorker(pluginId, parked);
+  }
+  return spawnCompartment(pluginId, sourceDir, entry);
 }

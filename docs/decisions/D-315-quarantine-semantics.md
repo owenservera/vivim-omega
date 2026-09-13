@@ -23,7 +23,7 @@ G2 warns about). Carried forward through two assessments unanswered.
 
 ## Decision
 
-**Decision:** (a) Finish current task, refuse new calls — decided during B1a (D-327): `agent.exec@1` checks contract state once at admission (active → admit; quarantined/otherwise → REFUSED, no new calls) and admitted calls run to settlement with the outcome ledgered (re-checked post-settle only to annotate `quarantinedMidFlight`, never to abort — there is no mid-flight abort path by construction). RATIFICATION awaits B1b widening evidence or owner confirmation; the status stays PROPOSED until then.
+**Decision:** (a) Finish current task, refuse new calls — CONFIRMED by B1a evidence (D-327 RATIFIED; the code-first bet paid off — writing `agent.exec@1` with the question live revealed what the invariant needs). What running it showed, beyond the three original options: admission is *version-pinned*, not merely state-gated — after a rollback quarantines v2 and reactivates v1, the head IS active, so a pure "contract active?" check would admit the quarantined version's agents; the pinned-version match (`identity.behaviorVersion === head.version`) is what actually refuses them. The ledger proves both halves: every attempt appends exactly one ns `agent` row carrying `admittedContractRev` + `quarantinedMidFlight` (completion-then-refusal is auditable per attempt, not per agent). There is no mid-flight abort path BY CONSTRUCTION (admit → settle → annotate has no abort primitive to call — and (b) stays rejected: killing settled vault writes half-done has no revocation primitive in v0). Honest boundary: identity terminal states (`quarantined`/`retired`) have no live producer in v0 — only contracts move — so that half of the combination rule is defense-in-depth, not exercised machinery.
 
 ## Consequences
 
@@ -32,10 +32,11 @@ G2 warns about). Carried forward through two assessments unanswered.
 - Why not (c) migrate: state transfer between contract versions has no machinery and murky audit ownership (which version owns the outcome?).
 - The first B1b PR that widens beyond one op MUST present settlement evidence for re-ratification, or the gate's decisions stage should be extended to block it.
 - `agent.describe@1` output exposes quarantine state via the resolved contract's `state` (already returned alongside the identity) — the combination rule (identity.state × contract.state → admittable?) is: admittable iff contract is `active` and identity is not `quarantined`/`retired`.
-- Status stays PROPOSED (TBD resolved to (a), owner confirmation pending).
+- B1a evidence for ratification: `plugins/vivim-agent/test/exec.test.ts` "D-315 finish-then-halt" (v2 agent REFUSED post-rollback with the version-mismatch reason; v1 agent still admitted and settled OK) + the ledger assertions on every exec test (`admittedContractRev`, `quarantinedMidFlight: false` on sequential calls) + `decideExecAdmission`/`execQuarantinedMidFlight` pure tables in `src/agent.ts` (terminal states, version skew, rev drift each pinned). Full `bun run omega:gate` GREEN 2026-09-13 (612/612 — ratification flips on the land-commit SHA).
 
 ## Evidence
 
 - `ARCHITECTURE-NEXT-STEPS.md` §3 G2/B-phase, §7 Q3 (elevated to blocker).
 - `upgrades/New/PROPOSED-NEXT-STEPS.md` §3 + §8 Q3 (concurs on elevation, argues code-first).
 - B1a decision evidence: `plugins/vivim-agent/src/index.ts` `agent.exec@1` (admission check + settle-and-ledger, no abort path) + `plugins/vivim-agent/test/exec.test.ts` (refuse-new + finish-and-annotate); `upgrades/OMEGA-FINAL-UPGRADE-PLAN.md` §5 (V2.2).
+- B1a confirmation evidence (this ratification): the version pin — not the state gate — does the refusing (rollback-reactivate case); ledger-per-attempt with `admittedContractRev` (audit pin) + `quarantinedMidFlight` (admission-once proof); identity-terminal half noted as unexercised defense-in-depth above. No fourth option emerged from running it.

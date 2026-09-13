@@ -7,7 +7,7 @@ import { generateRootKey, loadRootKeyPem } from "./canon.ts";
 import { verifyRecipeSignature, verifyCompositionInvariants, verifyEntryWithRoot } from "./recipe.ts";
 import { buildRoutingTable } from "./ports.ts";
 import { PortRouter } from "./ports.ts";
-import { spawnCompartment } from "./worker.ts";
+import { checkoutCompartment } from "./worker.ts";
 
 export interface BootedHost {
   recipe: Recipe;
@@ -61,7 +61,7 @@ export async function bootComposition(recipe: Recipe, buildDir: string, vaultDir
   router.onDemandSpawn = async (id: string): Promise<void> => {
     const d = router.peekDormant(id);
     if (!d) return;
-    const handle = spawnCompartment(d.entry.id, d.srcDir, d.entryFile);
+    const handle = await checkoutCompartment(d.entry.id, d.srcDir, d.entryFile);
     router.register(d.entry, d.manifest, handle, d.tokens);
     handle.post({ type: "init", manifest: d.manifest, tokens: d.tokens, capabilities: d.entry.grant.capabilities, ...(d.config ? { config: d.config } : {}) });
     await waitForActive(router, id);
@@ -73,7 +73,7 @@ export async function bootComposition(recipe: Recipe, buildDir: string, vaultDir
     const srcDir = resolve(buildDir, e.source);
     const tokens = router.mintTokensFor(e);
     if (e.bootPhase === 0) {
-      const handle = spawnCompartment(e.id, srcDir, m.entry);
+      const handle = await checkoutCompartment(e.id, srcDir, m.entry);
       router.register(e, m, handle, tokens);
       handle.post({ type: "init", manifest: m, tokens, capabilities: e.grant.capabilities, ...(e.config ? { config: e.config } : {}) });
       eager.push(e.id);
