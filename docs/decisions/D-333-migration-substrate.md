@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -39,3 +39,4 @@ scaffolded and will otherwise keep executing the wrong target.
 - `Migration/OMEGA-LEGACY-MIGRATION-PLAN.md` §§0–2 (ratification target + inventory salvage).
 - D-210 register row (backfill anticipated after the core exists; old repos frozen mines).
 - Gate green on the land commit (SHA cited at ratification).
+- Landing SHAs: records + index rows + board landed PROPOSED in ff762be; full `bun run omega:gate` GREEN 2026-09-13 on ff762be (612/612, host 984/1000, fresh-tree pass) — ratified on that evidence.

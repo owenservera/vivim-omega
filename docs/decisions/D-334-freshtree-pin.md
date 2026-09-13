@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -35,4 +35,5 @@ any change under review (exactly the M-plan §1 warning).
 
 - On-disk frozen state: enhanced at `afebe00`, program at `4a5eb84`, both `status --porcelain` clean; `abb6add` is not a valid object name in the enhanced lineage.
 - Pin edit in `tooling/gates/gate.ts` (land commit).
+- Landing SHAs: record + pin edit landed PROPOSED in ff762be; full `bun run omega:gate` GREEN 2026-09-13 on ff762be (612/612 — the `fresh-tree` stage passes with the new pin, both trees clean at their pins) — ratified on that evidence.
 - Gate green on the land commit (SHA cited at ratification).
