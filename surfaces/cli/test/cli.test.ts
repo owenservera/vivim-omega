@@ -220,8 +220,14 @@ describe("GATE-Ω6 — CLI msg sugar over the real email composition (Ω5 wave)"
     expect(sent.stdout).toContain("granted");
     expect(sent.stdout).toContain("messageId");
 
-    // search (READ, ungated) finds the message just sent through the sugar
-    const found = await runCli(["msg", "search", "surface sugar", "--vault", tempVault("msg-search"), "--composition", EMAIL_SPEC]);
+    // search (READ, ungated) finds the message just sent through the sugar.
+    // NOTE: fixtures/email.json pins vivim.vault dataDir to the shared
+    // /tmp/omega-cli-test/email-fixture/vault-data (not per-case tempVault),
+    // so the DB accumulates every historic run and message.search caps at 50.
+    // Searching the generic body ("surface sugar") therefore truncates the
+    // newest row once history exceeds the cap. Search the unique subject in
+    // the SAME vault instead — one exact hit, history-proof.
+    const found = await runCli(["msg", "search", subject, "--vault", vault, "--composition", EMAIL_SPEC]);
     expect(found.code).toBe(0);
     expect(found.stdout).toContain(subject);
   }, SPAWN_BUDGET_MS);
