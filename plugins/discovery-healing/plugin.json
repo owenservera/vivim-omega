@@ -11,7 +11,7 @@
         "kind": "engine",
         "id": "discovery.heal",
         "version": "1",
-        "doc": "discovery.heal@1 {contractEvidence, freshObservation, candidate, probes} → healing report. READ-class: engine contributions carry no risk attribute (risk is CONTRACT-kind declared data, per the pinned manifest law); this op mutates nothing except the journaled vault event, and the actual install is a separate user-signed recipe amendment."
+        "doc": "discovery.heal@1 {contractEvidence, freshObservation, candidate, probes, provider?, archetypeSlug?} → healing report. READ-class: engine contributions carry no risk attribute (risk is CONTRACT-kind declared data, per the pinned manifest law); this op mutates nothing except the journaled vault event, and the actual install is a separate user-signed recipe amendment. D-326: on drift the current-state realization record in ns 'providers' is appended (DEGRADED for reject, TESTING for hold-in-probation) via providerRealizationId(), superseding the prior rev and citing the drift observation; none/promote write no realization (verify owns promotion)."
       }
     ],
     "policy": [
@@ -27,11 +27,12 @@
     ]
   },
   "dependencies": [
-    { "ref": "contract:vault.append@1", "range": "1.x" }
+    { "ref": "contract:vault.append@1", "range": "1.x" },
+    { "ref": "contract:vault.get@1", "range": "1.x" }
   ],
   "capabilities": {
-    "requested": ["port:vault.append@1"],
-    "justification": "Healing events are journaled into the USER'S VAULT (data/code divorce): ns 'discovery', id 'heal:<ts>', data = the healing report with the full evidence chain. The composition grants exactly port:vault.append@1 per user-signed Recipe — never this manifest. Journaling is best-effort (a vault failure is reported, never blocks the healing decision)."
+    "requested": ["port:vault.append@1", "port:vault.get@1"],
+    "justification": "Healing events are journaled into the USER'S VAULT (data/code divorce): ns 'discovery', id 'heal:<ts>', data = the healing report with the full evidence chain. D-326: the current-state realization record (ns 'providers', DEGRADED on drift / TESTING on probation entry) is appended alongside, reading the prior rev first for supersedes lineage and evidence carry-forward (port:vault.get@1). The composition grants exactly these per user-signed Recipe — never this manifest. Both writes are reported, never blocking the healing decision."
   },
   "runtime": { "tier": "worker-thread", "budget": { "cpuMs": 500, "memMB": 128 } },
   "contentHash": ""

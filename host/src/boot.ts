@@ -54,27 +54,60 @@ export async function bootComposition(recipe: Recipe, buildDir: string, vaultDir
   const { manifests, errors } = verifyComposition(recipe, resolve(buildDir), rootKey.publicKey);
   if (errors.length > 0) throw new Error(`fail-closed boot: ${errors.join("; ")}`);
   const router = new PortRouter({ vaultDir, journal: true });
+  // D-331 lazy activation: bootPhase 0 spawns eager (the law must gate from
+  // the first tick); everything else registers dormant with minted tokens and
+  // spawns on first routed call. The spawner is injected (ports stay
+  // transport-only; boot owns lifecycle).
+  router.onDemandSpawn = async (id: string): Promise<void> => {
+    const d = router.peekDormant(id);
+    if (!d) return;
+    const handle = spawnCompartment(d.entry.id, d.srcDir, d.entryFile);
+    router.register(d.entry, d.manifest, handle, d.tokens);
+    handle.post({ type: "init", manifest: d.manifest, tokens: d.tokens, capabilities: d.entry.grant.capabilities, ...(d.config ? { config: d.config } : {}) });
+    await waitForActive(router, id);
+  };
+  const eager: string[] = [];
   const phases = [...recipe.composition].sort((a, b) => a.bootPhase - b.bootPhase);
   for (const e of phases) {
     const m = manifests.get(e.id)!;
     const srcDir = resolve(buildDir, e.source);
     const tokens = router.mintTokensFor(e);
-    const handle = spawnCompartment(e.id, srcDir, m.entry);
-    router.register(e, m, handle, tokens);
-    handle.post({ type: "init", manifest: m, tokens, capabilities: e.grant.capabilities, ...(e.config ? { config: e.config } : {}) });
+    if (e.bootPhase === 0) {
+      const handle = spawnCompartment(e.id, srcDir, m.entry);
+      router.register(e, m, handle, tokens);
+      handle.post({ type: "init", manifest: m, tokens, capabilities: e.grant.capabilities, ...(e.config ? { config: e.config } : {}) });
+      eager.push(e.id);
+    } else {
+      router.registerDormant(e, m, tokens, { srcDir, entryFile: m.entry, ...(e.config ? { config: e.config } : {}) });
+    }
   }
-  await waitReady(router, recipe);
+  await waitReady(router, recipe, eager);
   return { recipe, buildDir, router, manifests, shutdown: () => router.shutdown() };
 }
 
-function waitReady(router: PortRouter, recipe: Recipe): Promise<void> {
+/** One dormant id reaches active (bounded — a wedged spawn fails the touch, never hangs boot). */
+function waitForActive(router: PortRouter, id: string): Promise<void> {
   const deadline = Date.now() + 10_000;
   return new Promise((resolve, reject) => {
     const tick = () => {
       const st = router.status().compartments as Record<string, { state: string }>;
-      const all = recipe.composition.map((e) => st[e.id]?.state);
-      if (all.every((s) => s === "active")) return resolve();
-      if (all.some((s) => s === "degraded")) return reject(new Error(`compartment degraded during boot: ${JSON.stringify(st)}`));
+      if (st[id]?.state === "active") return resolve();
+      if (st[id]?.state === "degraded") return reject(new Error(`dormant ${id} degraded while spawning on first touch`));
+      if (Date.now() > deadline) return reject(new Error(`dormant ${id} spawn timeout on first touch`));
+      setTimeout(tick, 25);
+    };
+    tick();
+  });
+}
+
+function waitReady(router: PortRouter, recipe: Recipe, eager: string[]): Promise<void> {
+  const deadline = Date.now() + 10_000;
+  return new Promise((resolve, reject) => {
+    const tick = () => {
+      const st = router.status().compartments as Record<string, { state: string }>;
+      const states = eager.map((id) => st[id]?.state);
+      if (states.every((s) => s === "active")) return resolve();
+      if (states.some((s) => s === "degraded")) return reject(new Error(`compartment degraded during boot: ${JSON.stringify(st)}`));
       if (Date.now() > deadline) return reject(new Error(`boot timeout: ${JSON.stringify(st)}`));
       setTimeout(tick, 25);
     };

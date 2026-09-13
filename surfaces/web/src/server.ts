@@ -94,9 +94,15 @@ export async function startConsoleService(opts: ConsoleServiceOptions): Promise<
 
     if (req.method === "GET" && (url === "/api/health" || url === "/health")) {
       const st = boot.host.router.status();
+      // Dormant engines are reported, not hidden: "never started" (dormant)
+      // reads differently from "started and unwell" (degraded) — D-331.
+      const plugins: Record<string, unknown> = { ...(st.compartments as Record<string, unknown>) };
+      for (const id of st.dormant) {
+        if (!(id in plugins)) plugins[id] = { state: "dormant", delivered: 0, calls: 0, errors: 0, crashes: 0 };
+      }
       return send(200, {
         ok: true, composition: boot.specPath ? basename(boot.specPath) : "recipe",
-        uptimeMs: service.uptimeMs(), plugins: st.compartments, routedOps: st.routedOps, nlclVersion: NCLL_VERSION,
+        uptimeMs: service.uptimeMs(), plugins, routedOps: st.routedOps, nlclVersion: NCLL_VERSION,
       });
     }
     if (req.method === "GET" && (url === "/api/snapshot" || url === "/snapshot")) {

@@ -19,6 +19,13 @@ export interface PluginObservation {
   seenVia: string[];
 }
 
+export interface ForbiddenOverlayStatus {
+  persistence: boolean; // vault caps granted (agent.json) vs memory-only (law.json)
+  loaded: boolean;      // overlay reloaded from the vault (or memory-only, trivially true)
+  count: number;        // live principals with a non-empty forbidden list
+  lastError?: string;   // last reload failure, when present (loud, never silent)
+}
+
 export interface RegistrySnapshot {
   plugins: string[]; // sorted composition ids seen (reserved principals excluded)
   events: number;    // journal events in known history (replayed at init + absorbed live)
@@ -27,6 +34,7 @@ export interface RegistrySnapshot {
   replayed: number;  // events replayed at init
   observed: number;  // in-process law op events since boot (not journal-derived)
   states: Record<string, PluginObservation>;
+  forbidden?: ForbiddenOverlayStatus; // D-325 overlay durability state (present when the caller reports it)
 }
 
 type JournalEntry = Record<string, unknown>;
@@ -110,7 +118,7 @@ export class LawRegistry {
     return this.replayed + this.absorbed;
   }
 
-  snapshot(consents: number, generation: number): RegistrySnapshot {
+  snapshot(consents: number, generation: number, forbidden?: ForbiddenOverlayStatus): RegistrySnapshot {
     const events = this.refresh();
     const states: Record<string, PluginObservation> = {};
     for (const [id, o] of this.observations) states[id] = { ...o, seenVia: [...o.seenVia] };
@@ -122,6 +130,7 @@ export class LawRegistry {
       replayed: this.replayed,
       observed: this.observed,
       states,
+      ...(forbidden !== undefined ? { forbidden } : {}),
     };
   }
 }

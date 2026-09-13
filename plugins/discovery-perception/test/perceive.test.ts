@@ -190,12 +190,11 @@ beforeAll(async () => {
 });
 
 describe("GATE-Ω7 perception — boot compositions/discovery.json (law + vault + both engines)", () => {
-  test("four compartments boot active: real law, vault, perception, observation", () => {
+  test("law eager, perception+observation+vault dormant at boot (D-331); routes intact", () => {
     const st = host.router.status();
     const compartments = st.compartments as Record<string, { state: string }>;
-    for (const id of ["vivim.law", "vivim.vault", "discovery.perception", "discovery.observation"]) {
-      expect(compartments[id]?.state).toBe("active");
-    }
+    expect(compartments["vivim.law"]?.state).toBe("active");
+    expect(st.dormant).toEqual(["discovery.observation", "discovery.perception", "vivim.vault"]);
     expect(st.routedOps).toEqual(expect.arrayContaining([
       "discovery.perceive@1", "discovery.observe@1",
       "vault.append@1", "vault.get@1", "vault.query@1", "vault.search@1", "vault.verify@1", "vault.compact@1", "vault.roundtrip@1",

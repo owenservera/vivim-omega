@@ -122,12 +122,11 @@ describe("GATE-Ω8 — the discovery-mind pipeline (compositions/discovery-mind.
     c = await bootMind("gate", makeMindSpec("discovery-mind-gate", join("/tmp/omega-discovery-mind-test", `data-${Date.now()}`), { blueprintPath: join(OMEGA_ROOT, "packs/domain-email/plugin.json") }));
   });
 
-  test("five compartments boot active: real law, vault, and the three discovery engines", () => {
+  test("law eager, discovery pipeline dormant at boot (D-331); routes intact", () => {
     const st = c.host.router.status();
     const compartments = st.compartments as Record<string, { state: string }>;
-    for (const id of ["vivim.law", "vivim.vault", "discovery.inference", "discovery.mapping", "discovery.verification"]) {
-      expect(compartments[id]?.state).toBe("active");
-    }
+    expect(compartments["vivim.law"]?.state).toBe("active");
+    expect(st.dormant).toEqual(["discovery.inference", "discovery.mapping", "discovery.verification", "vivim.vault"]);
     expect(st.routedOps).toEqual(expect.arrayContaining([
       "discovery.infer@1", "discovery.map@1", "discovery.verify@1", ...VAULT_CONTRACTS, ...LAW_CONTRACTS,
     ]));
@@ -320,10 +319,11 @@ describe("GATE-Ω8 — the discovery-mind pipeline (compositions/discovery-mind.
     const host = await bootComposition(recipe, buildDir, vaultDir);
     hosts.push(host);
     try {
-      const st = host.router.status().compartments as Record<string, { state: string }>;
-      for (const id of ["vivim.law", "vivim.vault", "discovery.inference", "discovery.mapping", "discovery.verification"]) {
-        expect(st[id]?.state).toBe("active");
-      }
+      const st = host.router.status();
+      expect((st.compartments as Record<string, { state: string }>)["vivim.law"]?.state).toBe("active");
+      expect(st.dormant).toEqual([
+        "discovery.inference", "discovery.mapping", "discovery.verification", "vivim.providers", "vivim.vault",
+      ]); // D-331: verified-but-unspawned; the infer call below is the first touch
       // perception + inference on the shipped composition, then map WITHOUT a payload
       // blueprint — the engine reads config.blueprintPath (the pack's CONTRACT
       // declarations consumed as DATA from a fixed path)

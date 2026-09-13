@@ -6,8 +6,8 @@
       "source": "../plugins/vivim-law",
       "bootPhase": 0,
       "grant": {
-        "capabilities": ["host.journal.append", "host.tokens.revoke"],
-        "contracts": ["law.check@1", "law.registry@1", "law.consent.grant@1", "law.tokens.revoke@1", "law.forbidden.set@1", "law.amendment@1"]
+        "capabilities": ["host.journal.append", "host.tokens.revoke", "port:vault.append@1", "port:vault.query@1", "port:vault.get@1"],
+        "contracts": ["law.check@1", "law.registry@1", "law.consent.grant@1", "law.tokens.revoke@1", "law.forbidden.set@1", "law.forbidden.reload@1", "law.amendment@1"]
       }
     },
     {
@@ -25,8 +25,8 @@
       "source": "../plugins/vivim-agent",
       "bootPhase": 1,
       "grant": {
-        "capabilities": ["port:vault.append@1", "port:vault.get@1", "port:vault.query@1", "port:law.forbidden.set@1"],
-        "contracts": ["agent.spawn@1", "agent.describe@1", "behavior.propose@1", "behavior.promote@1", "behavior.rollback@1", "decision.record@1"]
+        "capabilities": ["port:vault.append@1", "port:vault.get@1", "port:vault.query@1", "port:law.forbidden.set@1", "port:law.check@1"],
+        "contracts": ["agent.spawn@1", "agent.describe@1", "agent.exec@1", "behavior.propose@1", "behavior.promote@1", "behavior.rollback@1", "decision.record@1"]
       }
     }
   ]

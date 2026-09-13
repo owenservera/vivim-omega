@@ -22,20 +22,46 @@
 //   ProviderRealization← HERE            (canonical ns "providers" record shape)
 
 import type { ProviderClass } from "./manifest.ts";
-import type { RealizationStatus, VaultProvenanceRef } from "./vocabulary.ts";
+import type { EpistemicStatus, RealizationStatus, VaultProvenanceRef } from "./vocabulary.ts";
 import { PROMOTION_INVARIANT } from "./vocabulary.ts";
 import type { RiskClass } from "./manifest.ts";
 import type { Variation, VariationChannel } from "./variation.ts";
 import type { AgentIdentity, BehaviorContract, DecisionRecord } from "./agent.ts";
 import type { Outcome, OutcomeStatus } from "./outcome.ts";
+import type {
+  ComputationKind, ResolveBranch, ResolveDecision, ResolveOutcome,
+  ResolveOutcomeStatus, ScorecardRow,
+} from "./computation.ts";
+import { resolveDecisionId } from "./computation.ts";
+import type {
+  AgentSnapshot, Bootstrap, ControlModel, DelegationRecord, DelegateEnvelope,
+  DescribeFocus, EvolutionEvaluation, EvolutionProposal, EvolutionTransition,
+} from "./control.ts";
+import {
+  BOOTSTRAP_VERSION, CONTROL_ENTRYPOINTS, CONTROL_MODEL_VERSION,
+  CONTROL_NAMESPACES, delegationId, evolutionId,
+} from "./control.ts";
 
 export type { ProviderClass };
-export type { RealizationStatus, VaultProvenanceRef };
+export type { EpistemicStatus, RealizationStatus, VaultProvenanceRef };
 export { PROMOTION_INVARIANT };
 export type { RiskClass };
 export type { Variation, VariationChannel };
 export type { AgentIdentity, BehaviorContract, DecisionRecord };
 export type { Outcome, OutcomeStatus };
+export type {
+  ComputationKind, ResolveBranch, ResolveDecision, ResolveOutcome,
+  ResolveOutcomeStatus, ScorecardRow,
+};
+export { resolveDecisionId };
+export type {
+  AgentSnapshot, Bootstrap, ControlModel, DelegationRecord, DelegateEnvelope,
+  DescribeFocus, EvolutionEvaluation, EvolutionProposal, EvolutionTransition,
+};
+export {
+  BOOTSTRAP_VERSION, CONTROL_ENTRYPOINTS, CONTROL_MODEL_VERSION,
+  CONTROL_NAMESPACES, delegationId, evolutionId,
+};
 
 /**
  * ProviderClass defines how a realization's ops execute.

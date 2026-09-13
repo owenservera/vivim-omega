@@ -8,18 +8,26 @@
 // Ops exposed (ENGINE contributions — no risk BY KIND, READ semantics):
 //   mind.snapshot@1  {} | {includeBodies?: boolean} → {world: WorldModel}
 //   mind.query@1     {kind, filter?} → {kind, filter, count, rows, worldV}
+//   control.bootstrap@1 {} → {bootstrap: Bootstrap} (D-328a: versioned first contact)
+//   control.describe@1 {focus?} → Outcome<{control: ControlModel}> (D-328a: bounded orient)
 //
 // Fail-closed: every port call goes through portCall (non-ok → throw); a throw
 // surfaces as DEGRADED at the port boundary. The mind NEVER degrades to guessing.
+// describe answers UNKNOWN (never a crash, never a guess) for unknown
+// kind/capability/version — an orienting agent detects skew and stops.
+import { definePlugin, startPlugin } from "@vivim/omega-shim";
+import type { PluginContext } from "@vivim/omega-shim";
+import type { WorldModel } from "@vivim/omega-nlcl-pure";
+import {
+  BOOTSTRAP_VERSION, CONTROL_ENTRYPOINTS, CONTROL_MODEL_VERSION, CONTROL_NAMESPACES,
+  type Bootstrap, type ControlModel, type DescribeFocus, type Outcome, type PortResult,
+} from "@vivim/omega-contracts";
+import { fail, ok } from "@vivim/omega-contracts";
 //
 // D-215 (quoted): "Self-knowledge is a PLUGIN (vivim.mind, Ω10), not µhost code.
 // The mind derives the WorldModel from law.registry + vault + composition-config
 // projections; it writes nothing, so a wrong self-model is falsifiable against
 // intact evidence."
-import { definePlugin, startPlugin } from "@vivim/omega-shim";
-import type { PluginContext } from "@vivim/omega-shim";
-import type { PortResult } from "@vivim/omega-contracts";
-import type { WorldModel } from "@vivim/omega-nlcl-pure";
 import {
   AUTOMATION_NS, buildWorldModel, EMAIL_NS, MESSAGE_META_TYPE, NLCL_NS, parseMindConfig,
   QUERY_BOUND, type EvidenceRow, type MindConfig, type RegistrySnapshotView,
@@ -90,6 +98,14 @@ async function buildSnapshot(ctx: PluginContext, config: MindConfig, opts: { inc
     config,
     { includeBodies: opts.includeBodies, t: opts.t },
   );
+}
+
+/** Governed-evolution activity for control.describe: rows in ns "control"
+ *  under prefix "evolution:" (bounded; 4a reads what 4b writes — before any
+ *  evolution exists this is honestly 0). */
+async function countEvolution(ctx: PluginContext): Promise<number> {
+  const rows = await portCall<VaultQueryRow[]>(ctx, "vault.query@1", { ns: "control", filter: { idPrefix: "evolution:" } });
+  return ((rows as VaultQueryRow[]) ?? []).length;
 }
 
 // ---- focused-view slicing (mind.query@1) ----
@@ -181,6 +197,93 @@ startPlugin(definePlugin({
         });
       }
       return { kind, filter, count: rows.length, rows, worldV: world.v };
+    },
+
+    /**
+     * bootstrap {} → {bootstrap: Bootstrap} (D-328a: versioned first contact).
+     * READ-only orientation: who this system is, which model version to ask
+     * for next, and the entry points to call. No vault write — 4a adds zero
+     * write path; ns "control" is reserved here and first written by 4b.
+     */
+    "control.bootstrap@1": async (payload: unknown, ctx: PluginContext) => {
+      asObj(payload ?? {}); // payload {} by contract; fields ignored, garbage → DEGRADED below
+      if (payload !== null && (typeof payload !== "object" || Array.isArray(payload))) {
+        throw new Error("control.bootstrap@1: payload must be an object");
+      }
+      const config = parseMindConfig(ctx.config);
+      const bootstrap: Bootstrap = {
+        bootstrapVersion: BOOTSTRAP_VERSION,
+        composition: config.composition,
+        controlModel: CONTROL_MODEL_VERSION,
+        entrypoints: CONTROL_ENTRYPOINTS,
+        namespaces: CONTROL_NAMESPACES,
+        next: ["control.describe@1", "agent.snapshot@1"],
+        at: Date.now(),
+      };
+      return { bootstrap };
+    },
+
+    /**
+     * describe {focus?: {kind?, capability?, version?}} →
+     * Outcome<{control: ControlModel}> (D-328a: bounded system projection).
+     * READ-only: versions, namespaces, kinds, capabilities, contracts,
+     * evaluators, policy boundaries, evolution activity. Unknown
+     * kind/capability/version → UNKNOWN (never a crash, never a guess).
+     */
+    "control.describe@1": async (payload: unknown, ctx: PluginContext): Promise<Outcome> => {
+      const p = asObj(payload ?? {});
+      if (payload !== null && (typeof payload !== "object" || Array.isArray(payload))) {
+        throw new Error("control.describe@1: payload must be an object");
+      }
+      const focusRaw = p["focus"];
+      let focus: DescribeFocus = {};
+      if (focusRaw !== undefined && focusRaw !== null) {
+        const f = asObj(focusRaw);
+        for (const k of ["kind", "capability", "version"] as const) {
+          const v = f[k];
+          if (v !== undefined && v !== null) {
+            if (typeof v !== "string") throw new Error(`control.describe@1: focus.${k} must be a string when provided`);
+            focus = { ...focus, [k]: v };
+          }
+        }
+        for (const k of Object.keys(f)) {
+          if (k !== "kind" && k !== "capability" && k !== "version") {
+            throw new Error(`control.describe@1: unknown focus field "${k}" (want kind|capability|version)`);
+          }
+        }
+      }
+      const config = parseMindConfig(ctx.config);
+      const snap = await portCall<Record<string, unknown>>(ctx, "law.registry@1", {});
+      const forbidden = asObj(snap["forbidden"]);
+      const control: ControlModel = {
+        controlVersion: CONTROL_MODEL_VERSION,
+        composition: config.composition,
+        generatedAt: Date.now(),
+        namespaces: CONTROL_NAMESPACES,
+        kinds: ["DETERMINISTIC", "PROBABILISTIC", "HUMAN"],
+        capabilities: config.ops.map((o) => ({ op: o.op, risk: o.risk, provider: o.provider, title: o.title })),
+        contracts: CONTROL_ENTRYPOINTS,
+        evaluators: [
+          "discovery.verify@1: promotion is proof, not confidence (postcondition probes ≥ threshold with resolving evidence)",
+        ],
+        policy: {
+          gate: "law.check@1",
+          forbidden: typeof forbidden["persistence"] === "boolean" && typeof forbidden["loaded"] === "boolean" && typeof forbidden["count"] === "number"
+            ? { persistence: forbidden["persistence"], loaded: forbidden["loaded"], count: forbidden["count"] }
+            : null,
+        },
+        evolution: { proposals: await countEvolution(ctx) },
+      };
+      if (focus.kind !== undefined && !(control.kinds as readonly string[]).includes(focus.kind)) {
+        return fail("UNKNOWN", `unknown computation kind "${focus.kind}" (want one of ${control.kinds.join("|")})`);
+      }
+      if (focus.capability !== undefined && !control.capabilities.some((c) => c.op === focus.capability)) {
+        return fail("UNKNOWN", `unknown capability "${focus.capability}" (not in this composition's ops catalog)`);
+      }
+      if (focus.version !== undefined && focus.version !== CONTROL_MODEL_VERSION) {
+        return fail("UNKNOWN", `unknown control version "${focus.version}" (this system speaks ${CONTROL_MODEL_VERSION})`);
+      }
+      return ok({ control });
     },
   },
 }));

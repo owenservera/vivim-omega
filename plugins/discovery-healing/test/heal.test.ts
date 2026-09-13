@@ -101,7 +101,7 @@ describe("Ω9 manifest — the engine + policy contributions parse and validate 
     expect(policy).toBeTruthy();
     expect(policy).toMatchObject({ kind: "policy", id: "discovery.healing-policy", version: "1", driftThreshold: 0.3, probationProbes: 3, promotionThreshold: 0.95 });
     expect(manifest.contributions.engine).toEqual([{ kind: "engine", id: "discovery.heal", version: "1", doc: expect.any(String) }]);
-    expect(manifest.capabilities.requested).toEqual(["port:vault.append@1"]);
+    expect(manifest.capabilities.requested).toEqual(["port:vault.append@1", "port:vault.get@1"]); // D-326: prior-rev read for supersedes lineage
   });
 
   test("readPolicy fails CLOSED when the manifest carries no policy contribution (policy is data, not defaults)", () => {

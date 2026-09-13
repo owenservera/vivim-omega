@@ -45,7 +45,7 @@
       "source": "../plugins/discovery-healing",
       "bootPhase": 1,
       "grant": {
-        "capabilities": ["port:vault.append@1"],
+        "capabilities": ["port:vault.append@1", "port:vault.get@1"],
         "contracts": ["discovery.heal@1"]
       }
     }

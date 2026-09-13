@@ -123,7 +123,10 @@ describe("GATE-Ω6 — CLI surface (root-principal script over the µhost)", () 
     expect(r.code).toBe(0);
     const st = JSON.parse(r.stdout); // stdout must be pure JSON — no host log pollution
     expect(st.routedOps).toContain("echo.ping@1");
-    expect(st.compartments["omega.echo"].state).toBe("active");
+    // Cold status never calls an op: phase-0 law is active, echo is dormant
+    // (never started — D-331), and the route table is intact regardless.
+    expect(st.compartments["vivim.law"].state).toBe("active");
+    expect(st.dormant).toEqual(["omega.echo"]);
     expect(st.generation).toBeGreaterThanOrEqual(1);
   }, SPAWN_BUDGET_MS);
 

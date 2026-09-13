@@ -61,14 +61,27 @@ afterAll(async () => {
 }, 30000);
 
 describe("Ω13 · boot + seeding + snapshot replication", () => {
-  test("health: all 8 compartments active, 20+ routed ops, nlcl pinned", async () => {
+  test("health: all 8 entries reported, 20+ routed ops, nlcl pinned (D-331 dormant-aware)", async () => {
     const r = await (await fetch(`${base}/api/health`)).json() as { ok: boolean; plugins: Record<string, { state: string }>; routedOps: string[]; nlclVersion: string };
     expect(r.ok).toBe(true);
+    // Seeding + snapshot replication wake law/vault/provider/mind; engines
+    // with no routed calls yet read dormant (never started — not degraded);
+    // the declarations-only pack is dormant by construction (nothing routes
+    // to it, ever). No entry may read degraded/unknown/stopped here.
     for (const [id, c] of Object.entries(r.plugins)) {
-      expect(c.state).toBe("active");
+      expect(["active", "dormant"]).toContain(c.state);
       expect(id).toBeTruthy();
     }
     expect(Object.keys(r.plugins).length).toBe(8);
+    expect(r.plugins["vivim.law"]?.state).toBe("active"); // bootPhase 0 gates from the first tick
+    expect(r.plugins["pack.domain-email"]?.state).toBe("dormant"); // declarations only: unrouted by design
+    // Seeding + snapshot replication wake law/vault/provider/mind; untouched
+    // engines (nlcl serves parses from nlcl-pure locally, director ticks on
+    // demand, llm is opt-in) honestly read dormant — touch→active is proven
+    // at the host layer (host/test/lazy.test.ts), not re-proven per surface.
+    for (const id of ["vivim.vault", "provider.email.file", "vivim.mind"]) {
+      expect(r.plugins[id]?.state).toBe("active");
+    }
     expect(r.routedOps.length).toBeGreaterThanOrEqual(20);
     expect(r.routedOps).toContain("nlcl.interpret@1");
     expect(r.nlclVersion).toBeTruthy();

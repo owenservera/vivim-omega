@@ -36,7 +36,25 @@ export interface VaultProvenanceRef {
   cid?: string;
   meta?: unknown;
   refs?: VaultProvenanceRef[];
+  /** HOW well the cited evidence is known (D-324) — orthogonal to Freshness
+   *  (timing), which is untouched. Optional: old records validate untouched.
+   *  VERIFIED is reserved for probe-backed writes (first adopter:
+   *  discovery.verify stamps evidence from passing probes); CONTRADICTED is
+   *  deferred until a producer exists — never emit it yet. */
+  epistemicStatus?: EpistemicStatus;
 }
+
+/**
+ * Epistemic status (D-324): the knower's relationship to the cited evidence.
+ * Three values ship; VERIFIED is reserved for probe-backed writes;
+ * CONTRADICTED waits for a producer (emitting it now is vocabulary without a
+ * writer — the plan's top risk).
+ */
+export type EpistemicStatus =
+  | "OBSERVED"   // directly read from a source (a vault row, a probe output)
+  | "INFERRED"   // derived by a deterministic rule from observed inputs
+  | "ASSUMED"    // taken as given without direct evidence (escalate, don't trust)
+  | "VERIFIED";  // backed by passing postcondition probes (reserved writers only)
 
 /**
  * CONFIDENCE VS PROOF (The Promotion Invariant).

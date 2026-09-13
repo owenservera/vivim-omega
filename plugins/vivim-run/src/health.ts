@@ -144,6 +144,22 @@ export class HealthMonitor {
   private observe(pluginId: string, s: CompartmentStats): void {
     if (pluginId === this.selfId) return; // run never quarantines itself
 
+    // D-331 late-observer rule: lazy activation means this loop can start AFTER
+    // crashes happened (counters are cumulative, transitions are not replayed).
+    // A compartment observed for the FIRST time already stuck degraded with
+    // recorded crashes IS crash-persistence by definition (v1 has no respawn:
+    // degraded is sticky, so there is no "transiently degraded" to wait out).
+    // Without this, a late observer would watch a standing crash loop forever
+    // and call it healthy — the exact conflation lazy must not introduce.
+    const seenBefore = this.crashWindows.has(pluginId) || this.stateWindows.has(pluginId);
+    if (!seenBefore && s.state === "degraded" && s.crashes >= 1) {
+      this.record("crash-increment", pluginId, `first sight: stuck degraded with ${s.crashes} recorded crashes (observer started late)`);
+      this.quarantine(
+        pluginId,
+        `crash-persistence: stuck degraded with ${s.crashes} recorded crashes on first observation (v1 has no respawn: a crashed compartment is a standing crash loop until recipe reboot)`,
+      );
+      return;
+    }
     // exponential backoff window: a quarantined compartment is muted for 2^n polls
     const muted = this.suppress.get(pluginId);
     if (muted !== undefined) {

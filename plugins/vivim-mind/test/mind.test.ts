@@ -359,12 +359,10 @@ describe("GATE-Ω10 — vivim.mind: the self-knowledge loop through registry + v
     c = await bootMind("loop", (dataDir, journalPath) => makeMindSpec("mind-loop", dataDir, MIND_CONFIG, journalPath));
   });
 
-  test("five compartments boot active: law, the pack, vault, provider, AND the mind", () => {
+  test("law eager, pack+provider+vault+mind dormant at boot (D-331); routes intact", () => {
     const st = c.host.router.status();
-    const compartments = st.compartments as Record<string, { state: string }>;
-    for (const id of ["vivim.law", "pack.domain-email", "vivim.vault", "provider.email.file", "vivim.mind"]) {
-      expect(compartments[id]?.state).toBe("active");
-    }
+    expect((st.compartments as Record<string, { state: string }>)["vivim.law"]?.state).toBe("active");
+    expect(st.dormant).toEqual(["pack.domain-email", "provider.email.file", "vivim.mind", "vivim.vault"]);
     expect(st.routedOps).toEqual(expect.arrayContaining([...MESSAGE_CONTRACTS, ...MIND_CONTRACTS, ...VAULT_CONTRACTS, ...LAW_CONTRACTS]));
   });
 
@@ -633,7 +631,7 @@ describe("GATE-Ω10 — vivim.mind: the self-knowledge loop through registry + v
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) throw new Error(parsed.errors.join("; "));
     expect(parsed.value.id).toBe("vivim.mind");
-    expect(parsed.value.contributions.engine?.map((c) => `${c.id}@${c.version}`)).toEqual(["mind.snapshot@1", "mind.query@1"]);
+    expect(parsed.value.contributions.engine?.map((c) => `${c.id}@${c.version}`)).toEqual(["mind.snapshot@1", "mind.query@1", "control.bootstrap@1", "control.describe@1"]);
     for (const c of parsed.value.contributions.engine ?? []) {
       expect(c.risk).toBeUndefined(); // engines declare no risk — READ semantics by kind (D-215)
     }

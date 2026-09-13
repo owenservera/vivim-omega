@@ -231,9 +231,10 @@ describe("GATE-Ω9 — the healing loop end-to-end (drift → rediscovery → pr
     expect(report.source).toBe("incoming");
     hosts.push(host!);
 
-    // four compartments active, all spine + engine ops routed
+    // law eager, vault+healing dormant at boot (D-331); all spine + engine ops routed
     const st = host!.router.status();
-    expect(Object.keys(st.compartments)).toEqual(["vivim.law", "vivim.vault", "discovery.healing"]);
+    expect(Object.keys(st.compartments)).toEqual(["vivim.law"]);
+    expect(st.dormant).toEqual(["discovery.healing", "vivim.vault"]);
     expect(st.routedOps).toContain("discovery.heal@1");
     expect(st.routedOps).toContain("vault.append@1");
     expect(st.routedOps).toContain("law.check@1");

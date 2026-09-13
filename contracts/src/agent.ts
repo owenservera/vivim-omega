@@ -48,4 +48,8 @@ export interface DecisionRecord {
   actor: string;                 // agent id or principal that decided
   evidence: VaultProvenanceRef[];
   parentDecisions: string[];     // decisionIds this decision descends from
+  /** Which build decision authorized the deciding logic (D-324, optional):
+   *  resolver decisions cite D-323, spawns cite D-309. A doc pointer ("D-###"),
+   *  not a vault ref — validated by shape, never resolved. */
+  buildDecisionRef?: string;
 }

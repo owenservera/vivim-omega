@@ -73,6 +73,13 @@ export interface HealInput {
   candidate?: SurfaceContractLike | null;
   probes?: ProbeResultLike[] | null;
   now?: number;
+  /** D-326: identity of the realized provider whose current state this drift
+   *  concerns — {id, class?} (class defaults SIMULATOR). Absent → the
+   *  realization write is skipped with a named reason (the decision still stands). */
+  provider?: { id?: unknown; class?: unknown } | null;
+  /** D-326: explicit archetype slug. Absent → derived from
+   *  contractEvidence.op (same rule as verification). */
+  archetypeSlug?: unknown;
 }
 
 // ---- policy extraction (policy is data, not constants) --------------------------
@@ -290,7 +297,21 @@ export interface HealingReport extends Omit<HealingDecision, "event"> {
     seq?: number;
     detail?: string;
   };
+  /** D-326: the ns-"providers" current-state write (DEGRADED on drift, TESTING
+   *  on probation entry), filled by the wiring — never by the pure core. */
+  realization?: RealizationWriteOutcome;
   at: number;
+}
+
+/** Outcome of the healing realization write (ns "providers"). `written: false`
+ *  is DATA, not an exception: the healing decision stands on its evidence like
+ *  every other spine plugin's journaling law — but the reason is always named. */
+export interface RealizationWriteOutcome {
+  written: boolean;
+  id?: string;
+  status?: "DEGRADED" | "TESTING";
+  rev?: number;
+  detail?: string;
 }
 
 function policyEcho(policy: HealingPolicy): HealingPolicy & { source: string } {

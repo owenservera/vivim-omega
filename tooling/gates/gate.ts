@@ -96,7 +96,16 @@ try {
   else fail("decisions", d.issues.join("; "));
 } catch (e) { fail("decisions", String(e)); }
 
-// 4 · tests (gate evidence)
+// 4 · compositions (W1 seed — read-only net over shipped compositions: grant vs
+// manifest, bootPhase-0 law, D-325 law+vault invariant, grant drift allowlist)
+try {
+  const { checkCompositions } = await import("./compositions.ts");
+  const c = await checkCompositions(ROOT);
+  if (c.ok) pass("compositions", c.detail);
+  else fail("compositions", c.issues.join("; "));
+} catch (e) { fail("compositions", String(e)); }
+
+// 5 · tests (gate evidence)
 // Concurrency is capped by box size (D-317): past core count, worker-heavy test
 // files thrash instead of parallelizing — measured 64s green at 4-wide vs
 // 300s+ flaking at default-20 on a loaded 4-core box. Same tests, same
@@ -115,7 +124,7 @@ const failingTests = [...tests.out.replace(/\x1b\[[0-9;]*m/g, "").matchAll(/\(fa
 if (tests.code === 0 && testFail === 0) pass("tests", { pass: testPass, fail: testFail, maxConcurrency: testMaxConc });
 else fail("tests", `${testPass} pass / ${testFail} fail — failing: ${JSON.stringify(failingTests)}`);
 
-// 5 · attest: boot the demo composition, round-trip, recovery drill (existence proof)
+// 6 · attest: boot the demo composition, round-trip, recovery drill (existence proof)
 try {
   const { attest } = await import("./attest.ts");
   const a = await attest();
@@ -123,7 +132,7 @@ try {
   else fail("attest", a.reason ?? "unknown");
 } catch (e) { fail("attest", String(e)); }
 
-// 6 · emit status.json (console feed) + gates.log line
+// 7 · emit status.json (console feed) + gates.log line
 const { emitStatus } = await import("./status.ts");
 await emitStatus({ gate, hostLoc, tests: { pass: testPass, fail: testFail } });
 

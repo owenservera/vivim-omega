@@ -33,7 +33,7 @@
 // Handlers throw on bad payloads / failed appends — DEGRADED at the boundary.
 import { definePlugin, startPlugin } from "@vivim/omega-shim";
 import type { PluginContext, CallMeta } from "@vivim/omega-shim";
-import type { PortResult, ProviderClass, ProviderRealization, RealizationStatus } from "@vivim/omega-contracts";
+import type { EpistemicStatus, PortResult, ProviderClass, ProviderRealization, RealizationStatus } from "@vivim/omega-contracts";
 import { archetypeSlugForOp, providerRealizationId } from "@vivim/omega-contracts";
 import { loadPromotionPolicy, POLICY_SOURCE, type PromotionPolicy } from "./policy.ts";
 import { evaluatePromotion, isValidProbe, refKey, type Probe, type BindingLike } from "./evaluate.ts";
@@ -252,9 +252,15 @@ export const def = definePlugin({
           if (status === null) continue;
           const slug = archetypeSlugForOp(r.blueprintOp);
           const id = providerRealizationId(slug, provider.id);
+          // D-324: evidence from probes that PASSED is stamped VERIFIED
+          // (probe-backed — the reserved writer adopts the reserved value
+          // first); failed-probe evidence stays unmarked (claimed, not proven).
+          const VERIFIED: EpistemicStatus = "VERIFIED";
           const refs = probes
             .filter((pr) => pr.candidateId === r.candidateId)
-            .flatMap((pr) => pr.evidence.map((e) => ({ ns: e.ns, id: e.id, rev: e.rev })));
+            .flatMap((pr) => pr.evidence.map((e) => pr.passed
+              ? { ns: e.ns, id: e.id, rev: e.rev, epistemicStatus: VERIFIED }
+              : { ns: e.ns, id: e.id, rev: e.rev }));
           const record: ProviderRealization = {
             archetypeSlug: slug,
             providerId: provider.id,

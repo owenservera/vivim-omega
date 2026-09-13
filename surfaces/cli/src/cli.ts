@@ -274,6 +274,7 @@ interface CompartmentRow {
 function compartmentRows(boot: BootView): CompartmentRow[] {
   const st = boot.host.router.status();
   const compartments = st.compartments as Record<string, { state?: string }>;
+  const dormant = Array.isArray((st as { dormant?: unknown }).dormant) ? (st as { dormant: string[] }).dormant : [];
   const rows: CompartmentRow[] = [];
   for (const e of [...boot.host.recipe.composition].sort((a, b) => a.bootPhase - b.bootPhase || a.id.localeCompare(b.id))) {
     const m: PluginManifest | undefined = boot.host.manifests.get(e.id);
@@ -281,7 +282,7 @@ function compartmentRows(boot: BootView): CompartmentRow[] {
       id: e.id,
       version: m?.version ?? "?",
       bootPhase: e.bootPhase,
-      state: compartments[e.id]?.state ?? "unknown",
+      state: compartments[e.id]?.state ?? (dormant.includes(e.id) ? "dormant" : "unknown"),
       description: m?.description ?? "",
       capabilities: e.grant.capabilities,
       routedOps: e.grant.contracts,
@@ -437,7 +438,7 @@ export interface BootView {
   host: {
     router: {
       callAsRoot(op: string, payload?: unknown, deadlineMs?: number): Promise<PortResult>;
-      status(): { compartments: unknown; generation: number; routedOps: string[] };
+      status(): { compartments: unknown; dormant?: string[]; generation: number; routedOps: string[] };
     };
     recipe: { name: string; composition: Array<{ id: string; bootPhase: number; grant: { capabilities: string[]; contracts: string[] } }> };
     manifests: Map<string, PluginManifest>;
@@ -469,7 +470,7 @@ async function tryDaemonBoot(
   const st = await callDaemon(info, "status", {}, 10000).catch(() => null);
   if (!st || !st.ok) return null;
   const v = st.value as {
-    router: { compartments: unknown; generation: number; routedOps: string[] };
+    router: { compartments: unknown; dormant?: string[]; generation: number; routedOps: string[] };
     recipe: RemoteBoot["host"]["recipe"];
     manifests: Record<string, { version: string; description: string }>;
   };

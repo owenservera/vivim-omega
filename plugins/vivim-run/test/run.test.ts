@@ -298,6 +298,41 @@ describe("Ω3 health monitor", () => {
     expect(m2.snapshot().quarantined.length).toBe(0);
   });
 
+  test("D-331: dormant compartments (never started) are observed but never quarantined", async () => {
+    // host.compartment.stats reports dormant ids with zero counters (ports.ts);
+    // the loop must tell "never started" apart from "started and unwell".
+    const dormant: Record<string, CompartmentStats> = {
+      "omega.echo": { state: "dormant", delivered: 0, calls: 0, errors: 0, crashes: 0, inflight: 0, bootedAt: 0 },
+    };
+    const caller = scriptedStats([dormant, dormant, dormant, dormant]);
+    const m = new HealthMonitor({ caller });
+    for (let i = 0; i < 4; i++) await m.poll();
+    expect(m.snapshot().quarantined.length).toBe(0);
+    expect(caller.calls.some((c) => c.op === HOST_OPS.compartmentTerminate)).toBe(false);
+    expect(m.snapshot().compartments?.["omega.echo"]?.state).toBe("dormant");
+  });
+
+  test("D-331 late observer: first sight of stuck-degraded with crashes quarantines (crash-persistence)", async () => {
+    // Lazy activation starts this loop after crashes happened: the counters
+    // persist, the transitions do not. First-sight degraded + crashes ≥ 1 is
+    // crash-persistence by definition (v1 degraded is sticky — no respawn).
+    const caller = scriptedStats([stats(2, "degraded")]);
+    const m = new HealthMonitor({ caller });
+    await m.poll();
+    const snap = m.snapshot();
+    expect(snap.quarantined.length).toBe(1);
+    expect(snap.quarantined[0].pluginId).toBe("omega.echo");
+    expect(snap.quarantined[0].reason).toMatch(/crash-persistence/);
+    // ...while first-sight dormant (never started, zero crashes) stays clean.
+    const calm = scriptedStats([{
+      "omega.echo": { state: "dormant", delivered: 0, calls: 0, errors: 0, crashes: 0, inflight: 0, bootedAt: 0 },
+    }]);
+    const m2 = new HealthMonitor({ caller: calm });
+    await m2.poll();
+    await m2.poll();
+    expect(m2.snapshot().quarantined.length).toBe(0);
+  });
+
   test("exponential backoff: re-arm after 2^n polls, second quarantine mutes longer", async () => {
     // crash-loop → quarantine #1 (mute 2) → rearm → crash-loop again → quarantine #2 (mute 4) → rearm
     const script: Array<Record<string, Partial<CompartmentStats>>> = [

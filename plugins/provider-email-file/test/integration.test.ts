@@ -98,17 +98,23 @@ describe("GATE-Ω5 — the email loop through vault + consent (compositions/emai
     c = await bootEmail("loop", (dataDir) => makeEmailSpec("email-loop", dataDir));
   });
 
-  test("four compartments boot active: real law, the PASSIVE pack, vault, provider", () => {
+  test("law eager, pack+vault+provider dormant at boot (D-331); routes intact", async () => {
     const st = c.host.router.status();
-    const compartments = st.compartments as Record<string, { state: string; delivered: number }>;
-    for (const id of ["vivim.law", "pack.domain-email", "vivim.vault", "provider.email.file"]) {
-      expect(compartments[id]?.state).toBe("active");
-    }
+    expect((st.compartments as Record<string, { state: string; delivered: number }>)["vivim.law"]?.state).toBe("active");
+    expect(st.dormant).toEqual(["pack.domain-email", "provider.email.file", "vivim.vault"]);
     // the pack composes with EMPTY grants: its manifest declares the same contract ids
     // the provider implements — cross-plugin implementation is the PREFERRED state,
-    // and the ops route to the provider, never to the pack (delivered stays 0).
+    // and the ops route to the provider, never to the pack.
     expect(st.routedOps).toEqual(expect.arrayContaining([...MESSAGE_CONTRACTS, ...VAULT_CONTRACTS, ...LAW_CONTRACTS]));
-    expect(compartments["pack.domain-email"].delivered).toBe(0);
+    // Touch the vault through a READ (no state change — the Merkle entry
+    // counts below stay exact): the pack must stay unspawned — under lazy it
+    // has no worker at all (strictly stronger than delivered 0).
+    const touched = await c.host.router.callAsRoot("vault.query@1", { ns: "probe", filter: {} });
+    expect(touched.ok).toBe(true);
+    const st2 = c.host.router.status();
+    expect((st2.compartments as Record<string, { state: string }>)["vivim.vault"]?.state).toBe("active");
+    expect(st2.dormant).toContain("pack.domain-email");
+    expect(st2.dormant).toContain("provider.email.file");
   });
 
   test("THE LOOP step 1 — message.send@1 from root: REFUSED (EXTERNAL_MUTATION, consent required)", async () => {
@@ -340,10 +346,9 @@ describe("GATE-Ω5 — the email loop through vault + consent (compositions/emai
     const host = await bootComposition(recipe, buildDir, vaultDir);
     hosts.push(host);
     try {
-      const st = host.router.status().compartments as Record<string, { state: string }>;
-      for (const id of ["vivim.law", "pack.domain-email", "vivim.vault", "provider.email.file"]) {
-        expect(st[id]?.state).toBe("active");
-      }
+      const st = host.router.status();
+      expect((st.compartments as Record<string, { state: string }>)["vivim.law"]?.state).toBe("active");
+      expect(st.dormant).toEqual(["pack.domain-email", "provider.email.file", "vivim.vault"]); // D-331
       // the shipped spec's provider config flows through: demo@omega.local
       const first = await host.router.callAsRoot("message.send@1", { to: "a@b.c", subject: "shipped spec", body: "hi" });
       const consentId = await extractConsentId(first);

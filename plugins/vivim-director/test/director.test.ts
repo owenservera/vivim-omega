@@ -219,14 +219,13 @@ describe("GATE-Ω12 — rules/teach as data, tick fires under principal vivim.di
     c = await bootCase("director-loop");
   });
 
-  test("five compartments boot active: law, pack, vault, provider, director", () => {
+  test("law eager, pack+provider+vault+director dormant at boot (D-331); routes intact", () => {
     const st = c.host.router.status();
-    const compartments = st.compartments as Record<string, { state: string; delivered: number }>;
-    for (const id of ["vivim.law", "pack.domain-email", "vivim.vault", "provider.email.file", "vivim.director"]) {
-      expect(compartments[id]?.state).toBe("active");
-    }
+    expect((st.compartments as Record<string, { state: string; delivered: number }>)["vivim.law"]?.state).toBe("active");
+    expect(st.dormant).toEqual(["pack.domain-email", "provider.email.file", "vivim.director", "vivim.vault"]);
     expect(st.routedOps).toEqual(expect.arrayContaining([...DIRECTOR_CONTRACTS, ...MESSAGE_CONTRACTS, ...VAULT_CONTRACTS, ...LAW_CONTRACTS]));
-    expect(compartments["pack.domain-email"].delivered).toBe(0); // declarations compose; ops route to the provider
+    // The pack never serves: under lazy it has no worker at all (the teach
+    // call in the next test wakes only the director+vault — pack stays dormant).
   });
 
   test("1 · teach: blitz = message.send@1 lands as a vault object (ns nlcl); remove appends op:null", async () => {
@@ -373,10 +372,11 @@ describe("GATE-Ω12 — rules/teach as data, tick fires under principal vivim.di
     expect(second).toBeTruthy();
     hosts.push(second!);
     try {
-      const st = second!.router.status().compartments as Record<string, { state: string }>;
-      for (const id of ["vivim.law", "pack.domain-email", "vivim.vault", "provider.email.file", "vivim.director"]) {
-        expect(st[id]?.state).toBe("active");
-      }
+      // Reboot lands dormant again (D-331) — law gates from the first tick,
+      // the rest wake on touch; the tick below is the touch.
+      const st = second!.router.status();
+      expect((st.compartments as Record<string, { state: string }>)["vivim.law"]?.state).toBe("active");
+      expect(st.dormant).toEqual(["pack.domain-email", "provider.email.file", "vivim.director", "vivim.vault"]);
       const t2 = await tick(second!);
       expect(t2.processed).toBe(0);
       expect(t2.fired).toEqual([]);
@@ -462,6 +462,7 @@ describe("GATE-Ω12 — rules/teach as data, tick fires under principal vivim.di
     expect(parsed.value.id).toBe("vivim.director");
     expect(parsed.value.contributions.engine?.map((e) => `${e.id}@${e.version}`)).toEqual([
       "director.rule@1", "director.registry@1", "director.teach@1", "director.tick@1",
+      "resolve.classify@1", "resolve.report@1", "strategy.scorecard@1", // D-323: same plugin, no new caps
     ]);
     expect(parsed.value.capabilities.requested).toEqual(DIRECTOR_CAPS);
     const issues = validateManifest(parsed.value);

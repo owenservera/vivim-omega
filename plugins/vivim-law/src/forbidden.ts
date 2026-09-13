@@ -14,6 +14,52 @@
 // vanish, so previously-forbidden calls fall back to normal policy — the
 // agent plugin re-registers on spawn; boot-time re-registration is a
 // documented v0 limitation, not silent policy).
+//
+// D-325 (forbidden durability): the overlay is ALSO journaled to the vault
+// (ns "law", ids "forbidden:<principal>") by vivim.law's law.forbidden.set@1
+// handler, and reloaded at boot once the vault reports queryable. The helpers
+// below are the pure record mapping — the port calls live in index.ts so this
+// module stays import-safe for unit tests (same split as tokens.ts).
+
+/** Vault namespace owning forbidden-overlay records. */
+export const FORBIDDEN_NS = "law";
+
+/** Vault id prefix for forbidden-overlay records. */
+export const FORBIDDEN_ID_PREFIX = "forbidden:";
+
+/** Vault object id for a principal's forbidden record. */
+export function forbiddenVaultId(principal: string): string {
+  return `${FORBIDDEN_ID_PREFIX}${requirePrincipal(principal)}`;
+}
+
+/** The vault record shape for one principal's forbidden list. */
+export interface ForbiddenRecord {
+  principal: string;
+  ops: string[];
+  updatedAt: number;
+}
+
+/** Pure mapping: in-memory entry → vault record (stamped at write time). */
+export function toRecord(entry: ForbiddenEntry): ForbiddenRecord {
+  const p = requirePrincipal(entry.principal);
+  const ops = requireOps(entry.ops);
+  return { principal: p, ops, updatedAt: Date.now() };
+}
+
+/** Pure mapping: vault record → in-memory entry. Null when malformed (skipped, never throws). */
+export function fromRecord(data: unknown): ForbiddenEntry | null {
+  if (data === null || typeof data !== "object" || Array.isArray(data)) return null;
+  const r = data as Record<string, unknown>;
+  if (typeof r["principal"] !== "string" || (r["principal"] as string).length === 0) return null;
+  if (!Array.isArray(r["ops"])) return null;
+  try {
+    const principal = requirePrincipal(r["principal"]);
+    const ops = requireOps(r["ops"]);
+    return { principal, ops };
+  } catch {
+    return null;
+  }
+}
 
 export interface ForbiddenEntry {
   principal: string;

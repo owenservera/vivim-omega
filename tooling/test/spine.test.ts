@@ -25,10 +25,13 @@ beforeAll(async () => {
 afterAll(async () => { await host.shutdown(); });
 
 describe("the spine boots and the loop closes", () => {
-  test("five compartments active (law, vault, run, echo, risky)", () => {
-    const st = host.router.status().compartments as Record<string, { state: string }>;
-    for (const id of ["vivim.law", "vivim.vault", "vivim.run", "omega.echo", "omega.risky"]) {
-      expect(st[id]?.state).toBe("active");
+  test("law eager at boot, the rest dormant (D-331); routing covers everything granted", () => {
+    const st = host.router.status();
+    const compartments = st.compartments as Record<string, { state: string }>;
+    expect(compartments["vivim.law"]?.state).toBe("active"); // bootPhase 0 gates from the first tick
+    expect(st.dormant).toEqual(["omega.echo", "omega.risky", "vivim.run", "vivim.vault"]); // never started, not degraded
+    for (const op of ["law.check@1", "vault.append@1", "echo.ping@1"]) {
+      expect(st.routedOps).toContain(op);
     }
   });
 

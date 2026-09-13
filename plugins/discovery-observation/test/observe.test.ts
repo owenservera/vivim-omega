@@ -251,12 +251,16 @@ describe("GATE-Ω7 observation — perceive → observe the webmail trace throug
     });
   });
 
-  test("four compartments boot active; both engine ops route", () => {
+  test("first touch activated the pipeline (D-331 transparency); both engine ops route", () => {
+    // beforeAll already perceived + observed + read the vault back: every
+    // phase-1 entry above woke on its first routed call. Dormant-at-boot for
+    // this same composition shape is pinned in perceive.test.ts.
     const st = c.host.router.status();
     const compartments = st.compartments as Record<string, { state: string }>;
     for (const id of ["vivim.law", "vivim.vault", "discovery.perception", "discovery.observation"]) {
       expect(compartments[id]?.state).toBe("active");
     }
+    expect(st.dormant).toEqual([]);
     expect(st.routedOps).toEqual(expect.arrayContaining(["discovery.perceive@1", "discovery.observe@1"]));
   });
 

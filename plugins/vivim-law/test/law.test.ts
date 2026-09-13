@@ -3,7 +3,7 @@
 import { describe, test, expect } from "bun:test";
 import { mintCap, attenuate, isSubset, parseScope, canonicalScope } from "../src/tokens.ts";
 import { ConsentTable, consentIdFor } from "../src/consent.ts";
-import { ForbiddenTable } from "../src/forbidden.ts";
+import { ForbiddenTable, FORBIDDEN_NS, FORBIDDEN_ID_PREFIX, forbiddenVaultId, toRecord, fromRecord } from "../src/forbidden.ts";
 import { LAW_POLICY_V1, evalPolicy, normalizeShadowSpec } from "../src/policy.ts";
 import { ShadowAmendment } from "../src/amendment.ts";
 
@@ -194,6 +194,31 @@ describe("Ω1 amendment — shadow mode observes, never swaps", () => {
     expect(doc.riskDefaults.MUTATION.decision).toBe("allow"); // inherited from primary
     expect(doc.riskDefaults.EXTERNAL_MUTATION.decision).toBe("deny"); // overridden
     expect(() => normalizeShadowSpec(LAW_POLICY_V1, { policy: { policyId: "x", version: "1", riskTable: [], defaultRisk: "MUTATION", riskDefaults: {} as never, rules: [] } })).toThrow(/riskDefaults/);
+  });
+});
+
+describe("D-325 forbidden durability — pure record mapping (vault ns law)", () => {
+  test("forbiddenVaultId prefixes the principal; ns and prefix constants stable", () => {
+    expect(FORBIDDEN_NS).toBe("law");
+    expect(FORBIDDEN_ID_PREFIX).toBe("forbidden:");
+    expect(forbiddenVaultId("agent:x")).toBe("forbidden:agent:x");
+    expect(() => forbiddenVaultId("")).toThrow(/principal/);
+  });
+
+  test("toRecord stamps and sorts; fromRecord round-trips; malformed records read as null", () => {
+    const rec = toRecord({ principal: "agent:x", ops: ["vault.append@1", "message.send@1"] });
+    expect(rec.principal).toBe("agent:x");
+    expect(rec.ops).toEqual(["message.send@1", "vault.append@1"]); // canonical sort
+    expect(rec.updatedAt).toBeGreaterThan(0);
+    expect(fromRecord(rec)).toEqual({ principal: "agent:x", ops: ["message.send@1", "vault.append@1"] });
+    // empty-ops tombstones (clears) round-trip — restart must reproduce the clear
+    expect(fromRecord(toRecord({ principal: "agent:x", ops: [] }))).toEqual({ principal: "agent:x", ops: [] });
+    // malformed records are skipped, never thrown (reload is honest, never fabricating)
+    expect(fromRecord(null)).toBeNull();
+    expect(fromRecord({})).toBeNull();
+    expect(fromRecord({ principal: "", ops: [] })).toBeNull();
+    expect(fromRecord({ principal: "agent:x", ops: [""] })).toBeNull();
+    expect(fromRecord({ principal: "agent:x", ops: "message.send@1" })).toBeNull();
   });
 });
 

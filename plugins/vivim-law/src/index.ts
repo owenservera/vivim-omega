@@ -9,7 +9,7 @@ import { HOST_OPS } from "@vivim/omega-contracts";
 import type { LawDecision, PortResult, ConsentGrant } from "@vivim/omega-contracts";
 import { LAW_POLICY_V1, evalPolicy, type PolicyDoc } from "./policy.ts";
 import { ConsentTable } from "./consent.ts";
-import { ForbiddenTable } from "./forbidden.ts";
+import { ForbiddenTable, FORBIDDEN_NS, FORBIDDEN_ID_PREFIX, forbiddenVaultId, toRecord, fromRecord } from "./forbidden.ts";
 import { mintCap, attenuate } from "./tokens.ts";
 import { ShadowAmendment, AMENDMENT_SWAP_NOTE } from "./amendment.ts";
 import { LawRegistry } from "./registry.ts";
@@ -21,6 +21,88 @@ const shadow = new ShadowAmendment(LAW_POLICY_V1);
 const registry = new LawRegistry();
 const rootConsentCap = mintCap("law.consent"); // attenuated per grant — the algebra in live use
 let generation = 1;                            // law state generation (bumps on every state change)
+
+// ---- forbidden durability (D-325): vault-backed overlay -------------------
+// Persistence is composition-granted, never assumed: the law entry must grant
+// BOTH port:vault.append@1 and port:vault.query@1 (agent.json first; audited
+// across the rest by the W1 composition-conformance net). Without both caps
+// the overlay stays memory-only — the pre-D-325 behavior, byte for byte.
+let forbiddenPersistence = false;
+let forbiddenLoaded = false;
+let forbiddenLoadedCount = 0;
+let forbiddenLastError: string | null = null;
+
+function hasVaultCaps(ctx: PluginContext | null): boolean {
+  if (!ctx) return false;
+  return ctx.capabilities.includes("port:vault.append@1") && ctx.capabilities.includes("port:vault.query@1");
+}
+
+interface VaultQueryRow { id: string; rev: number; cid: string }
+interface VaultGetResult { rev: number; cid: string; data: unknown }
+
+/** Single reload attempt: query ns "law" prefix "forbidden:", fetch each record, rebuild the table. */
+async function reloadForbidden(ctx: PluginContext): Promise<number> {
+  const q = await ctx.port.call("vault.query@1", { ns: FORBIDDEN_NS, filter: { idPrefix: FORBIDDEN_ID_PREFIX } });
+  if (!q.ok) {
+    throw new Error(
+      `vivim.law: forbidden persistence requires vivim.vault queryable — missing dependency vivim.vault ` +
+      `(vault.query@1 ${q.error}: ${q.detail ?? "no detail"})`,
+    );
+  }
+  const rows = (q.value ?? []) as VaultQueryRow[];
+  let count = 0;
+  for (const row of rows) {
+    if (typeof row?.id !== "string" || !row.id.startsWith(FORBIDDEN_ID_PREFIX)) continue;
+    const g = await ctx.port.call("vault.get@1", { ns: FORBIDDEN_NS, id: row.id });
+    if (!g.ok) continue; // cold gap or compacted past keep — skip honestly, never fabricate
+    const entry = fromRecord((g.value as VaultGetResult).data);
+    if (!entry) continue; // malformed record — skipped, never throws the reload
+    forbiddenTable.set(entry.principal, entry.ops);
+    if (entry.ops.length > 0) count++;
+  }
+  forbiddenLoaded = true;
+  forbiddenLoadedCount = count;
+  forbiddenLastError = null;
+  return count;
+}
+
+/** Boot-time reload with bounded retries: the vault boots phase 1, after law
+ *  phase 0, so the first query can race a still-booting vault (DEGRADED /
+ *  absent → retry). A composition with NO vault entry fails permanently
+ *  (REFUSED no-routed-implementation → missing dependency, no retry loop). */
+async function reloadForbiddenAtBoot(ctx: PluginContext): Promise<void> {
+  const MAX_ATTEMPTS = 40;
+  const WAIT_MS = 125;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      const count = await reloadForbidden(ctx);
+      if (count === 0) ctx.log(`0 forbidden entries`);
+      else ctx.log(`forbidden overlay: ${count} entries reloaded from vault ns "law"`);
+      return;
+    } catch (e) {
+      const msg = String(e);
+      forbiddenLastError = msg;
+      // Permanent: this composition boots no vault — stop retrying, stay loud.
+      if (msg.includes("no routed implementation")) {
+        ctx.log(
+          `vivim.law: forbidden persistence requires vivim.vault queryable — missing dependency vivim.vault ` +
+          `in this composition (law grants vault caps but boots no vivim.vault). Overlay stays UNLOADED; ` +
+          `law.forbidden.set@1 aborts fail-closed until the vault is present.`,
+        );
+        return;
+      }
+      if (attempt === MAX_ATTEMPTS) {
+        ctx.log(
+          `vivim.law: forbidden overlay reload failed after ${MAX_ATTEMPTS} attempts — missing dependency vivim.vault ` +
+          `queryable (${msg}). Overlay stays UNLOADED; law.forbidden.set@1 aborts fail-closed. ` +
+          `Recover with law.forbidden.reload@1 once the vault is queryable.`,
+        );
+        return;
+      }
+      await new Promise((r) => setTimeout(r, WAIT_MS));
+    }
+  }
+}
 
 function asObj(v: unknown): Record<string, unknown> {
   return typeof v === "object" && v !== null ? (v as Record<string, unknown>) : {};
@@ -68,9 +150,19 @@ function resolve(doc: PolicyDoc, principal: string, op: string): Resolved {
 
 // ---- the ops ----
 startPlugin(definePlugin({
-  onInit: (ctx) => {
+  onInit: async (ctx) => {
     const init = registry.init(ctx.config["journalPath"], ctx.manifest.id);
     ctx.log(`vivim.law up (Ω1) — policy ${LAW_POLICY_V1.policyId}@${LAW_POLICY_V1.version}, journal replay: ${init.replayed} events`);
+    // D-325: reload the forbidden overlay once the vault is queryable. Law is
+    // bootPhase 0, vault is bootPhase 1 — never assume the vault is up at
+    // law-init time. Without vault caps this stays memory-only (pre-D-325).
+    forbiddenPersistence = hasVaultCaps(ctx);
+    if (!forbiddenPersistence) {
+      forbiddenLoaded = true; // nothing to load — memory-only by composition, not by failure
+      return;
+    }
+    forbiddenLoaded = false;
+    await reloadForbiddenAtBoot(ctx);
   },
 
   ops: {
@@ -129,7 +221,12 @@ startPlugin(definePlugin({
     "law.registry@1": (_payload: unknown, _ctx: PluginContext | null, meta: CallMeta) => {
       registry.observe(meta.from, "active", "op");
       registry.countEvent();
-      return registry.snapshot(consentTable.activeCount(), generation);
+      return registry.snapshot(consentTable.activeCount(), generation, {
+        persistence: forbiddenPersistence,
+        loaded: forbiddenLoaded,
+        count: forbiddenLoaded ? forbiddenTable.list().filter((e) => e.ops.length > 0).length : forbiddenLoadedCount,
+        ...(forbiddenLastError !== null ? { lastError: forbiddenLastError } : {}),
+      });
     },
 
     /** Grant a consent (default) or explicitly deny-revoke it ({action:"revoke"}). */
@@ -209,19 +306,64 @@ startPlugin(definePlugin({
 
     /** Forbidden-action overlay: replace a principal's forbidden op list (empty array clears).
      *  Payload {principal, ops: string[]}. READ-risk like every law contract — the
-     *  enforcement lives in law.check@1, which denies matches before policy eval. */
+     *  enforcement lives in law.check@1, which denies matches before policy eval.
+     *  D-325: with vault caps granted, the write is journaled to vault ns "law"
+     *  AFTER the in-memory set — an append failure rolls the set back and aborts
+     *  fail-closed (the spawn that triggered it aborts too, per agent.spawn). */
     "law.forbidden.set@1": async (payload: unknown, ctx: PluginContext | null, meta: CallMeta) => {
       const p = asObj(payload);
       // set() validates shape at runtime (fail-closed → DEGRADED); casts only satisfy the signature.
+      const rawPrincipal = p["principal"] as string;
+      const prior = forbiddenTable.list().find((e) => e.principal === rawPrincipal)?.ops;
       const entry = forbiddenTable.set(p["principal"] as string, p["ops"] as string[]);
       bump();
       registry.countEvent();
+      if (forbiddenPersistence) {
+        if (!ctx) {
+          // No port outside a worker — roll back, never leave a write half-done.
+          if (prior === undefined) forbiddenTable.clear(entry.principal);
+          else forbiddenTable.set(entry.principal, prior);
+          throw new Error("law.forbidden.set: no plugin context — vault append impossible, set aborted fail-closed");
+        }
+        try {
+          const r = await ctx.port.call("vault.append@1", {
+            ns: FORBIDDEN_NS,
+            id: forbiddenVaultId(entry.principal),
+            data: toRecord(entry),
+          });
+          if (!r.ok) throw new Error(`vault.append@1 ${r.error}: ${r.detail ?? "no detail"}`);
+        } catch (e) {
+          // Roll the in-memory set back — a half-persisted overlay is worse than none.
+          if (prior === undefined) forbiddenTable.clear(entry.principal);
+          else forbiddenTable.set(entry.principal, prior);
+          throw new Error(
+            `law.forbidden.set: vault append failed — set aborted fail-closed ` +
+            `(missing dependency vivim.vault queryable?): ${String(e)}`,
+          );
+        }
+      }
       await journal(ctx, {
         source: "vivim.law", op: "law.forbidden.set", action: "set",
         principal: entry.principal, ops: entry.ops,
         caller: meta.from, causationId: meta.causationId,
       });
-      return { principal: entry.principal, ops: entry.ops, count: entry.ops.length, generation };
+      return { principal: entry.principal, ops: entry.ops, count: entry.ops.length, generation, persisted: forbiddenPersistence };
+    },
+
+    /** Forbidden-overlay reload (D-325): re-read vault ns "law" prefix
+     *  "forbidden:" into the in-memory table. READ-risk. The boot path calls
+     *  the same mapping automatically; this op is the deterministic handle for
+     *  tests and for operator recovery after a vault outage. Throws DEGRADED
+     *  naming vivim.vault when the vault is absent or unqueryable — never an
+     *  empty-table silent success. */
+    "law.forbidden.reload@1": async (_payload: unknown, ctx: PluginContext | null, _meta: CallMeta) => {
+      registry.countEvent();
+      if (!forbiddenPersistence) {
+        return { loaded: true, persistence: false, count: forbiddenTable.list().filter((e) => e.ops.length > 0).length };
+      }
+      if (!ctx) throw new Error("law.forbidden.reload: no plugin context — missing dependency vivim.vault queryable");
+      const count = await reloadForbidden(ctx);
+      return { loaded: true, persistence: true, count };
     },
   },
 }));

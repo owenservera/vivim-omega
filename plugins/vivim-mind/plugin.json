@@ -8,7 +8,9 @@
   "contributions": {
     "engine": [
       { "kind": "engine", "id": "mind.snapshot", "version": "1", "doc": "snapshot {} or {includeBodies?: boolean} → {world: WorldModel} — the full grounding target (nlcl-pure WorldModel shape exactly). includeBodies defaults true (forward/compose grounding needs bodies); false strips data.body from message entities for light replication. READ semantics by kind — engines declare no risk; the mind performs no writes. A failed evidence port call throws → DEGRADED (fail-closed: no guessing)." },
-      { "kind": "engine", "id": "mind.query", "version": "1", "doc": "query {kind: ops|entities|rules|lexicon|plugins|contacts, filter?} → {kind, filter, count, rows, worldV} — a focused view derived from the same snapshot machinery (identical semantics, only the slice differs). READ semantics by kind." }
+      { "kind": "engine", "id": "mind.query", "version": "1", "doc": "query {kind: ops|entities|rules|lexicon|plugins|contacts, filter?} → {kind, filter, count, rows, worldV} — a focused view derived from the same snapshot machinery (identical semantics, only the slice differs). READ semantics by kind." },
+      { "kind": "engine", "id": "control.bootstrap", "version": "1", "doc": "bootstrap {} → {bootstrap} — D-328a versioned first contact: composition, model version, entry points, namespaces, the orienting sequence (describe → snapshot). READ-only, zero write path." },
+      { "kind": "engine", "id": "control.describe", "version": "1", "doc": "describe {focus?: {kind?, capability?, version?}} → Outcome<{control}> — D-328a bounded system projection: versions, namespaces, kinds, capabilities (config catalog), contracts, evaluators, policy boundaries (live forbidden-overlay state when reported), evolution activity. Unknown kind/capability/version → UNKNOWN, never a crash. READ-only." }
     ]
   },
   "dependencies": [],

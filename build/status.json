@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-09-12T23:21:52.405Z",
+  "generatedAt": "2026-09-13T11:19:17.510Z",
   "repo": "vivim-omega",
   "branch": "omega",
-  "head": "51b1177",
+  "head": "10f9c07",
   "waves": [
     {
       "id": "Ω0",
@@ -90,12 +90,12 @@
     }
   ],
   "gate": {
-    "startedAt": "2026-09-12T23:19:53.265Z",
+    "startedAt": "2026-09-13T11:17:13.873Z",
     "checks": {
       "host-loc": {
         "ok": true,
         "detail": {
-          "loc": 843,
+          "loc": 950,
           "budget": 1000
         }
       },
@@ -116,28 +116,85 @@
       "decisions": {
         "ok": true,
         "detail": {
-          "rows": 36,
-          "records": 10,
-          "ratified": 4,
+          "rows": 46,
+          "records": 20,
+          "ratified": 5,
           "grandfatherBelow": 313,
           "openQuestions": {
-            "count": 6,
+            "count": 15,
             "ids": [
               313,
               314,
               315,
               316,
               317,
-              322
+              323,
+              324,
+              325,
+              326,
+              327,
+              328,
+              329,
+              330,
+              331,
+              332
             ],
             "board": "stale"
           }
         }
       },
+      "compositions": {
+        "ok": true,
+        "detail": {
+          "specs": 13,
+          "entries": 49,
+          "driftAllowlisted": {
+            "vivim.law": {
+              "files": [
+                "agent.json",
+                "console.json",
+                "demo.json",
+                "discovery-mind.json",
+                "discovery.json",
+                "email.json",
+                "healing.json",
+                "law.json",
+                "llm.json",
+                "notes.json",
+                "run.json",
+                "spine.json",
+                "vault.json"
+              ],
+              "reason": "D-325: per-composition law scope (memory-only law.json … vault-durable agent.json); new shapes fail until allowlisted"
+            },
+            "vivim.run": {
+              "files": [
+                "run.json",
+                "spine.json"
+              ],
+              "reason": "alias-style variance run.json vs spine.json: same effective authority (HOST_OP_TO_CAP auto-mint); convergence deferred, see _note in run.json"
+            }
+          },
+          "contractTypes": 68,
+          "callSiteAllowlisted": [
+            "CompositionSpecEntry",
+            "LangContribution",
+            "LangFamilyChar",
+            "LangFrameSlot",
+            "LangLexiconEntry",
+            "LangOpFrame",
+            "LangSlotKind",
+            "OutcomeStatus",
+            "PROMOTION_INVARIANT",
+            "PortErrorCode",
+            "ProvenanceTier"
+          ]
+        }
+      },
       "tests": {
         "ok": true,
         "detail": {
-          "pass": 542,
+          "pass": 601,
           "fail": 0,
           "maxConcurrency": 8
         }
@@ -145,8 +202,8 @@
       "attest": {
         "ok": true,
         "detail": {
-          "compileMs": 67,
-          "bootMs": 240,
+          "compileMs": 43,
+          "bootMs": 168,
           "echo": true,
           "counterBump": true,
           "counterValue": {
@@ -167,9 +224,9 @@
       }
     }
   },
-  "hostLoc": 843,
+  "hostLoc": 950,
   "tests": {
-    "pass": 542,
+    "pass": 601,
     "fail": 0
   },
   "benchmarks": {

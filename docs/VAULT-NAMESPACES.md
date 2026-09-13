@@ -27,11 +27,14 @@ write would force a choice between auditability and freshness — hence two obje
 | `automation` | vivim.director | `rule:*`, `fired:*` | director (rules, tick ledger) | Ledger rows are authority (no-refire); kept while any rule lives |
 | `nlcl` | vivim.director | `lexicon:*` | director.teach | Survives plugin swaps by design (D-218) |
 | `discovery` | discovery-* engines | `candidates:*`, `mapping:*`, `promotion:*`, `graph:*`, `capture:*`, `trace:*`, `observation:*` | infer/map/verify/perceive/observe | Promotion events append-only (proof chain); graphs/captures cited by evidence refs (compaction honors) |
-| `agent` | vivim.agent | `agent_*` identities | agent.spawn | Append-only; lineage refs must resolve (dangling parents refused at write) |
+| `agent` | vivim.agent | `agent_*` identities, `exec:*` per-attempt ledger (`exec:<causationId>`) | agent.spawn (identities), agent.exec (ledger rows: admittedContractRev + quarantinedMidFlight + decision, settled and refused alike — D-327) | Append-only; lineage refs must resolve (dangling parents refused at write); exec rows kept while their agent lives |
 | `behavior` | vivim.agent | contract ids (multi-rev: staged→active→quarantined) | propose/promote/rollback | All revs kept (rollback walks history; quarantine never deletes) |
 | `decision` | vivim.agent | `dec-*` genealogy records | decision.record | Append-only; parent refs must resolve at write (G0 §4) |
 | `providers` | vivim.providers (reads), discovery.verify/healing (writes) | `realization:<archetype>:<provider>` | verify (PROMOTED/REQUIRES_REDISCOVERY/TESTING); healing (DEGRADED/TESTING) | Latest-wins current state; cites `discovery` promotion events (see worked example) |
 | `probe` | tests only | `p*` seeded proof records | test harnesses | Ephemeral; never read by product code |
+| `law` | vivim.law | `forbidden:<principal>` (D-325: per-principal forbidden-action overlay records `{principal, ops, updatedAt}`) | vivim.law (forbidden.set appends after the in-memory set — append failure aborts the set fail-closed; boot reloads once the vault is queryable) | Latest-wins per principal; empty-`ops` tombstones preserve clears across restarts |
+| `resolve` | vivim.director | `resolve:<decisionId>` (D-323: decision rev 1 `{decisionId, kind, capability, branch, reason, evidenceRefs, buildDecisionRef: "D-323"}` + outcome rev 2 `{status, execMs}`) | resolve.classify (rev 1) + resolve.report (rev 2); strategy.scorecard reads | Two revs of one object (verdict then outcome); ids without outcomes are decided-but-unreported |
+| `control` | vivim.agent (writes), vivim.mind (reads) | `delegation:<childId>` (D-328b handoff envelopes), `evolution:<contractId>` (D-328b proposal→evaluation→promotion/rollback mirrors) | agent.delegate (delegations); evolution.propose/evaluate/promote/rollback (evolution log); control.describe counts `evolution:` rows | Latest-wins per id; behavior mechanics stay in ns `behavior` (control mirrors genealogy, never authority) |
 
 ## Not vault namespaces (common confusion)
 
@@ -42,5 +45,5 @@ write would force a choice between auditability and freshness — hence two obje
 ## Open questions
 
 - Retention policy for `email` at scale (per-folder keep windows?) — undecided, no pressure yet.
-- `healing` writes to `providers` are specified (A4 remainder) but not yet implemented.
+- ~~`healing` writes to `providers` are specified (A4 remainder) but not yet implemented.~~ Closed by D-326: `discovery.heal@1` appends `realization:<archetype>:<provider>` with `DEGRADED` (drift, no admissible candidate) or `TESTING` (probation entry), superseding the prior rev and citing the drift observation; `none`/`promote` write nothing (verify owns promotion).
 - Session bookkeeping (`session:<uuid>` in ns `providers`) is deferred with its consumer.

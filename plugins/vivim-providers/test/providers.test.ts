@@ -114,10 +114,13 @@ describe("D-319 — realization loop end-to-end (map → verify → registry rea
     if (!booted.host) throw new Error(`boot failed: ${booted.report.reason}`);
     host = booted.host;
     hosts.push(host);
-    const st = host.router.status().compartments as Record<string, { state: string }>;
-    for (const id of ["vivim.law", "vivim.vault", "discovery.inference", "discovery.mapping", "discovery.verification", "vivim.providers"]) {
-      expect(st[id]?.state).toBe("active"); // A1 canary: the wired plugin boots with the pipeline
-    }
+    const st = host.router.status();
+    expect((st.compartments as Record<string, { state: string }>)["vivim.law"]?.state).toBe("active");
+    // A1 canary, dormant-aware (D-331): the wired pipeline registers dormant
+    // with the full route table — first touch (the map test below) activates.
+    expect(st.dormant).toEqual([
+      "discovery.inference", "discovery.mapping", "discovery.verification", "vivim.providers", "vivim.vault",
+    ]);
   }, 60_000);
 
   async function root<T>(op: string, payload: unknown): Promise<T> {
@@ -199,5 +202,44 @@ describe("D-319 — realization loop end-to-end (map → verify → registry rea
       "providers.realization.get@1", { archetypeSlug: "message.archive", providerId: "provider.email.file" },
     );
     expect(miss).toEqual({ realization: null, rev: null });
+  });
+
+  test("D-326 — registry reads all five statuses from the real vault (DEGRADED/TESTING are healing's)", async () => {
+    // Writer-honest shapes (same fields verify/heal append); the target here is
+    // the READER — writers are proven by the verify suite above and healing's
+    // realization-writes lifecycle test. No registry logic change (D-326), only
+    // proof it already handles every status live.
+    const healingShaped = [
+      { slug: "message.move", status: "DEGRADED" },
+      { slug: "message.flag", status: "TESTING" },
+      { slug: "message.archive", status: "REQUIRES_REDISCOVERY" },
+    ];
+    for (const { slug, status } of healingShaped) {
+      const w = await host.router.callAsRoot("vault.append@1", {
+        ns: "providers",
+        id: `realization:${slug}:provider.email.file`,
+        data: {
+          archetypeSlug: slug, providerId: "provider.email.file", providerClass: "SIMULATOR", status,
+          discoverySessionRef: null, opMapRef: null, entityMapRef: null, streamRefs: [],
+          evidenceRefs: [{ ns: "discovery", id: "promotion:prov-loop-2", rev: 1 }],
+          supersedes: null, createdAt: Date.now(),
+        },
+      });
+      expect(w.ok).toBe(true);
+    }
+    const reg = await root<{ entries: Array<Record<string, unknown>>; skipped: unknown[] }>("providers.registry@1", {});
+    expect(reg.skipped).toEqual([]);
+    const byArchetype = new Map(reg.entries.map((e) => [e.archetypeSlug, e]));
+    // verify's PROMOTED rows from the previous test still read back …
+    expect(byArchetype.get("message.send")).toMatchObject({ status: "PROMOTED" });
+    // … alongside every healing-side status, each with a live rev ref.
+    expect(byArchetype.get("message.move")).toMatchObject({ providerId: "provider.email.file", status: "DEGRADED" });
+    expect(byArchetype.get("message.flag")).toMatchObject({ providerId: "provider.email.file", status: "TESTING" });
+    expect(byArchetype.get("message.archive")).toMatchObject({ providerId: "provider.email.file", status: "REQUIRES_REDISCOVERY" });
+    for (const slug of ["message.move", "message.flag", "message.archive"]) {
+      const ref = byArchetype.get(slug)?.realizationRef as { ns: string; id: string; rev: number };
+      expect(ref).toMatchObject({ ns: "providers", id: `realization:${slug}:provider.email.file` });
+      expect(ref.rev).toBeGreaterThanOrEqual(1);
+    }
   });
 });

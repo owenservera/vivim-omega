@@ -111,7 +111,8 @@ describe("open-questions board — team surface over PROPOSED records", () => {
       expect(q.recommended.length).toBeGreaterThan(0);
       expect(q.awaiting).toMatch(/Owner/);
     }
-    expect(qs.find((q) => q.n === 315)!.hasTbd).toBe(true);
+    expect(qs.find((q) => q.n === 316)!.hasTbd).toBe(true); // genuinely undecided
+    expect(qs.find((q) => q.n === 315)!.hasTbd).toBe(false); // decided as (a) during B1a — awaiting owner confirmation, not a TBD
     expect(qs.find((q) => q.n === 313)!.hasTbd).toBe(false);
   });
 

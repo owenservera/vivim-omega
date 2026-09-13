@@ -14,18 +14,31 @@
 //   director.registry@1 list rules / enable / disable (data revisions)
 //   director.teach@1    teach or unteach a word (data revisions in ns "nlcl")
 //   director.tick@1     the deterministic fire pass (also scheduled live)
+//   resolve.classify@1  route by computation kind (D-323: rule → PROMOTED realization → HUMAN)
+//   resolve.report@1    record a routed execution's outcome (same ns "resolve" object, rev 2)
+//   strategy.scorecard@1 pure aggregation over ns "resolve" (scoreboards inform, never decide)
 //
 // Handlers throw on bad payloads/failed port calls — the shim converts throws
 // into DEGRADED returns at the port boundary (fail-closed propagation), except
 // director.tick@1 which NEVER throws (partial reports are honest outcomes).
+// resolve.report@1 returns an Outcome (UNKNOWN when the decision doesn't
+// exist) — a missing decision is expected-but-negative, not malformed.
 import { clearInterval, setInterval } from "node:timers";
+import { randomBytes } from "node:crypto";
 import { definePlugin, startPlugin } from "@vivim/omega-shim";
 import type { PluginContext } from "@vivim/omega-shim";
-import type { PortResult } from "@vivim/omega-contracts";
+import type { PortResult, ResolveDecision, ResolveOutcome } from "@vivim/omega-contracts";
+import { fail, resolveDecisionId } from "@vivim/omega-contracts";
 import {
   AUTOMATION_NS, LEXICON_PREFIX, NLCL_NS, RULE_PREFIX, nextFreeRuleId, ruleSlug, ruleSummary,
   validateRuleInput, validateTeachInput, asRule,
 } from "./rules.ts";
+import {
+  REALIZATION_SCAN_CAP, RESOLVE_NS, RULE_SCAN_CAP, SCORECARD_ROW_CAP,
+  asClassifiableRealization, asResolveDecision, classifyPure, parseClassifyInput,
+  parseReportInput, scorecardPure,
+  type ClassifiableRealization, type ClassifiableRule,
+} from "./resolve.ts";
 import {
   DEFAULT_SELF_ADDRESSES, DEFAULT_TICK_MS, runTick,
   type TickConfig, type TickReport, type TickState, type VaultGetResult, type VaultQueryRow,
@@ -217,6 +230,105 @@ startPlugin(definePlugin({
     "director.tick@1": async (payload: unknown, ctx: PluginContext) => {
       asObject("director.tick@1", payload ?? {}); // payload {} by contract; garbage → DEGRADED
       return tickSerialized(ctx);
+    },
+
+    /**
+     * Route by computation kind (D-323) — payload
+     * {op?, archetypeSlug?, event?, from?} → {decisionId, kind, capability,
+     * branch, reason, rev}. Rule table: enabled automation rule →
+     * DETERMINISTIC + its op; else PROMOTED realization → class-mapped kind;
+     * else HUMAN + empty capability (escalate). Appends decision rev 1 to ns
+     * "resolve" (id `resolve:<decisionId>`, minted `res_<hex>`); the writer
+     * AND this reader ship together — never touches the hot run.submit path.
+     */
+    "resolve.classify@1": async (payload: unknown, ctx: PluginContext) => {
+      const input = parseClassifyInput(payload); // contradictory/stale → DEGRADED
+      // Branch-(1) rows: enabled automation rules, id asc (bounded).
+      const rules: ClassifiableRule[] = [];
+      const qr = await vaultCall<VaultQueryRow[]>(ctx, "vault.query@1", { ns: AUTOMATION_NS, filter: { idPrefix: RULE_PREFIX } });
+      for (const row of ((qr as VaultQueryRow[]) ?? []).slice(0, RULE_SCAN_CAP)) {
+        const gr: PortResult = await ctx.port.call("vault.get@1", { ns: AUTOMATION_NS, id: row.id });
+        if (!gr.ok) continue; // unreadable rows can't route — skipped, not fatal
+        const rule = asRule("resolve.classify@1", row.id, (gr.value as VaultGetResult).data);
+        if (!rule || !rule.enabled) continue;
+        rules.push({ id: rule.id, rev: (gr.value as VaultGetResult).rev, event: rule.when.event, from: rule.when.from, op: rule.then.op, enabled: true });
+      }
+      rules.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+      // Branch-(2) rows: realizations for the archetype (bounded; the
+      // PROMOTED gate lives in classifyPure so misfiltered callers stay honest).
+      const realizations: ClassifiableRealization[] = [];
+      if (input.slug !== null) {
+        const pr: PortResult = await ctx.port.call("vault.query@1", { ns: "providers", filter: { idPrefix: `realization:${input.slug}:` } });
+        if (!pr.ok) throw new Error(`resolve.classify@1: vault.query@1 providers ${pr.error}: ${pr.detail ?? ""}`);
+        for (const row of ((pr.value as VaultQueryRow[]) ?? []).slice(0, REALIZATION_SCAN_CAP)) {
+          const gr: PortResult = await ctx.port.call("vault.get@1", { ns: "providers", id: row.id });
+          if (!gr.ok) continue;
+          const c = asClassifiableRealization(row.id, (gr.value as VaultGetResult).rev, (gr.value as VaultGetResult).data);
+          if (c) realizations.push(c);
+        }
+      }
+      const verdict = classifyPure({ input: { event: input.event, from: input.from, slug: input.slug }, rules, realizations });
+      const decisionId = `res_${randomBytes(8).toString("hex")}`;
+      const data: ResolveDecision = {
+        decisionId, kind: verdict.kind, capability: verdict.capability, branch: verdict.branch,
+        reason: verdict.reason, evidenceRefs: verdict.evidenceRefs,
+        buildDecisionRef: "D-323", createdAt: Date.now(),
+      };
+      const append = await vaultCall<VaultAppendResult>(ctx, "vault.append@1", {
+        ns: RESOLVE_NS, id: resolveDecisionId(decisionId), data,
+        meta: { type: "resolve-decision", kind: verdict.kind, branch: verdict.branch },
+        refs: verdict.evidenceRefs,
+      });
+      return { decisionId, kind: verdict.kind, capability: verdict.capability, branch: verdict.branch, reason: verdict.reason, rev: append.rev };
+    },
+
+    /**
+     * Record a routed execution's outcome — payload {decisionId, status:
+     * "ok"|"failed", execMs} → {decisionId, rev, status}. Appends outcome rev
+     * 2 to the SAME ns "resolve" object (two revs of one object: decision then
+     * outcome). UNKNOWN when the decision doesn't exist — never a throw.
+     */
+    "resolve.report@1": async (payload: unknown, ctx: PluginContext) => {
+      const input = parseReportInput(payload); // malformed → DEGRADED
+      const id = resolveDecisionId(input.decisionId);
+      const gr: PortResult = await ctx.port.call("vault.get@1", { ns: RESOLVE_NS, id });
+      if (!gr.ok) return fail("UNKNOWN", `resolve decision "${input.decisionId}" not found`);
+      const dec = asResolveDecision((gr.value as VaultGetResult).data);
+      if (!dec) throw new Error(`resolve.report@1: stored decision "${input.decisionId}" is malformed (fail-closed)`);
+      const data: ResolveOutcome = {
+        decisionId: input.decisionId, kind: dec.kind, capability: dec.capability,
+        status: input.status, execMs: input.execMs, reportedAt: Date.now(),
+      };
+      const append = await vaultCall<VaultAppendResult>(ctx, "vault.append@1", {
+        ns: RESOLVE_NS, id, data,
+        meta: { type: "resolve-outcome", status: input.status },
+        refs: [{ ns: RESOLVE_NS, id, rev: (gr.value as VaultGetResult).rev }],
+      });
+      return { decisionId: input.decisionId, rev: append.rev, status: input.status };
+    },
+
+    /**
+     * Pure aggregation over ns "resolve" — payload {} →
+     * {rows: [{kind, capability, n, okRate, p50ExecMs}], at}. Latest rev per
+     * id; ids without an outcome yet are skipped (decided but unreported).
+     * No thresholds, no auto-actions — scoreboards inform, they never decide.
+     */
+    "strategy.scorecard@1": async (payload: unknown, ctx: PluginContext) => {
+      asObject("strategy.scorecard@1", payload ?? {}); // garbage → DEGRADED
+      const qr = await vaultCall<VaultQueryRow[]>(ctx, "vault.query@1", { ns: RESOLVE_NS, filter: { idPrefix: "resolve:" } });
+      const outcomes: Array<{ kind: "DETERMINISTIC" | "PROBABILISTIC" | "HUMAN"; capability: string; status: "ok" | "failed"; execMs: number }> = [];
+      for (const row of ((qr as VaultQueryRow[]) ?? []).slice(0, SCORECARD_ROW_CAP)) {
+        const gr: PortResult = await ctx.port.call("vault.get@1", { ns: RESOLVE_NS, id: row.id });
+        if (!gr.ok) continue;
+        const d = (gr.value as VaultGetResult).data as Record<string, unknown>;
+        if ((d["kind"] === "DETERMINISTIC" || d["kind"] === "PROBABILISTIC" || d["kind"] === "HUMAN") &&
+          typeof d["capability"] === "string" &&
+          (d["status"] === "ok" || d["status"] === "failed") &&
+          typeof d["execMs"] === "number" && Number.isFinite(d["execMs"]) && d["execMs"] >= 0) {
+          outcomes.push({ kind: d["kind"], capability: d["capability"], status: d["status"], execMs: d["execMs"] });
+        }
+      }
+      return { rows: scorecardPure(outcomes), at: Date.now() };
     },
   },
 }));

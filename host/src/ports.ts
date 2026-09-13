@@ -21,6 +21,18 @@ export interface TokenRecord { token: string; pluginId: string; cap: string; gen
 
 export interface RouterOptions { vaultDir: string; journal: boolean }
 
+/** A verified-but-unspawned entry (D-331 lazy activation): everything needed
+ *  for spawn-on-first-routed-call, minted at boot. Dormant is "never started"
+ *  — distinct from "degraded" (started and unwell) in status() and stats. */
+export interface DormantEntry {
+  entry: CompositionEntry;
+  manifest: PluginManifest;
+  tokens: Record<string, string>;
+  srcDir: string;
+  entryFile: string;
+  config?: Record<string, unknown>;
+}
+
 export class PortRouter {
   private compartments = new Map<string, CompartmentHandle>();
   private manifests = new Map<string, PluginManifest>();
@@ -31,6 +43,10 @@ export class PortRouter {
   private callSeq = 0;
   private pending = new Map<string, { resolve: (r: PortResult) => void; timer: ReturnType<typeof setTimeout> }>();
   private inflightByCompartment = new Map<string, Set<string>>();
+  private dormant = new Map<string, DormantEntry>(); // verified, never started (D-331)
+  private spawning = new Map<string, Promise<void>>(); // singleflight per dormant id
+  /** Injected by boot.ts: spawn + register + init-post one dormant id. */
+  onDemandSpawn: ((id: string) => Promise<void>) | null = null;
   journalPath: string;
 
   constructor(private opts: RouterOptions) {
@@ -53,6 +69,46 @@ export class PortRouter {
     }
     handle.onMessage((m) => this.onWorkerMessage(entry.id, m));
     handle.onCrash(() => this.failInflight(entry.id, `compartment ${entry.id} crashed`));
+  }
+
+  /** Register a verified entry WITHOUT spawning (D-331): phase > 0 boots
+   *  dormant; the first routed call spawns transparently. Tokens are minted
+   *  at boot like eager entries (same authority, just deferred transport). */
+  registerDormant(entry: CompositionEntry, manifest: PluginManifest, tokens: Record<string, string>, spawn: { srcDir: string; entryFile: string; config?: Record<string, unknown> }): void {
+    this.manifests.set(entry.id, manifest);
+    for (const op of entry.grant.contracts) this.opRoute.set(op, entry.id);
+    for (const [op, risk] of riskyOps(manifest)) this.opRisk.set(op, risk);
+    for (const [key, token] of Object.entries(tokens)) {
+      if (this.tokens.has(token)) continue;
+      const aliasedOp = key.startsWith("port:") ? key.slice("port:".length) : null;
+      const effectiveCap = aliasedOp && HOST_OP_TO_CAP[aliasedOp] ? HOST_OP_TO_CAP[aliasedOp] : key;
+      this.tokens.set(token, { token, pluginId: entry.id, cap: effectiveCap, gen: this.generation });
+    }
+    this.dormant.set(entry.id, { entry, manifest, tokens, ...spawn });
+  }
+
+  /** Read-only peek for boot.ts's on-demand spawner (the spawn itself stays
+   *  the host's: singleflight + register live in spawnDormant below). */
+  peekDormant(id: string): DormantEntry | undefined {
+    return this.dormant.get(id);
+  }
+
+  /** Spawn one dormant id (singleflight: concurrent first touches share one
+   *  spawn; failures stay dormant so the next call retries fail-closed). */
+  private async spawnDormant(id: string): Promise<void> {
+    let p = this.spawning.get(id);
+    if (!p) {
+      p = (async () => {
+        if (!this.dormant.has(id)) return;
+        if (!this.onDemandSpawn) throw new Error(`dormant ${id} has no lazy spawner (fail-closed)`);
+        await this.onDemandSpawn(id);
+        this.dormant.delete(id);
+      })().finally(() => {
+        if (this.spawning.get(id) === p) this.spawning.delete(id);
+      });
+      this.spawning.set(id, p);
+    }
+    await p;
   }
 
   mintTokensFor(entry: CompositionEntry): Record<string, string> {
@@ -119,10 +175,6 @@ export class PortRouter {
   private async dispatch(principal: string, op: string, payload: unknown, deadlineMs: number, causationId: string, token: string): Promise<PortResult> {
     const target = this.opRoute.get(op);
     if (!target) return { ok: false, error: "REFUSED", detail: `no routed implementation for ${op}` };
-    const targetHandle = this.compartments.get(target);
-    if (!targetHandle || targetHandle.state === "stopped" || targetHandle.state === "degraded") {
-      return { ok: false, error: "DEGRADED", detail: `implementation ${target} is ${targetHandle?.state ?? "absent"}` };
-    }
     const risk = this.opRisk.get(op);
     if (risk) {
       const gate = await this.callLaw(principal, op, payload, causationId);
@@ -131,6 +183,20 @@ export class PortRouter {
       if (decision.decision === "deny") { this.journal({ principal, op, decision: "deny", reason: decision.reason, causationId }); return { ok: false, error: "REFUSED", detail: `denied by law: ${decision.reason ?? ""}` }; }
       if (decision.decision === "require-consent") { this.journal({ principal, op, decision: "require-consent", reason: decision.reason, consentId: decision.consentId, causationId }); return { ok: false, error: "REFUSED", detail: `consent required${decision.consentId ? `: ${decision.consentId}` : ""}` }; }
       this.journal({ principal, op, decision: "allow", reason: decision.reason, causationId });
+    }
+    // D-331: a dormant target spawns on first touch — AFTER the gate, so a
+    // refused call never pays a spawn. Transparent thereafter: the caller
+    // cannot tell a just-spawned compartment from an eager one.
+    if (!this.compartments.has(target) && this.dormant.has(target)) {
+      try {
+        await this.spawnDormant(target);
+      } catch (e) {
+        return { ok: false, error: "DEGRADED", detail: `dormant ${target} failed to spawn on first touch: ${String(e)}` };
+      }
+    }
+    const targetHandle = this.compartments.get(target);
+    if (!targetHandle || targetHandle.state === "stopped" || targetHandle.state === "degraded") {
+      return { ok: false, error: "DEGRADED", detail: `implementation ${target} is ${targetHandle?.state ?? "absent"}` };
     }
     const deadlineAbs = deadlineMs > 0 ? Date.now() + deadlineMs : 0;
     return this.deliver(target, { type: "deliver", causationId, op, payload, deadlineMs, from: principal });
@@ -164,6 +230,14 @@ export class PortRouter {
       case HOST_OPS.compartmentStats: {
         const stats: Record<string, unknown> = {};
         for (const [id, h] of this.compartments) stats[id] = { state: h.state, ...h.stats, inflight: this.inflightByCompartment.get(id)?.size ?? 0 };
+        // D-331: dormant ids report state "dormant" with zero counters — the
+        // health loop (and operators) tell "never started" apart from
+        // "started and unwell" without a second source.
+        for (const id of this.dormant.keys()) {
+          if (!(id in stats)) {
+            stats[id] = { state: "dormant", delivered: 0, calls: 0, errors: 0, crashes: 0, bootedAt: 0, inflight: 0 };
+          }
+        }
         return { ok: true, value: stats };
       }
       case HOST_OPS.compartmentTerminate: {
@@ -226,10 +300,10 @@ export class PortRouter {
     for (const h of this.compartments.values()) await h.terminate().catch(() => {});
   }
 
-  status(): { compartments: Record<string, unknown>; generation: number; routedOps: string[] } {
+  status(): { compartments: Record<string, unknown>; dormant: string[]; generation: number; routedOps: string[] } {
     const compartments: Record<string, unknown> = {};
     for (const [id, h] of this.compartments) compartments[id] = { state: h.state, ...h.stats };
-    return { compartments, generation: this.generation, routedOps: [...this.opRoute.keys()] };
+    return { compartments, dormant: [...this.dormant.keys()].sort(), generation: this.generation, routedOps: [...this.opRoute.keys()] };
   }
 }
 
