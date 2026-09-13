@@ -51,7 +51,7 @@ export function collectContractExports(ROOT: string): Map<string, string[]> {
   };
   let files: string[];
   try {
-    files = readdirSync(dir);
+    files = readdirSync(dir).sort(); // filesystem order is unspecified — sort so per-export file lists are deterministic everywhere
   } catch {
     return out; // no contracts tree here (unit scaffolds) — nothing to check
   }
