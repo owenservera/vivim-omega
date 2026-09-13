@@ -241,7 +241,7 @@ export function decideRollback(revsNewestFirst: RevState[]): Outcome<{ quarantin
   return ok({ quarantineRev: quarantine.rev, reactivateRev: reactivate.rev });
 }
 
-// ---- exec (B1a, D-327: one agent acts once; D-315 finish-then-halt) ----
+// ---- exec (B1a, D-327: one agent acts once; D-315(a) finish-then-halt, ratified) ----
 
 export interface ExecInput {
   agentId: string;
@@ -281,7 +281,7 @@ export function execCallScope(op: string, payload: Record<string, unknown>): Exe
   return { kind: "scope", scope: `${base}:ns=${ns}` };
 }
 
-// ---- exec admission (D-315 finish-then-halt, B1a D-327) ----
+// ---- exec admission (D-315(a) finish-then-halt, ratified, B1a D-327) ----
 
 /** Identity states that can never admit a new call (quarantined/retired are terminal). */
 const TERMINAL_IDENTITY_STATES = ["quarantined", "retired"] as const;

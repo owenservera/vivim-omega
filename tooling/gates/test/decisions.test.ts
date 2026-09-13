@@ -100,7 +100,12 @@ describe("open-questions board — team surface over PROPOSED records", () => {
     const qs = listOpenQuestions(root);
     const ids = qs.map((q) => q.n);
     expect(ids).toEqual([...ids].sort((a, b) => a - b)); // D-number order, append-proof
-    for (const known of [313, 314, 315, 316, 317]) expect(ids).toContain(known);
+    for (const known of [313, 314, 316, 317]) expect(ids).toContain(known);
+    // ratified records leave the board: D-315 (quarantine semantics, confirmed
+    // by B1a) parses RATIFIED in its record and is absent here.
+    expect(ids).not.toContain(315);
+    expect(parseRecord(315, "docs/decisions/D-315-quarantine-semantics.md",
+      readFileSync(join(root, "docs/decisions/D-315-quarantine-semantics.md"), "utf-8")).status).toBe("RATIFIED");
     // everything listed is genuinely PROPOSED in its record (no ratified stragglers on the board)
     for (const q of qs) {
       const text = readFileSync(join(root, q.file), "utf-8");
@@ -112,7 +117,6 @@ describe("open-questions board — team surface over PROPOSED records", () => {
       expect(q.awaiting).toMatch(/Owner/);
     }
     expect(qs.find((q) => q.n === 316)!.hasTbd).toBe(true); // genuinely undecided
-    expect(qs.find((q) => q.n === 315)!.hasTbd).toBe(false); // decided as (a) during B1a — awaiting owner confirmation, not a TBD
     expect(qs.find((q) => q.n === 313)!.hasTbd).toBe(false);
   });
 

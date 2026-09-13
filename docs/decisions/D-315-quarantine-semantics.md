@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -32,7 +32,7 @@ G2 warns about). Carried forward through two assessments unanswered.
 - Why not (c) migrate: state transfer between contract versions has no machinery and murky audit ownership (which version owns the outcome?).
 - The first B1b PR that widens beyond one op MUST present settlement evidence for re-ratification, or the gate's decisions stage should be extended to block it.
 - `agent.describe@1` output exposes quarantine state via the resolved contract's `state` (already returned alongside the identity) — the combination rule (identity.state × contract.state → admittable?) is: admittable iff contract is `active` and identity is not `quarantined`/`retired`.
-- B1a evidence for ratification: `plugins/vivim-agent/test/exec.test.ts` "D-315 finish-then-halt" (v2 agent REFUSED post-rollback with the version-mismatch reason; v1 agent still admitted and settled OK) + the ledger assertions on every exec test (`admittedContractRev`, `quarantinedMidFlight: false` on sequential calls) + `decideExecAdmission`/`execQuarantinedMidFlight` pure tables in `src/agent.ts` (terminal states, version skew, rev drift each pinned). Full `bun run omega:gate` GREEN 2026-09-13 (612/612 — ratification flips on the land-commit SHA).
+- B1a evidence for ratification: `plugins/vivim-agent/test/exec.test.ts` "D-315 finish-then-halt" (v2 agent REFUSED post-rollback with the version-mismatch reason; v1 agent still admitted and settled OK) + the ledger assertions on every exec test (`admittedContractRev`, `quarantinedMidFlight: false` on sequential calls) + `decideExecAdmission`/`execQuarantinedMidFlight` pure tables in `src/agent.ts` (terminal states, version skew, rev drift each pinned). Full `bun run omega:gate` GREEN 2026-09-13 (612/612 — ratified in 46fc6b3; B1a exec evidence home 3f53afc).
 
 ## Evidence
 
@@ -40,3 +40,4 @@ G2 warns about). Carried forward through two assessments unanswered.
 - `upgrades/New/PROPOSED-NEXT-STEPS.md` §3 + §8 Q3 (concurs on elevation, argues code-first).
 - B1a decision evidence: `plugins/vivim-agent/src/index.ts` `agent.exec@1` (admission check + settle-and-ledger, no abort path) + `plugins/vivim-agent/test/exec.test.ts` (refuse-new + finish-and-annotate); `upgrades/OMEGA-FINAL-UPGRADE-PLAN.md` §5 (V2.2).
 - B1a confirmation evidence (this ratification): the version pin — not the state gate — does the refusing (rollback-reactivate case); ledger-per-attempt with `admittedContractRev` (audit pin) + `quarantinedMidFlight` (admission-once proof); identity-terminal half noted as unexercised defense-in-depth above. No fourth option emerged from running it.
+- Landing SHAs: B1a exec machinery + tests in 3f53afc; confirmation text + 612-gate tree in 46fc6b3.

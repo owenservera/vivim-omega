@@ -25,7 +25,7 @@
 // (fail-closed: never claim an outcome without its proof). There is no
 // mid-flight abort path by construction: admission is checked once, the
 // admitted call runs to settlement, and a post-settle head re-read only
-// annotates `quarantinedMidFlight` (D-315 finish-then-halt).
+// annotates `quarantinedMidFlight` (D-315(a) finish-then-halt, ratified).
 //
 // PRINCIPAL HONESTY (host limitation, documented not hidden): the µhost sets
 // the dispatch principal to the CALLING compartment (`vivim.agent`), so the
@@ -501,7 +501,7 @@ startPlugin(definePlugin({
       };
     },
 
-    /** One agent acts once (B1a, D-327; D-315 finish-then-halt).
+    /** One agent acts once (B1a, D-327; D-315(a) finish-then-halt, ratified).
      *  Payload {agentId, op: "<id>@<version>", payload?, realizationRef?}.
      *  See the LEDGER RULE + PRINCIPAL HONESTY notes at the top of this file:
      *  every attempt ledgers exactly once to ns "agent" id `exec:<causationId>`;

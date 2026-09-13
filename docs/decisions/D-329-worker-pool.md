@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -37,4 +37,4 @@ in the plan.
 - Placement (how the wall held): ~34 lines in `host/src` (hook interface + setter + `checkoutCompartment` + `wrapWorker` extract in `worker.ts`; two call-site swaps in `boot.ts`) → host 984/1000, nothing trimmed. The pool proper — idle queue, refill-to-N bound, generic `poolboot.ts` bootstrap (`assign {entry}` → dynamic import → `assigned` ack), stats — lives in `surfaces/daemon` (the process lifecycle the pool belongs inside). The host never imports surfaces: the pool is INJECTED via `setPoolHook`, mirroring the `onDemandSpawn` injection. No compliant placement existed *inside* `host/src` for the whole pool; splitting interface (host) from implementation (daemon) is what fits.
 - History note: this record previously deferred landing (949 + ~62 > 1000 for a host-resident pool). The deferral was correct for that placement and is superseded by this one — the wall was met by placement, not by cramming (host delta auditable in the land commit).
 - `surfaces/daemon/test/pool.test.ts`: mechanics (size-0/shutdown nulls, assign-failure refill, entry-per-assignment init→ready, 6-way concurrent soak) + the ADVERSARIAL ship-blocker (tenant pollutes `globalThis`/timers/closures/module cache → terminated → same slot serves inspector → all four channels pristine + distinct threadIds) + checkout-latency distribution + daemon integration (pooled hits serve boot + first touch, status reports stats, poolSize 0 disables honestly). `host/test/pool.test.ts`: hook-absent/throwing/null all degrade to cold spawn; plain `spawnCompartment` untouched.
-- Falsifier run: pooled checkout n=12 min 8.1ms p50 ~52–60ms max ~105–163ms vs cold thread-spawn p50 26.5ms on record (numbers in `BENCHMARKS.md`); full `bun run omega:gate` pending at record time (ratification flips on the land-commit SHA).
+- Falsifier run: pooled checkout n=12 min 8.1ms p50 ~52–60ms max ~105–163ms vs cold thread-spawn p50 26.5ms on record (numbers in `BENCHMARKS.md`); full `bun run omega:gate` GREEN 2026-09-13 (612/612, host 984/1000 — ratified in 46fc6b3).
