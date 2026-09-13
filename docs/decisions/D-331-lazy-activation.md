@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -39,4 +39,4 @@ with "started and unwell" would turn laziness into silent permissiveness.
 - Health vocabulary, held consistent three ways (same wave): (1) `router.status()` + `host.compartment.stats` report `dormant` explicitly — never-started vs degraded is structural; (2) `vivim.run`'s loop needed NO logic change (zero-crash rows cannot trip either rule — proven by the new dormant unit test in `run.test.ts`, not assumed); (3) `vivim.mind`'s lens documents its boundary honestly instead of faking it: the lens reports law-observed liveness only, so dormant ≡ unobserved there, falsifiable against `router.status()` (deviation from the "schema updated" letter, reasoned: the mind has no router-state port, and inventing dormancy without evidence would be the worse dishonesty).
 - Prerequisite note: D-330 (cache) landed; D-329 (pool) did not — first-touch measured 78–83ms without it, so the "first-touch cheap" intent is met by measurement; the pool remains pure upside (see D-329).
 - Migration: twelve boot-active assertions across spine/providers/inference/perceive/email/observe/mind/director/llm/cli/web re-pinned to dormant-at-boot (each now proves MORE: dormant set + intact routes); `surfaces/cli` renders `[dormant]`; `/api/health` merges dormant rows.
-- Falsifier run: lazy suite 6/6 + all migrated suites green; full `bun run omega:gate` GREEN 2026-09-13 (601/601, host 950/1000 — ratification flips on commit SHA).
+- Falsifier run: lazy suite 6/6 + all migrated suites green; full `bun run omega:gate` GREEN 2026-09-13 (601/601, host 950/1000 — ratified in 3f53afc).

@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -40,4 +40,4 @@ operator signal. The law is otherwise fail-closed; this table fails open.
 - `plugins/vivim-law/src/index.ts`: vault-journaled set with rollback, boot reload with bounded retries, `law.forbidden.reload@1`, registry `forbidden` block.
 - `plugins/vivim-law/test/forbidden-durability.test.ts`: restart round trip + vault-absent fail-closed + empty-overlay reload (3/3 green).
 - `plugins/vivim-law/test/law.test.ts`: pure record-mapping suite (D-325 block).
-- Falsifier run: `bun test plugins/vivim-law/test/forbidden-durability.test.ts` 4 pass / 0 fail; full `bun run omega:gate` GREEN 2026-09-13 (601/601 — ratification flips on commit SHA).
+- Falsifier run: `bun test plugins/vivim-law/test/forbidden-durability.test.ts` 4 pass / 0 fail; full `bun run omega:gate` GREEN 2026-09-13 (601/601 — ratified in 3f53afc).

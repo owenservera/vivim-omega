@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -39,4 +39,4 @@ is cheaper than a graph engine.
 - `plugins/vivim-agent/src/agent.ts` + `src/index.ts` (unchanged wiring): `decision.record` accepts `buildDecisionRef: "D-###"`, rejects anything else fail-closed.
 - `plugins/vivim-agent/test/decision-ref.test.ts`: cite/round-trip + legacy-without-pointer + six malformed shapes refused and never stored.
 - INFERRED-vs-VERIFIED distinction survives the vault round trip: asserted in `plugins/vivim-director/test/resolve.test.ts` (rule evidence INFERRED, realization evidence VERIFIED, both read back exact).
-- Falsifier run: decision-ref + resolve suites green; full `bun run omega:gate` GREEN 2026-09-13 (601/601 — ratification flips on commit SHA).
+- Falsifier run: decision-ref + resolve suites green; full `bun run omega:gate` GREEN 2026-09-13 (601/601 — ratified in 3f53afc).

@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -39,4 +39,4 @@ proposal twice (see Options).
 - `plugins/vivim-director/src/resolve.ts`: pure rule table (`classifyPure`: rule → PROMOTED-realization → HUMAN) + `scorecardPure` (exact lower-median p50, no thresholds) + strict input parsing (stale op/slug contradictions throw).
 - `plugins/vivim-director/src/index.ts`: `resolve.classify@1` (decision rev 1, ns `resolve`) + `resolve.report@1` (outcome rev 2, UNKNOWN when missing) + `strategy.scorecard@1` (reads only); same vault caps, no new plugin/composition/host/law/vault changes.
 - `plugins/vivim-director/test/resolve.test.ts`: branch tables + real-boot classify→report→scorecard round trip with exact arithmetic + stale-input refusal.
-- Falsifier run: resolve suite green (with D-324 file); full `bun run omega:gate` GREEN 2026-09-13 (601/601, host 950/1000 — ratification flips on commit SHA).
+- Falsifier run: resolve suite green (with D-324 file); full `bun run omega:gate` GREEN 2026-09-13 (601/601, host 950/1000 — ratified in 3f53afc).

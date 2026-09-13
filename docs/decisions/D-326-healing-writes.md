@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -36,4 +36,4 @@ conformance is vacuous — no consumer can trust a status no producer writes.
 - `plugins/discovery-healing/test/realization-writes.test.ts`: full lifecycle PROMOTED→DEGRADED→TESTING→REQUIRES_REDISCOVERY→PROMOTED through `discovery.verify@1` + `discovery.heal@1`, every transition asserted by real vault read; registry reflects TESTING with live rev (2/2 green).
 - `plugins/vivim-providers/test/providers.test.ts`: registry reads all five statuses from the real vault (no registry logic change).
 - `compositions/healing.json` + `plugins/discovery-healing/plugin.json`: `port:vault.get@1` granted/requested (prior-rev read); `docs/VAULT-NAMESPACES.md` open question closed.
-- Falsifier run: lifecycle round-trip green; full `bun run omega:gate` GREEN 2026-09-13 (601/601 — ratification flips on commit SHA).
+- Falsifier run: lifecycle round-trip green; full `bun run omega:gate` GREEN 2026-09-13 (601/601 — ratified in 3f53afc).

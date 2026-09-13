@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -39,4 +39,4 @@ hygiene items.
 - Folded into the W1 net (`tooling/gates/compositions.ts` check 5 — the gate's `compositions` stage fails on relapse).
 - The rule caught four newborn gaps the same day (DelegateEnvelope, DescribeFocus, EpistemicStatus, ResolveOutcomeStatus exported with no readers) — all four were WIRED (real type uses in agent/mind/director/verification), not allowlisted.
 - `tooling/gates/test/contract-sites.test.ts`: parsing + verdicts + allowlist + self-observation guards, temp-dir only.
-- Falsifier run: `bun run tooling/gates/contract-sites.ts` ok:true (68 checked, 11 grandfathered); gate suites green; full `bun run omega:gate` GREEN 2026-09-13 (601/601 — ratification flips on commit SHA).
+- Falsifier run: `bun run tooling/gates/contract-sites.ts` ok:true (68 checked, 11 grandfathered); gate suites green; full `bun run omega:gate` GREEN 2026-09-13 (601/601 — ratified in 3f53afc).

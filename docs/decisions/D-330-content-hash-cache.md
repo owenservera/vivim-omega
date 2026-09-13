@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -38,4 +38,4 @@ matters — a stale hit executes the wrong code under the right name.
 - Staleness: verified-hash comparison (not mtime trust alone) + verify-on-boot retained + changed-sources-miss proven live (marker v1→v2 through a temp plugin copy; the repo tree is never written by the test).
 - `surfaces/daemon/test/cache.test.ts`: key/LRU unit tables + cold→warm switch-back equivalence (identical routedOps + call results; misses 2 / hits 1) + changed-sources partial + never-stale behavior.
 - Prerequisite note: landed WITHOUT D-329 (sequencing inverted honestly — the cache composes with lazy, not with the pool; the pool-backed miss path is D-329's recorded follow-up).
-- Falsifier run: cache suite 4/4 + daemon suite green; reboot numbers in `BENCHMARKS.md`; full `bun run omega:gate` GREEN 2026-09-13 (601/601 — ratification flips on commit SHA).
+- Falsifier run: cache suite 4/4 + daemon suite green; reboot numbers in `BENCHMARKS.md`; full `bun run omega:gate` GREEN 2026-09-13 (601/601 — ratified in 3f53afc).

@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -38,4 +38,4 @@ splitting read/orient (safe to ship alone) from act/evolve (may slip alone).
 - 4b: `agent.delegate@1` (subset-mathed handoff + `delegation:<childId>` to ns `control`; receiver re-discovers via describe) + `evolution.propose/evaluate/promote/rollback@1` (identical behavior-mechanics gates, genealogy-distinct names, mirrors to `evolution:<contractId>`; evidence-required; agent actors need a live version-pinned identity — no L-levels exist, so the evidence requirement IS the floor, per the no-second-auth-model non-goal).
 - `contracts/src/control.ts` (one vocabulary surface via `provider.ts`); `docs/VAULT-NAMESPACES.md` ns `control` row (first writer lands here, same wave).
 - `plugins/vivim-agent/test/control.test.ts`: 4a gate (describe→snapshot→bootstrap, UNKNOWN trio) + 4b loop (delegate re-discovery, propose→evaluate→promote mirrors, ghost/empty/dangling refusals, rollback mirror, describe activity count).
-- Falsifier run: control suite green with mind+agent suites; full `bun run omega:gate` GREEN 2026-09-13 (601/601 — ratification flips on commit SHA; 4b did not slip).
+- Falsifier run: control suite green with mind+agent suites; full `bun run omega:gate` GREEN 2026-09-13 (601/601 — ratified in 3f53afc; 4b did not slip).

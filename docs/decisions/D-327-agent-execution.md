@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -38,4 +38,4 @@ PROPOSED, not RATIFIED.
 - `plugins/vivim-agent/src/index.ts`: `agent.exec@1` (admit → scope → realization → law pre-check for `agent:<id>` → settle → annotate → ledger exactly once to ns `agent` id `exec:<causationId>`; ledger rule + principal-honesty limitation stated in a design comment before the code).
 - `plugins/vivim-agent/test/exec.test.ts`: PROMOTED→settled→ledgered round trip + forbidden-refused-and-ledgered + scope/verb/realization/shape gates + D-315 finish-then-halt (quarantine refuses v2, admits v1) — 8/8 green.
 - `plugins/vivim-agent/plugin.json` + `compositions/agent.json`: `agent.exec@1` routed, `port:law.check@1` granted (pre-check); `docs/VAULT-NAMESPACES.md` ns `agent` row extended with `exec:*`.
-- Falsifier run: `bun test plugins/vivim-agent/test/exec.test.ts` 8 pass / 0 fail; full `bun run omega:gate` GREEN 2026-09-13 (601/601 — ratification flips on commit SHA).
+- Falsifier run: `bun test plugins/vivim-agent/test/exec.test.ts` 8 pass / 0 fail; full `bun run omega:gate` GREEN 2026-09-13 (601/601 — ratified in 3f53afc).
