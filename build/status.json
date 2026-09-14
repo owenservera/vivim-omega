@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-09-14T12:45:10.995Z",
+  "generatedAt": "2026-09-14T12:48:58.380Z",
   "repo": "vivim-omega",
   "branch": "omega",
-  "head": "2caa500",
+  "head": "cb34aa6",
   "waves": [
     {
       "id": "Ω0",
@@ -90,7 +90,7 @@
     }
   ],
   "gate": {
-    "startedAt": "2026-09-14T12:44:05.830Z",
+    "startedAt": "2026-09-14T12:47:52.884Z",
     "checks": {
       "host-loc": {
         "ok": true,
@@ -186,7 +186,7 @@
         "ok": true,
         "detail": {
           "compileMs": 3,
-          "bootMs": 33,
+          "bootMs": 32,
           "echo": true,
           "counterBump": true,
           "counterValue": {
