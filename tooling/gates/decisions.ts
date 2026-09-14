@@ -224,7 +224,10 @@ export function boardFreshness(root: string): { state: "fresh" | "stale" | "miss
   let base = "";
   try {
     const text = readFileSync(join(root, "docs/decisions/OPEN-QUESTIONS.md"), "utf-8");
-    base = /<!--\s*base:\s*([0-9a-f]{7,40})\s*-->/.exec(text)?.[1] ?? "";
+    // the writer emits `<!-- base: <sha> generated: … -->` — the sha is the
+    // anchored part; everything after it is presentation (the reader used to
+    // demand `-->` immediately after the sha, which the writer never wrote).
+    base = /<!--\s*base:\s*([0-9a-f]{7,40})/.exec(text)?.[1] ?? "";
   } catch {
     return { state: "missing", base: "", head };
   }
