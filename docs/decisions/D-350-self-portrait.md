@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -40,6 +40,6 @@ forward.
 ## Evidence
 
 - `plugins/vivim-mind/plugin.json` (5th engine contribution + the four-port capability request with justification), `src/derive.ts` (`buildPortrait`, `PORTRAIT_NAMESPACES`, `RegistryFullView`), `src/index.ts` (`mind.portrait@1` handler, `fetchRegistryFull` shared with `fetchRegistry`).
-- `plugins/vivim-mind/test/portrait.test.ts` (10 tests: unit derivation/determinism/one-machinery + integration one-call-after-traffic, snapshot parity, fail-closed-without-verify, manifest lawfulness) — 40/40 mind suite green.
+- `plugins/vivim-mind/test/portrait.test.ts` (9 tests: unit derivation/determinism/one-machinery + integration one-call-after-traffic, snapshot parity, fail-closed-without-verify, manifest lawfulness) — 40/40 mind suite green.
 - `tooling/portrait/portrait.ts` + `posture.ts` + `test/posture.test.ts` (3 tests; missing-doc honesty).
-- PROPOSED in this wave; gate evidence recorded at ratification.
+- Ratification: owner directive 2026-09-14 ("ensure the self view is configured"); landed PROPOSED in 33cfdee; full `bun run omega:gate` GREEN on 33cfdee (624/624, host 984/1000, attest de3d24e) — ratified on that evidence. The emitter reproduces the first-lineage numbers exactly on the pristine base (world v38, 11 vault entries verified, 27 journal events, 12 steps, consents 1).
