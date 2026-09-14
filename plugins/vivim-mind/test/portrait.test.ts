@@ -79,7 +79,11 @@ interface PortraitResult { portrait: {
   at: number; composition: string; nlclVersion: string;
   kernel: { plugins: Array<{ id: string; version: string; state: string }>; events: number; consents: number; generation: number };
   vault: { ok: boolean; headHash: string; entries: number; namespaces: Array<{ ns: string; entries: number }> };
-  world: { v: number; t: number; kernel: { composition: string }; ops: unknown[]; entities: unknown[]; lexicon: unknown[]; rules: unknown[] };
+  world: {
+    v: number; t: number;
+    counts: { entities: number; messages: number; contacts: number; rules: number; lexicon: number; ops: number };
+    topContacts: Array<{ id: string; label: string; address: string }>;
+  };
   capabilities: Array<{ op: string; risk: string; provider: string; title: string }>;
 } }
 
@@ -137,10 +141,13 @@ describe("unit: buildPortrait", () => {
 
   test("the world inside is the SAME machinery as snapshot (one derivation, two views)", () => {
     const p = buildPortrait(evidence, config, { t: 42 });
-    expect(p.world.kernel.composition).toBe("portrait-test");
+    // the summary counts the snapshot machinery's own outputs: 1 message + 1 derived contact (peter)
+    expect(p.world.counts.messages).toBe(1);
+    expect(p.world.counts.contacts).toBe(1);
+    expect(p.world.counts.entities).toBe(2);
+    expect(p.world.counts.ops).toBe(config.ops.length);
     expect(p.world.t).toBe(42);
-    expect(p.world.entities.some((e) => (e as { id: string }).id === "message:m1")).toBe(true);
-    expect(p.world.entities.some((e) => (e as { id: string }).id.startsWith("contact:"))).toBe(true);
+    expect(p.world.topContacts).toEqual([{ id: "contact:peter", label: "Peter", address: "peter@northwind.example" }]);
   });
 
   test("the capabilities catalog is the config ops (recipe data, never invented)", () => {
@@ -155,6 +162,7 @@ describe("unit: buildPortrait", () => {
     const c = buildPortrait(evidence, config, { t: 200 });
     expect(c.at).toBe(200);
     expect(c.world.t).toBe(200);
+    expect(c.world.v).toBe(a.world.v); // v is a function of evidence, not the clock
   });
 });
 
@@ -189,9 +197,10 @@ describe("integration: mind.portrait@1 through the real composition", () => {
     expect(portrait.vault.entries).toBeGreaterThanOrEqual(2);
     expect(portrait.vault.headHash).toMatch(/^[0-9a-f]{64}$/);
     expect(portrait.vault.namespaces.find((n) => n.ns === "email")!.entries).toBeGreaterThanOrEqual(2);
-    // world: the SAME evidence the snapshot machinery sees
-    expect(portrait.world.entities.some((e) => (e as { id: string }).id.startsWith("message:"))).toBe(true);
-    expect(portrait.world.entities.some((e) => (e as { id: string }).id === "contact:peter")).toBe(true);
+    // world: the same evidence the snapshot machinery sees, as the summary
+    expect(portrait.world.counts.messages).toBeGreaterThanOrEqual(2);
+    expect(portrait.world.topContacts.some((c) => c.id === "contact:peter" && c.address === "peter@northwind.example")).toBe(true);
+    expect(portrait.world.counts.ops).toBe(MIND_OPS.length);
     // capabilities: the config catalog verbatim
     expect(portrait.capabilities.map((x) => x.op)).toEqual(MIND_OPS.map((x) => x.op));
   }, 30_000);
@@ -203,8 +212,9 @@ describe("integration: mind.portrait@1 through the real composition", () => {
     if (!pr.ok || !sr.ok) throw new Error("precondition");
     const { portrait } = pr.value as PortraitResult;
     const snap = (sr.value as { world: { v: number; entities: unknown[] } }).world;
-    // entity count matches (t and at differ between the two calls; ids must not)
-    expect(portrait.world.entities.length).toBe(snap.entities.length);
+    // the portrait's entity count is the snapshot machinery's own count (same evidence, two views)
+    expect(portrait.world.counts.entities).toBe(snap.entities.length);
+    expect(portrait.world.v).toBe(snap.v);
   }, 30_000);
 
   test("fail-closed: without port:vault.verify@1 the portrait degrades, never guesses", async () => {

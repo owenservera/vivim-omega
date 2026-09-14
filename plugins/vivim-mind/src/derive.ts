@@ -425,6 +425,23 @@ export interface PortraitEvidence {
   lexiconRows: EvidenceRow[]; // ns "nlcl"
 }
 
+/** The portrait's world slice — the SUMMARY the artifact ships (the full
+ *  WorldModel stays behind the op boundary; the portrait carries counts + the
+ *  top derived contacts, exactly the first-lineage artifact shape). */
+export interface PortraitWorldSummary {
+  v: number;
+  t: number;
+  counts: {
+    entities: number;
+    messages: number;
+    contacts: number;
+    rules: number;
+    lexicon: number;
+    ops: number;
+  };
+  topContacts: Array<{ id: string; label: string; address: string }>;
+}
+
 /** The portrait view returned by mind.portrait@1 (the artifact's `runtime` minus
  *  the host-side router truth, which a plugin cannot see — the emitter merges
  *  that in from the booted host). */
@@ -444,7 +461,7 @@ export interface PortraitView {
     entries: number;
     namespaces: Array<{ ns: string; entries: number }>;
   };
-  world: WorldModel;
+  world: PortraitWorldSummary;
   capabilities: OpRow[];
 }
 
@@ -452,7 +469,8 @@ export interface PortraitView {
  * Build the portrait from evidence + config. PURE given (evidence, config, opts):
  * same evidence + same config ⇒ byte-identical portrait except `at` (the one
  * clock, supplied by the wiring) and `world.t` (same clock). The world inside is
- * the SAME machinery as mind.snapshot@1 — one derivation, two views.
+ * derived by the SAME machinery as mind.snapshot@1 — one derivation, two views
+ * (the portrait ships the summary; the snapshot ships the whole model).
  */
 export function buildPortrait(evidence: PortraitEvidence, config: MindConfig, opts: { t: number }): PortraitView {
   const world = buildWorldModel(
@@ -469,6 +487,11 @@ export function buildPortrait(evidence: PortraitEvidence, config: MindConfig, op
     ns,
     entries: evidence.namespaceCounts.find((c) => c.ns === ns)?.entries ?? 0,
   }));
+  const contacts = world.entities.filter((e) => e.type === "contact");
+  const asAddress = (data: unknown): string =>
+    typeof data === "object" && data !== null && typeof (data as Record<string, unknown>)["address"] === "string"
+      ? (data as Record<string, unknown>)["address"] as string
+      : "";
   return {
     at: opts.t,
     composition: config.composition,
@@ -485,7 +508,19 @@ export function buildPortrait(evidence: PortraitEvidence, config: MindConfig, op
       entries: evidence.verify.entries,
       namespaces,
     },
-    world,
+    world: {
+      v: world.v,
+      t: world.t,
+      counts: {
+        entities: world.entities.length,
+        messages: world.entities.filter((e) => e.type === "message").length,
+        contacts: contacts.length,
+        rules: world.rules.length,
+        lexicon: world.lexicon.length,
+        ops: world.ops.length,
+      },
+      topContacts: contacts.slice(0, 5).map((c) => ({ id: c.id, label: c.label, address: asAddress(c.data) })),
+    },
     capabilities: config.ops.map((o) => ({ ...o })),
   };
 }
