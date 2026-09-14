@@ -41,8 +41,8 @@
       "source": "../plugins/vivim-mind",
       "bootPhase": 1,
       "grant": {
-        "capabilities": ["port:law.registry@1", "port:vault.query@1", "port:vault.get@1"],
-        "contracts": ["mind.snapshot@1", "mind.query@1"]
+        "capabilities": ["port:law.registry@1", "port:vault.query@1", "port:vault.get@1", "port:vault.verify@1"],
+        "contracts": ["mind.snapshot@1", "mind.query@1", "mind.portrait@1"]
       },
       "config": {
         "composition": "console",

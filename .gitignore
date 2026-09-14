@@ -2,3 +2,4 @@ node_modules/
 dev-vault/
 *.log
 .DS_Store
+build/self-portrait.json

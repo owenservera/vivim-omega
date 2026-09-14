@@ -1,15 +1,17 @@
 // vivim.mind — index.ts (Ω10), the self-knowledge plugin (wiring only).
 //
-// THE LENS, never an author: everything below READS through three ports
-// (law.registry@1, vault.query@1, vault.get@1 — exactly the capabilities this
-// manifest requests) and assembles the WorldModel via the pure machinery in
-// derive.ts. There is no write path anywhere in this plugin.
+// THE LENS, never an author: everything below READS through four ports
+// (law.registry@1, vault.query@1, vault.get@1, vault.verify@1 — exactly the
+// capabilities this manifest requests) and assembles the WorldModel / the
+// portrait via the pure machinery in derive.ts. There is no write path
+// anywhere in this plugin.
 //
 // Ops exposed (ENGINE contributions — no risk BY KIND, READ semantics):
 //   mind.snapshot@1  {} | {includeBodies?: boolean} → {world: WorldModel}
 //   mind.query@1     {kind, filter?} → {kind, filter, count, rows, worldV}
 //   control.bootstrap@1 {} → {bootstrap: Bootstrap} (D-328a: versioned first contact)
 //   control.describe@1 {focus?} → Outcome<{control: ControlModel}> (D-328a: bounded orient)
+//   mind.portrait@1   {} → {portrait: PortraitView} (D-350: one unified self-read)
 //
 // Fail-closed: every port call goes through portCall (non-ok → throw); a throw
 // surfaces as DEGRADED at the port boundary. The mind NEVER degrades to guessing.
@@ -29,8 +31,9 @@ import { fail, ok } from "@vivim/omega-contracts";
 // projections; it writes nothing, so a wrong self-model is falsifiable against
 // intact evidence."
 import {
-  AUTOMATION_NS, buildWorldModel, EMAIL_NS, MESSAGE_META_TYPE, NLCL_NS, parseMindConfig,
-  QUERY_BOUND, type EvidenceRow, type MindConfig, type RegistrySnapshotView,
+  AUTOMATION_NS, buildPortrait, buildWorldModel, EMAIL_NS, MESSAGE_META_TYPE, NLCL_NS, parseMindConfig,
+  QUERY_BOUND, type EvidenceRow, type MindConfig, type PortraitEvidence, type PortraitView,
+  type RegistryFullView, type RegistrySnapshotView, type VaultVerifyView,
 } from "./derive.ts";
 
 // ---- port plumbing (fail-closed, same discipline as the provider's vaultCall) ----
@@ -49,8 +52,11 @@ function asObj(v: unknown): Record<string, unknown> {
   return typeof v === "object" && v !== null ? (v as Record<string, unknown>) : {};
 }
 
-/** law.registry@1 → the slice of the snapshot the lens consumes (shape-validated). */
-async function fetchRegistry(ctx: PluginContext): Promise<RegistrySnapshotView> {
+/** law.registry@1 → the FULL snapshot the portrait consumes (shape-validated):
+ *  plugins, events, states (the snapshot view) PLUS consents + generation —
+ *  the law's own numbers, never a guess. One validated read machinery, shared
+ *  with fetchRegistry so both ops see the SAME evidence shape. */
+async function fetchRegistryFull(ctx: PluginContext): Promise<RegistryFullView> {
   const snap = await portCall<Record<string, unknown>>(ctx, "law.registry@1", {});
   const plugins = snap["plugins"];
   const events = snap["events"];
@@ -61,6 +67,14 @@ async function fetchRegistry(ctx: PluginContext): Promise<RegistrySnapshotView> 
   if (typeof events !== "number" || !Number.isFinite(events)) {
     throw new Error("mind: law.registry@1 returned a malformed events count");
   }
+  const consents = snap["consents"];
+  if (typeof consents !== "number" || !Number.isFinite(consents)) {
+    throw new Error("mind: law.registry@1 returned a malformed consents count");
+  }
+  const generation = snap["generation"];
+  if (typeof generation !== "number" || !Number.isFinite(generation)) {
+    throw new Error("mind: law.registry@1 returned a malformed generation");
+  }
   if (states === null || typeof states !== "object" || Array.isArray(states)) {
     throw new Error("mind: law.registry@1 returned a malformed states map");
   }
@@ -69,7 +83,13 @@ async function fetchRegistry(ctx: PluginContext): Promise<RegistrySnapshotView> 
     const state = asObj(o)["state"];
     view[id] = { state: typeof state === "string" ? state : "unknown" };
   }
-  return { plugins, events, states: view };
+  return { plugins, events, consents, generation, states: view };
+}
+
+/** law.registry@1 → the slice of the snapshot the lens consumes (shape-validated). */
+async function fetchRegistry(ctx: PluginContext): Promise<RegistrySnapshotView> {
+  const full = await fetchRegistryFull(ctx);
+  return { plugins: full.plugins, events: full.events, states: full.states };
 }
 
 /** One namespace's rows (latest revision per id), bounded at QUERY_BOUND fetches —
@@ -284,6 +304,55 @@ startPlugin(definePlugin({
         return fail("UNKNOWN", `unknown control version "${focus.version}" (this system speaks ${CONTROL_MODEL_VERSION})`);
       }
       return ok({ control });
+    },
+
+    /**
+     * portrait {} → {portrait} — D-350, the system seeing itself in ONE unified
+     * read: kernel (live law registry: plugins/events/consents/generation),
+     * vault (the recomputed Merkle head + per-namespace counts through the
+     * mind's own lens), world (the SAME WorldModel machinery as snapshot), and
+     * the capabilities catalog. READ-only — the mind holds no write capability;
+     * a failed evidence port call (including vault.verify@1 when the composition
+     * has not granted it) throws → DEGRADED, fail-closed like every other read.
+     */
+    "mind.portrait@1": async (payload: unknown, ctx: PluginContext) => {
+      if (payload !== null && (typeof payload !== "object" || Array.isArray(payload))) {
+        throw new Error("mind.portrait@1: payload must be an object");
+      }
+      const config = parseMindConfig(ctx.config);
+      const t = Date.now();
+      // evidence: one full registry read + the namespace rows + the Merkle walk
+      const registry = await fetchRegistryFull(ctx);
+      const emailRows = await fetchNamespaceRows(ctx, EMAIL_NS);
+      const messageRows: EvidenceRow[] = emailRows
+        .filter((r) => asObj(r.meta)["type"] === MESSAGE_META_TYPE)
+        .map((r) => ({ id: r.id, data: r.data }));
+      const ruleRows = (await fetchNamespaceRows(ctx, AUTOMATION_NS)).map((r) => ({ id: r.id, data: r.data }));
+      const lexiconRows = (await fetchNamespaceRows(ctx, NLCL_NS)).map((r) => ({ id: r.id, data: r.data }));
+      const controlRows = await portCall<VaultQueryRow[]>(ctx, "vault.query@1", { ns: "control", filter: {} });
+      const verify = await portCall<Record<string, unknown>>(ctx, "vault.verify@1", {});
+      if (typeof verify["ok"] !== "boolean" || typeof verify["headHash"] !== "string" || typeof verify["entries"] !== "number") {
+        throw new Error("mind.portrait@1: vault.verify@1 returned a malformed verdict");
+      }
+      const evidence: PortraitEvidence = {
+        registry,
+        verify: { ok: verify["ok"] as boolean, headHash: verify["headHash"] as string, entries: verify["entries"] as number },
+        namespaceCounts: [
+          { ns: EMAIL_NS, entries: emailRows.length },
+          { ns: AUTOMATION_NS, entries: ruleRows.length },
+          { ns: NLCL_NS, entries: lexiconRows.length },
+          { ns: "control", entries: (controlRows as VaultQueryRow[]).length },
+        ],
+        messageRows,
+        ruleRows,
+        lexiconRows,
+      };
+      const portrait: PortraitView = buildPortrait(evidence, config, { t });
+      ctx.log(
+        `mind: portrait at ${new Date(t).toISOString()} — ${portrait.kernel.plugins.length} live plugins, `
+          + `vault ${portrait.vault.entries} entries ${portrait.vault.ok ? "verified" : "BROKEN"}, world v${portrait.world.v}`,
+      );
+      return { portrait };
     },
   },
 }));

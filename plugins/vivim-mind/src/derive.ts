@@ -386,3 +386,106 @@ export function buildWorldModel(evidence: WorldEvidence, config: MindConfig, opt
     context,
   };
 }
+
+// ---- the portrait (D-350 — the system seeing itself, one unified read) ----
+
+/**
+ * The FULL law.registry@1 snapshot view the portrait consumes (validated by the
+ * wiring's fetchRegistryFull): everything RegistrySnapshotView carries, plus the
+ * consent count and the law generation — the portrait reports the law's own
+ * numbers, never a guess.
+ */
+export interface RegistryFullView extends RegistrySnapshotView {
+  consents: number;   // active consents (law registry's own count)
+  generation: number; // law state generation
+}
+
+/** The vault.verify@1 result view (the recomputed Merkle chain head). */
+export interface VaultVerifyView {
+  ok: boolean;
+  headHash: string;
+  entries: number;
+}
+
+/**
+ * The namespaces the portrait counts — the mind's OWN lens, nothing else. The
+ * counts come from the same bounded vault queries that feed the WorldModel, so
+ * the portrait's namespaces and the world's entities trace to the same evidence.
+ */
+export const PORTRAIT_NAMESPACES = ["email", "automation", "nlcl", "control"] as const;
+
+/** Everything the portrait is derived from (fetched by the wiring, all READ). */
+export interface PortraitEvidence {
+  registry: RegistryFullView;
+  verify: VaultVerifyView;
+  /** Per-namespace row counts, one entry per PORTRAIT_NAMESPACES (control may be 0). */
+  namespaceCounts: ReadonlyArray<{ ns: string; entries: number }>;
+  messageRows: EvidenceRow[];  // ns "email", meta.type "message"
+  ruleRows: EvidenceRow[];    // ns "automation"
+  lexiconRows: EvidenceRow[]; // ns "nlcl"
+}
+
+/** The portrait view returned by mind.portrait@1 (the artifact's `runtime` minus
+ *  the host-side router truth, which a plugin cannot see — the emitter merges
+ *  that in from the booted host). */
+export interface PortraitView {
+  at: number;
+  composition: string;
+  nlclVersion: string;
+  kernel: {
+    plugins: PluginView[];
+    events: number;
+    consents: number;
+    generation: number;
+  };
+  vault: {
+    ok: boolean;
+    headHash: string;
+    entries: number;
+    namespaces: Array<{ ns: string; entries: number }>;
+  };
+  world: WorldModel;
+  capabilities: OpRow[];
+}
+
+/**
+ * Build the portrait from evidence + config. PURE given (evidence, config, opts):
+ * same evidence + same config ⇒ byte-identical portrait except `at` (the one
+ * clock, supplied by the wiring) and `world.t` (same clock). The world inside is
+ * the SAME machinery as mind.snapshot@1 — one derivation, two views.
+ */
+export function buildPortrait(evidence: PortraitEvidence, config: MindConfig, opts: { t: number }): PortraitView {
+  const world = buildWorldModel(
+    {
+      registry: evidence.registry, // RegistryFullView is a superset — the world consumes the reduced view
+      messageRows: evidence.messageRows,
+      ruleRows: evidence.ruleRows,
+      lexiconRows: evidence.lexiconRows,
+    },
+    config,
+    { includeBodies: true, t: opts.t },
+  );
+  const namespaces = PORTRAIT_NAMESPACES.map((ns) => ({
+    ns,
+    entries: evidence.namespaceCounts.find((c) => c.ns === ns)?.entries ?? 0,
+  }));
+  return {
+    at: opts.t,
+    composition: config.composition,
+    nlclVersion: config.nlclVersion,
+    kernel: {
+      plugins: world.kernel.plugins,
+      events: evidence.registry.events,
+      consents: evidence.registry.consents,
+      generation: evidence.registry.generation,
+    },
+    vault: {
+      ok: evidence.verify.ok,
+      headHash: evidence.verify.headHash,
+      entries: evidence.verify.entries,
+      namespaces,
+    },
+    world,
+    capabilities: config.ops.map((o) => ({ ...o })),
+  };
+}

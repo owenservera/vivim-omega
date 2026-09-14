@@ -23,6 +23,7 @@
     "omega:bench": "bun run tooling/bench/bench.ts",
     "omega:status": "bun run tooling/gates/status.ts",
     "omega:demo": "bun run tooling/demo/demo.ts",
+    "omega:portrait": "bun run tooling/portrait/portrait.ts",
     "omega:host": "bun run host/src/main.ts"
   },
   "dependencies": {
