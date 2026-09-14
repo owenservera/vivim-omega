@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-09-13T16:34:22.975Z",
+  "generatedAt": "2026-09-14T12:40:25.963Z",
   "repo": "vivim-omega",
   "branch": "omega",
-  "head": "c09c140",
+  "head": "33cfdee",
   "waves": [
     {
       "id": "Ω0",
@@ -90,7 +90,7 @@
     }
   ],
   "gate": {
-    "startedAt": "2026-09-13T16:31:59.589Z",
+    "startedAt": "2026-09-14T12:39:19.523Z",
     "checks": {
       "host-loc": {
         "ok": true,
@@ -101,37 +101,27 @@
       },
       "fresh-tree": {
         "ok": true,
+        "skipped": true,
         "detail": {
-          "vivim-final-enhanced": {
-            "head": "afebe00",
-            "clean": true
-          },
-          "vivim-final-program": {
-            "head": "4a5eb84",
-            "clean": true
-          },
+          "reason": "no sibling legacy repos present (clean clone / CI) — nothing to verify untouched",
           "legacyImports": 0
         }
       },
       "decisions": {
         "ok": true,
         "detail": {
-          "rows": 53,
-          "records": 27,
-          "ratified": 18,
+          "rows": 54,
+          "records": 28,
+          "ratified": 23,
           "grandfatherBelow": 313,
           "openQuestions": {
-            "count": 9,
+            "count": 5,
             "ids": [
               313,
               314,
               316,
               317,
-              335,
-              336,
-              337,
-              338,
-              339
+              350
             ],
             "board": "stale"
           }
@@ -188,16 +178,16 @@
       "tests": {
         "ok": true,
         "detail": {
-          "pass": 612,
+          "pass": 624,
           "fail": 0,
-          "maxConcurrency": 8
+          "maxConcurrency": 4
         }
       },
       "attest": {
         "ok": true,
         "detail": {
-          "compileMs": 88,
-          "bootMs": 203,
+          "compileMs": 3,
+          "bootMs": 32,
           "echo": true,
           "counterBump": true,
           "counterValue": {
@@ -220,7 +210,7 @@
   },
   "hostLoc": 984,
   "tests": {
-    "pass": 612,
+    "pass": 624,
     "fail": 0
   },
   "benchmarks": {
