@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -54,4 +54,4 @@ costs the most — evidence-class decisions touching B1–B4.
 - Checker rule green on the landing commit; decisions contract tests extended
   (tag parsing + flagging), 11/11 green.
 - `docs/decisions/CURRENT-INVARIANTS.md` ships as consolidation pass #1.
-- Landed in the remediation-wave commit (SHA recorded at ratification).
+- Landed in 0df18d0 (the remediation-wave commit; gate GREEN 733/733, host 999/1000, all seven stages incl. the new bun-surface stage).

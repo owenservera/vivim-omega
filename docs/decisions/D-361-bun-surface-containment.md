@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -58,4 +58,4 @@ surface is Bun by definition (the gate itself runs `bun test`).
 - Gate `bun-surface` stage green on the landing commit (scan: 30 production dirs).
 - Node canary (D-362): canon suite 5/5 under Node 24 — `node --test tooling/ci/canon-canary.test.mjs`.
 - Daemon/CLI/MCP/web/vault suites green on the landing commit (726/726).
-- Landed in the remediation-wave commit (SHA recorded at ratification).
+- Landed in 0df18d0 (the remediation-wave commit; gate GREEN 733/733, host 999/1000, all seven stages incl. the new bun-surface stage).

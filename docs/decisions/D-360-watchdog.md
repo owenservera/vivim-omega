@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -57,4 +57,4 @@ own recommendation; (b) is re-verified per runtime upgrade via the probe.
 - Adversarial cases 13/14 green (726/726 across the tree on the landing commit).
 - resourceLimits probe on Linux/Bun 1.3.14: `{"capMB":32,"peakHeapMB":130,"exitCode":0,
   "verdict":"NOT ENFORCED"}` — recorded in BENCHMARKS.md (remediation wave entry).
-- Landed in the remediation-wave commit (SHA recorded at ratification).
+- Landed in 0df18d0 (the remediation-wave commit; gate GREEN 733/733, host 999/1000, all seven stages incl. the new bun-surface stage).

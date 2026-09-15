@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -54,4 +54,4 @@ command (`bun run omega:gate`).
 - Canary 5/5 under Node 24 on the landing commit.
 - ci.yml: `gate-ubuntu`, `gate-reproduce`, `node-canary` (required) + `test-windows`
   (informational, D-320 unchanged).
-- Landed in the remediation-wave commit (SHA recorded at ratification).
+- Landed in 0df18d0 (the remediation-wave commit; gate GREEN 733/733, host 999/1000, all seven stages incl. the new bun-surface stage).

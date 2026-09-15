@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -46,4 +46,4 @@ behavior are unchanged, and the poll loops are deleted (net-negative host LOC).
 - All suites green on the landing commit (726/726), including lazy-activation and
   boot-timeout cases that previously exercised the pollers.
 - Bench before/after recorded in BENCHMARKS.md (27ms → 10ms).
-- Landed in the remediation-wave commit (SHA recorded at ratification).
+- Landed in 0df18d0 (the remediation-wave commit; gate GREEN 733/733, host 999/1000, all seven stages incl. the new bun-surface stage).
