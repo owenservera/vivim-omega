@@ -132,8 +132,16 @@ startPlugin(definePlugin({
       }
 
       // 3. walk + classify; every node cites the capture revision (evidence is constitutional)
-      const captureCasRef = `${pageRef.ns}/${pageRef.id}@${capture.rev}`;
-      const graph = buildGraph(page, [{ casRef: captureCasRef }]);
+      // D-357 G0 fix: the evidence ref carries the {ns, id, rev} triple (inference's
+      // normalizeEvidence requirement) + the derived casRef — casRef-only refs were
+      // silently dropped downstream, zeroing the perceive→infer seam.
+      const captureRef = {
+        ns: pageRef.ns,
+        id: pageRef.id,
+        rev: capture.rev,
+        casRef: `${pageRef.ns}/${pageRef.id}@${capture.rev}`,
+      };
+      const graph = buildGraph(page, [captureRef]);
 
       // 4. persist the graph in the vault, with a vault-level provenance edge to the capture
       const graphId = { ns: DISCOVERY_NS, id: `graph:${name}` };
@@ -141,7 +149,7 @@ startPlugin(definePlugin({
         ns: graphId.ns,
         id: graphId.id,
         data: graph,
-        meta: { type: "graph", fixture: name, nodeCount: graph.nodes.length, evidenceObject: captureCasRef },
+        meta: { type: "graph", fixture: name, nodeCount: graph.nodes.length, evidenceObject: captureRef.casRef },
         refs: [{ ns: pageRef.ns, id: pageRef.id, rev: capture.rev }],
       });
 

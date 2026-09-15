@@ -43,11 +43,16 @@ export interface PolicyDoc {
  *  says. Two sources, one truth: every routed contract op with declared non-READ
  *  risk must classify identically here (exact rows added for `vault.roundtrip@1`
  *  and `providers.session.start@1`; `notes.*` repaired to `note.*` — it matched
- *  nothing). Enforced fail-closed by the parity net (D-351). */
+ *  nothing). Enforced fail-closed by the parity net (D-351).
+ *  1.2.0 (D-356): the credentials spine enters the net — exact row
+ *  `credential.put@1` → MUTATION (the class is vault-internal), with an
+ *  explicit require-consent RULE so storing a credential keeps the
+ *  security-sensitive consent bar (the first-lineage put ceremony, now
+ *  stated as policy data instead of default-riding). */
 export const LAW_POLICY_V1: PolicyDoc = {
   policyId: "law.policy",
-  version: "1.1.0",
-  description: "Ω1 baseline: risk-class defaults, mutation journaling, principal deny-list",
+  version: "1.2.0",
+  description: "Ω1 baseline: risk-class defaults, mutation journaling, principal deny-list, credential-consent rule",
   riskTable: [
     { op: "risky.op@1", risk: "EXTERNAL_MUTATION" },
     { op: "risky.read@1", risk: "READ" },
@@ -55,6 +60,7 @@ export const LAW_POLICY_V1: PolicyDoc = {
     { op: "providers.session.start@1", risk: "MUTATION" },  // D-351: exact row outranks the fail-closed default (was silently upgraded)
     { op: "vault.*", risk: "MUTATION" },
     { op: "note.*", risk: "MUTATION" },                     // D-351: repaired from "notes.*" (note.write@1 never matched)
+    { op: "credential.put@1", risk: "MUTATION" },           // D-356: vault-internal class — the consent bar lives in the rule below, not the class
   ],
   defaultRisk: "EXTERNAL_MUTATION", // unknown ops are treated as the strictest class (fail-closed)
   riskDefaults: {
@@ -64,6 +70,7 @@ export const LAW_POLICY_V1: PolicyDoc = {
   },
   rules: [
     { match: { principal: "omega.attacker" }, decision: "deny", reason: "principal deny-listed (adversarial fixture, Ω0 runtime suite)" },
+    { match: { op: "credential.put@1" }, decision: "require-consent", reason: "storing a credential is the security-sensitive bar — consent required even though the class is vault-internal (D-356)" },
   ],
 };
 

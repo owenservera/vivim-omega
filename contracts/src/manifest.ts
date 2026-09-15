@@ -6,6 +6,9 @@ export const CONTRIBUTION_KINDS = [
   "schema", "contract", "engine", "provider",
   "runtime", "surface", "policy", "pack", "test",
   "lang", // Ω13.5 — vocabulary/frames as data (see ./lang.ts). NOT routable.
+  "parser", // D-355 (M7) — parser-as-governed-data: a signed, version-pinned
+  // contribution whose whole job is producing M1 chunk rows (see ./parser.ts).
+  // NOT routable: registers no op, never appears in routableOps()/riskyOps().
 ] as const;
 export type ContributionKind = (typeof CONTRIBUTION_KINDS)[number];
 

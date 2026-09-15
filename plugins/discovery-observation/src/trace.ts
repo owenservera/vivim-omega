@@ -130,13 +130,16 @@ function requestIdOf(ev: TraceEvent | undefined): string | undefined {
  * resolve to graph nodes are skipped — both are COUNTED, never thrown (drift is
  * data, not error).
  */
-export function deriveEdges(events: TraceEvent[], spans: Array<{ start: number; end: number }>, resolve: NodeResolver, casRef: string): DeriveResult {
+export function deriveEdges(events: TraceEvent[], spans: Array<{ start: number; end: number }>, resolve: NodeResolver, source: { ns: string; id: string; rev: number }): DeriveResult {
   const edges: CausalEdge[] = [];
   let skippedUnresolved = 0;
   let unattributedUpdates = 0;
   let group: Group | null = null;
 
-  const ref = (line: number): EvidenceRef => ({ casRef, span: { ...spans[line]! } });
+  // D-357 G0 fix: every edge evidence ref carries the {ns, id, rev} triple + the
+  // derived casRef (casRef-only refs were dropped by inference's fail-closed filter).
+  const casRef = `${source.ns}/${source.id}@${source.rev}`;
+  const ref = (line: number): EvidenceRef => ({ ns: source.ns, id: source.id, rev: source.rev, casRef, span: { ...spans[line]! } });
 
   for (let i = 0; i < events.length; i++) {
     const ev = events[i]!;

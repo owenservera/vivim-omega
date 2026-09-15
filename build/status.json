@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-09-15T15:23:47.717Z",
+  "generatedAt": "2026-09-15T16:52:30.109Z",
   "repo": "vivim-omega",
   "branch": "omega",
-  "head": "b3c5eec",
+  "head": "d5d8951",
   "waves": [
     {
       "id": "Ω0",
@@ -90,7 +90,7 @@
     }
   ],
   "gate": {
-    "startedAt": "2026-09-15T15:22:42.675Z",
+    "startedAt": "2026-09-15T16:51:24.773Z",
     "checks": {
       "host-loc": {
         "ok": true,
@@ -110,32 +110,38 @@
       "decisions": {
         "ok": true,
         "detail": {
-          "rows": 57,
-          "records": 31,
+          "rows": 61,
+          "records": 35,
           "ratified": 27,
           "grandfatherBelow": 313,
           "openQuestions": {
-            "count": 4,
+            "count": 8,
             "ids": [
               313,
               314,
               316,
-              317
+              317,
+              354,
+              355,
+              356,
+              357
             ],
-            "board": "fresh"
+            "board": "stale"
           }
         }
       },
       "compositions": {
         "ok": true,
         "detail": {
-          "specs": 13,
-          "entries": 49,
+          "specs": 15,
+          "entries": 61,
           "driftAllowlisted": {
             "vivim.law": {
               "files": [
                 "agent.json",
+                "browser.json",
                 "console.json",
+                "credentials.json",
                 "demo.json",
                 "discovery-mind.json",
                 "discovery.json",
@@ -158,7 +164,7 @@
               "reason": "alias-style variance run.json vs spine.json: same effective authority (HOST_OP_TO_CAP auto-mint); convergence deferred, see _note in run.json"
             }
           },
-          "contractTypes": 74,
+          "contractTypes": 80,
           "callSiteAllowlisted": [
             "CompositionSpecEntry",
             "LangContribution",
@@ -177,7 +183,7 @@
       "tests": {
         "ok": true,
         "detail": {
-          "pass": 651,
+          "pass": 691,
           "fail": 0,
           "maxConcurrency": 4
         }
@@ -185,8 +191,8 @@
       "attest": {
         "ok": true,
         "detail": {
-          "compileMs": 4,
-          "bootMs": 33,
+          "compileMs": 3,
+          "bootMs": 32,
           "echo": true,
           "counterBump": true,
           "counterValue": {
@@ -209,7 +215,7 @@
   },
   "hostLoc": 997,
   "tests": {
-    "pass": 651,
+    "pass": 691,
     "fail": 0
   },
   "benchmarks": {

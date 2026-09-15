@@ -1,0 +1,32 @@
+{
+  "manifestVersion": "1",
+  "id": "provider.browser",
+  "version": "0.1.0",
+  "description": "M0/D-357 — the BROWSER_MEDIATED realization (D-338 engineering): holds the browser session as FIXTURE-recorded captures (in-sandbox; the CDP leg is owner-machine-only future work and never silently simulated). Sends pass four fail-closed bars: day-one fence holds (law.forbidden.set@1 registered at onInit), session attached, realization PROMOTED through discovery.verify@1's standard lifecycle, and a verified parser pin covers the manifest parser version (D-355). The send replay emits ordered M1 chunks via meta.emit (D-352 discipline) and lands the message ns 'email' pack-schema-exact. Captures run through credential.redact@1 BEFORE the vault sees them (M12/D-356 ordering law).",
+  "entry": "src/index.ts",
+  "publisher": { "keyId": "", "signature": "" },
+  "contributions": {
+    "provider": [
+      { "kind": "provider", "id": "browser.attach", "version": "1", "doc": "attach {captureText, archetypeSlug?, parserVersion?} → {sessionId, captureRef, redactions, integrity, rev} — redact-before-vault (credential.redact@1), then append the capture row (ns providers, capture:<uuid>) and the session row (session:<uuid>, BY REFERENCE ONLY, sim: true). Parser version must match the manifest's (fail-closed genealogy)." },
+      { "kind": "provider", "id": "browser.release", "version": "1", "doc": "release {sessionId} → {sessionId, status: 'RELEASED', rev} — appends the release revision; a released session fails bar 2 on every later send." },
+      { "kind": "provider", "id": "message.send", "version": "1", "doc": "send {sessionId, to, subject, body, threadId?} → {messageId, rev, sentAt, chunks} — realizes the pack.domain-email message.send@1 contract (EXTERNAL_MUTATION, consent required) through the browser realization. Risk/risk-class for this op is DECLARED by pack.domain-email (risk lives on contract kind only). Four fail-closed bars; replay emits ordered chunks via meta.emit; message row ns 'email' pack-schema-exact with provenance refs (session + capture)." }
+    ],
+    "parser": [
+      { "kind": "parser", "id": "message.send", "version": "1", "doc": "D-355 (M7): the version-pinned parser for the message.send archetype — NOT routable (parser kind registers no op). The transform is pure and deterministic: capture text in, ordered ParsedChunk rows out (replay.start / replay.message / replay.event*n / replay.done-final). Discovery-derived: exists because the recorded fixture session exists; the pin's evidence trail is the promotion event." }
+    ]
+  },
+  "dependencies": [
+    { "ref": "contract:message.send@1", "range": "1.x" }
+  ],
+  "capabilities": {
+    "requested": [
+      "port:vault.append@1",
+      "port:vault.get@1",
+      "port:credential.redact@1",
+      "port:law.forbidden.set@1"
+    ],
+    "justification": "Session/capture/message rows persist in the USER'S VAULT (data/code divorce) via port:vault.append@1 + port:vault.get@1. Captures are redacted BEFORE storage via port:credential.redact@1 — an output-only surface that cannot reveal secrets (it never returns them; M12/D-356). The day-one fence registers never-invocations via port:law.forbidden.set@1 (D-338 law-reviewed authority). The browser NEVER requests port:credential.use@1 — the fence denies it to the pilot principal on day one, and the plugin holds no such capability."
+  },
+  "runtime": { "tier": "worker-thread", "budget": { "cpuMs": 1000, "memMB": 128 } },
+  "contentHash": ""
+}

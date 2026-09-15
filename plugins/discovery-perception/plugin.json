@@ -63,10 +63,13 @@
         "id": "discovery.evidence-ref",
         "version": "1",
         "fields": [
-          { "name": "casRef", "type": "string", "required": true, "doc": "vault object holding the capture bytes, as '<ns>/<id>@<rev>' (e.g. 'discovery/capture:webmail-inbox@1'); resolves via vault.get@1 {ns, id, rev}" },
+          { "name": "ns", "type": "string", "required": true, "doc": "G0 minimum (D-357): the vault namespace holding the capture bytes — the triple {ns, id, rev} downstream consumers (inference normalizeEvidence) require" },
+          { "name": "id", "type": "string", "required": true, "doc": "G0 minimum: the vault object id" },
+          { "name": "rev", "type": "integer", "required": true, "doc": "G0 minimum: the vault object revision (>= 1)" },
+          { "name": "casRef", "type": "string", "required": true, "doc": "DERIVED from the triple: '<ns>/<id>@<rev>' (e.g. 'discovery/capture:webmail-inbox@1'); kept for byte-span citation readers" },
           { "name": "span", "type": "object", "doc": "optional {start, end}: UTF-8 BYTE offsets [start, end) into the referenced capture bytes — observation cites per event line; perception cites whole-capture (no span)" }
         ],
-        "doc": "discovery.evidence-ref@1 — the provenance unit: which vault object's bytes back a claim."
+        "doc": "discovery.evidence-ref@1 — the provenance unit: which vault object's bytes back a claim. v1 (D-357): the ref carries the {ns, id, rev} triple plus the derived casRef — the falsifier proved casRef-only refs were silently dropped by inference's fail-closed evidence filter, zeroing the perceive→infer seam."
       }
     ]
   },

@@ -134,6 +134,18 @@
         "@vivim/omega-shim": "workspace:*",
       },
     },
+    "plugins/provider-browser": {
+      "name": "@vivim/plugin-provider-browser",
+      "version": "0.1.0",
+      "dependencies": {
+        "@vivim/omega-contracts": "workspace:*",
+        "@vivim/omega-shim": "workspace:*",
+      },
+      "devDependencies": {
+        "@vivim/omega-host": "workspace:*",
+        "@vivim/omega-sdk": "workspace:*",
+      },
+    },
     "plugins/provider-email-file": {
       "name": "@vivim/plugins-provider-email-file",
       "version": "0.1.0",
@@ -163,6 +175,18 @@
         "@vivim/omega-host": "workspace:*",
         "@vivim/omega-sdk": "workspace:*",
         "@vivim/omega-testkit": "workspace:*",
+      },
+    },
+    "plugins/vivim-credentials": {
+      "name": "@vivim/plugin-vivim-credentials",
+      "version": "0.1.0",
+      "dependencies": {
+        "@vivim/omega-contracts": "workspace:*",
+        "@vivim/omega-shim": "workspace:*",
+      },
+      "devDependencies": {
+        "@vivim/omega-host": "workspace:*",
+        "@vivim/omega-sdk": "workspace:*",
       },
     },
     "plugins/vivim-director": {
@@ -379,6 +403,10 @@
     "@vivim/plugin-plugin-notes": ["@vivim/plugin-plugin-notes@workspace:examples/plugin-notes"],
 
     "@vivim/plugin-plugin-risky": ["@vivim/plugin-plugin-risky@workspace:examples/plugin-risky"],
+
+    "@vivim/plugin-provider-browser": ["@vivim/plugin-provider-browser@workspace:plugins/provider-browser"],
+
+    "@vivim/plugin-vivim-credentials": ["@vivim/plugin-vivim-credentials@workspace:plugins/vivim-credentials"],
 
     "@vivim/plugin-vivim-law": ["@vivim/plugin-vivim-law@workspace:plugins/vivim-law"],
 

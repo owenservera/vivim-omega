@@ -155,6 +155,12 @@ export interface ProviderRealization {
   evidenceRefs: VaultProvenanceRef[];
   supersedes: VaultProvenanceRef | null;
   createdAt: number;
+  /** D-355 (M7): the parser pins the run was verified against — WHICH parser
+   *  contribution version realizes this archetype for this provider (P-D3
+   *  genealogy). Optional: pre-D-355 records (upstream rows, re-landed trees)
+   *  carry no pins; consumers treat absence as "unpinned" and the D-357
+   *  realization bar refuses sends that need a pin the record lacks. */
+  parserPins?: import("./parser.ts").ParserPin[];
   /** Vault record revision — absent on writes, filled by readers (vault.get rev). Not stored. */
   rev?: number;
 }

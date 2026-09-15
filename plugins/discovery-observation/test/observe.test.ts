@@ -55,11 +55,11 @@ describe("Ω7 observation unit — event-trace parsing + edge derivation (src/tr
     );
     const { events, spans } = parseTrace(text);
     const resolver = (s: string) => (s === "#a" ? "na" : s === "#b" ? "nb" : null);
-    const { edges, skippedUnresolved, unattributedUpdates } = deriveEdges(events, spans, resolver, "discovery/trace:t@1");
+    const { edges, skippedUnresolved, unattributedUpdates } = deriveEdges(events, spans, resolver, { ns: "discovery", id: "trace:t", rev: 1 });
     expect(edges.length).toBe(1);
     expect(edges[0]).toMatchObject({ id: "e0", from: "na", to: "nb", trigger: "click", latencyMs: 200 });
     expect(edges[0]!.evidence.length).toBe(3); // cause line + network line + dom line
-    expect(edges[0]!.evidence.every((e) => e.casRef === "discovery/trace:t@1" && e.span)).toBe(true);
+    expect(edges[0]!.evidence.every((e) => e.casRef === "discovery/trace:t@1" && e.ns === "discovery" && e.id === "trace:t" && e.rev === 1 && e.span)).toBe(true);
     expect(skippedUnresolved).toBe(0);
     expect(unattributedUpdates).toBe(0);
   });
@@ -74,7 +74,7 @@ describe("Ω7 observation unit — event-trace parsing + edge derivation (src/tr
     );
     const { events, spans } = parseTrace(text);
     const resolver = (s: string) => (s === "#f" ? "nf" : s === "#list" ? "nlist" : null);
-    const { edges } = deriveEdges(events, spans, resolver, "x/y@1");
+    const { edges } = deriveEdges(events, spans, resolver, { ns: "x", id: "y", rev: 1 });
     expect(edges.map((e) => [e.trigger, e.latencyMs])).toEqual([["type", 400], ["network", 120]]);
     expect(edges[0]).toMatchObject({ from: "nf", to: "nlist" });
     expect(edges[1]).toMatchObject({ from: "nlist", to: "nlist" }); // push lands on the list itself
@@ -92,7 +92,7 @@ describe("Ω7 observation unit — event-trace parsing + edge derivation (src/tr
     );
     const { events, spans } = parseTrace(text);
     const resolver = (s: string) => `n:${s}`;
-    const { edges } = deriveEdges(events, spans, resolver, "x/y@1");
+    const { edges } = deriveEdges(events, spans, resolver, { ns: "x", id: "y", rev: 1 });
     expect(edges.length).toBe(3);
     expect(edges.map((e) => e.latencyMs)).toEqual([250, 750, 1080]); // all measured from the click
     expect(new Set(edges.map((e) => e.from))).toEqual(new Set(["n:#send"]));
@@ -112,7 +112,7 @@ describe("Ω7 observation unit — event-trace parsing + edge derivation (src/tr
     );
     const { events, spans } = parseTrace(text);
     const resolver = (s: string) => (s === "#a" ? "na" : s === "#f" ? "nf" : null);
-    const { edges, skippedUnresolved, unattributedUpdates } = deriveEdges(events, spans, resolver, "x/y@1");
+    const { edges, skippedUnresolved, unattributedUpdates } = deriveEdges(events, spans, resolver, { ns: "x", id: "y", rev: 1 });
     expect(edges.length).toBe(0);
     expect(unattributedUpdates).toBe(1);
     expect(skippedUnresolved).toBe(1);
@@ -125,7 +125,7 @@ describe("Ω7 observation unit — event-trace parsing + edge derivation (src/tr
       { type: "dom-update", targetSelector: "#suggest", ts: 350 },
     );
     const { events, spans } = parseTrace(t);
-    const { edges } = deriveEdges(events, spans, (s) => `n:${s}`, "x/y@1");
+    const { edges } = deriveEdges(events, spans, (s) => `n:${s}`, { ns: "x", id: "y", rev: 1 });
     expect(edges.length).toBe(1);
     expect(edges[0]!.latencyMs).toBe(150); // 350 − 200: the most recent user action wins
     expect(edges[0]!.trigger).toBe("type");

@@ -4,9 +4,12 @@
 //   discovery.verify@1 {mapping, probes, runId?, candidates?, candidatesRef?, mappingRef?, provider?}
 //     → {runId, policy, results[], promoted[], stillDraft[], orphanProbes[], candidates?, vaultRef,
 //        realizations[], realizationsWritten}
-//   provider?: {id, class?} enables ns-"providers" current-state writes (PROMOTED /
-//   REQUIRES_REDISCOVERY per evaluated binding, each citing the promotion event);
-//   absent provider disables them (verify behaves exactly as before).
+//   provider?: {id, class?, parserPins?} enables ns-"providers" current-state writes (PROMOTED /
+//   REQUIRES_REDISCOVERY per evaluated binding, each citing the promotion event). parserPins
+//   (D-355, M7) are the parser-contribution pins the run was verified against — total-validated
+//   (asParserPin), dup-checked per (providerId, archetypeSlug), and written onto EVERY realization
+//   row the run produces. Absent provider disables ns-providers writes entirely (verify behaves
+//   exactly as before).
 //
 // THE INVARIANT (the hallucination cure): a DRAFT SurfaceContract becomes
 // PROMOTED only through caller-supplied postcondition probes with recorded
@@ -34,7 +37,7 @@
 import { definePlugin, startPlugin } from "@vivim/omega-shim";
 import type { PluginContext, CallMeta } from "@vivim/omega-shim";
 import type { EpistemicStatus, PortResult, ProviderClass, ProviderRealization, RealizationStatus } from "@vivim/omega-contracts";
-import { archetypeSlugForOp, providerRealizationId } from "@vivim/omega-contracts";
+import { archetypeSlugForOp, providerRealizationId, asParserPin, parserContributionId, type ParserPin } from "@vivim/omega-contracts";
 import { loadPromotionPolicy, POLICY_SOURCE, type PromotionPolicy } from "./policy.ts";
 import { evaluatePromotion, isValidProbe, refKey, type Probe, type BindingLike } from "./evaluate.ts";
 
@@ -139,12 +142,14 @@ function optionalRunId(v: unknown): string {
 
 const PROVIDER_CLASSES = ["SIMULATOR", "API_NATIVE", "BROWSER_MEDIATED"] as const;
 
-/** Optional realization writer identity: {id, class?} (class defaults SIMULATOR).
- *  Absent (undefined/null) disables ns-providers writes entirely. */
-function normalizeProvider(v: unknown): { id: string; class: ProviderClass } | null {
+/** Optional realization writer identity: {id, class?, parserPins?} (class defaults SIMULATOR).
+ *  Absent (undefined/null) disables ns-providers writes entirely.
+ *  D-355: parserPins are total-validated (asParserPin) and dup-checked per
+ *  (providerId, archetypeSlug) — a run may not verify the same parser twice. */
+function normalizeProvider(v: unknown): { id: string; class: ProviderClass; parserPins: ParserPin[] } | null {
   if (v === undefined || v === null) return null;
   if (typeof v !== "object" || Array.isArray(v)) {
-    throw new Error("discovery.verify@1: provider must be {id, class?}");
+    throw new Error("discovery.verify@1: provider must be {id, class?, parserPins?}");
   }
   const o = v as Record<string, unknown>;
   if (typeof o.id !== "string" || o.id.length === 0) {
@@ -157,7 +162,26 @@ function normalizeProvider(v: unknown): { id: string; class: ProviderClass } | n
   if (!(PROVIDER_CLASSES as readonly string[]).includes(cls as string)) {
     throw new Error(`discovery.verify@1: provider.class must be one of ${PROVIDER_CLASSES.join("|")}`);
   }
-  return { id: o.id, class: cls as ProviderClass };
+  const pins: ParserPin[] = [];
+  if (o.parserPins !== undefined) {
+    if (!Array.isArray(o.parserPins)) {
+      throw new Error("discovery.verify@1: provider.parserPins must be an array of ParserPin");
+    }
+    const seen = new Set<string>();
+    for (const raw of o.parserPins) {
+      const pin = asParserPin(raw); // total validation — throws with the reason
+      if (pin.providerId !== o.id) {
+        throw new Error(`discovery.verify@1: parser pin providerId ${pin.providerId} does not match provider.id ${o.id} (fail-closed genealogy)`);
+      }
+      const key = parserContributionId(pin.providerId, pin.archetypeSlug);
+      if (seen.has(key)) {
+        throw new Error(`discovery.verify@1: duplicate parser pin for ${key} (a run verifies a parser once)`);
+      }
+      seen.add(key);
+      pins.push(pin);
+    }
+  }
+  return { id: o.id, class: cls as ProviderClass, parserPins: pins };
 }
 
 /** Rewrite candidate statuses in the RETURNED report (copies; the vault object is append-only). */
@@ -273,6 +297,9 @@ export const def = definePlugin({
             evidenceRefs: refs,
             supersedes: null,
             createdAt: Date.now(),
+            // D-355 (M7): every realization row this run writes carries the
+            // pins the run was verified against (the P-D3 genealogy link).
+            ...(provider.parserPins.length > 0 ? { parserPins: provider.parserPins } : {}),
           };
           const w = await vaultCall<VaultAppendResult>(ctx, "vault.append@1", {
             ns: PROVIDERS_NS,

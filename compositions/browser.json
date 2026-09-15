@@ -1,0 +1,88 @@
+{
+  "name": "browser",
+  "_note": "M0 GATE composition (D-357) — the BROWSER_MEDIATED realization through the STANDARD discovery lifecycle: vault-durable law (D-325 shape: forbidden.set+reload routed; the day-one fence persists), vault, pack.domain-email (the message.* declarations the browser realizes), the perceive→infer→map→verify pipeline (the realization path — PROMOTED rows carry D-355 parser pins), vivim.credentials (XC-2/D-356: credential.put consent ceremony + credential.redact@1 — the redact-before-vault surface attach consumes), and provider.browser (four fail-closed bars). message.send@1 is EXTERNAL_MUTATION by pack declaration — sends require consent through law.check exactly like every other op.",
+  "entries": [
+    {
+      "id": "vivim.law",
+      "source": "../plugins/vivim-law",
+      "bootPhase": 0,
+      "grant": {
+        "capabilities": ["host.journal.append", "host.tokens.revoke", "port:vault.append@1", "port:vault.query@1", "port:vault.get@1"],
+        "contracts": ["law.check@1", "law.registry@1", "law.consent.grant@1", "law.tokens.revoke@1", "law.forbidden.set@1", "law.forbidden.reload@1", "law.amendment@1", "law.describe@1"]
+      }
+    },
+    {
+      "id": "vivim.vault",
+      "source": "../plugins/vivim-vault",
+      "bootPhase": 1,
+      "grant": {
+        "capabilities": [],
+        "contracts": ["vault.append@1", "vault.get@1", "vault.query@1", "vault.search@1", "vault.verify@1", "vault.compact@1", "vault.roundtrip@1"]
+      },
+      "config": { "dataDir": "/tmp/omega-browser/vault-data" }
+    },
+    {
+      "id": "pack.domain-email",
+      "source": "../packs/domain-email",
+      "bootPhase": 1,
+      "grant": { "capabilities": [], "contracts": [] }
+    },
+    {
+      "id": "discovery.perception",
+      "source": "../plugins/discovery-perception",
+      "bootPhase": 1,
+      "grant": {
+        "capabilities": ["port:vault.append@1", "port:vault.get@1"],
+        "contracts": ["discovery.perceive@1"]
+      },
+      "config": { "fixturesDir": "fixtures" }
+    },
+    {
+      "id": "discovery.inference",
+      "source": "../plugins/discovery-inference",
+      "bootPhase": 1,
+      "grant": {
+        "capabilities": ["port:vault.append@1", "port:vault.get@1"],
+        "contracts": ["discovery.infer@1"]
+      }
+    },
+    {
+      "id": "discovery.mapping",
+      "source": "../plugins/discovery-mapping",
+      "bootPhase": 1,
+      "grant": {
+        "capabilities": ["port:vault.append@1"],
+        "contracts": ["discovery.map@1", "discovery.variations@1"]
+      },
+      "config": { "blueprintPath": "packs/domain-email/plugin.json" }
+    },
+    {
+      "id": "discovery.verification",
+      "source": "../plugins/discovery-verification",
+      "bootPhase": 1,
+      "grant": {
+        "capabilities": ["port:vault.append@1", "port:vault.get@1"],
+        "contracts": ["discovery.verify@1"]
+      }
+    },
+    {
+      "id": "vivim.credentials",
+      "source": "../plugins/vivim-credentials",
+      "bootPhase": 1,
+      "grant": {
+        "capabilities": ["port:vault.append@1", "port:vault.get@1"],
+        "contracts": ["credential.put@1", "credential.use@1", "credential.redact@1"]
+      }
+    },
+    {
+      "id": "provider.browser",
+      "source": "../plugins/provider-browser",
+      "bootPhase": 1,
+      "grant": {
+        "capabilities": ["port:vault.append@1", "port:vault.get@1", "port:credential.redact@1", "port:law.forbidden.set@1"],
+        "contracts": ["browser.attach@1", "browser.release@1", "message.send@1"]
+      },
+      "config": { "from": "pilot@omega.local", "fencePrincipals": ["agent:pilot"] }
+    }
+  ]
+}

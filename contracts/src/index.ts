@@ -10,3 +10,4 @@ export * from "./provider.ts"; // Ω14.0 / Gate G0 — consolidation facade (re-
 export * from "./variation.ts"; // D-308
 export * from "./agent.ts"; // D-309
 export * from "./outcome.ts"; // D-312
+export * from "./parser.ts"; // D-355 (M7 re-land) — parser governance vocabulary (NOT routable)

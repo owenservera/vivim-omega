@@ -1,0 +1,14 @@
+{
+  "name": "@vivim/plugin-provider-browser",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@vivim/omega-shim": "workspace:*",
+    "@vivim/omega-contracts": "workspace:*"
+  },
+  "devDependencies": {
+    "@vivim/omega-host": "workspace:*",
+    "@vivim/omega-sdk": "workspace:*"
+  }
+}

@@ -167,8 +167,10 @@ startPlugin(definePlugin({
       }
 
       // 4. derive causal edges; every edge cites its trace lines by byte span
-      const casRef = `${traceRef.ns}/${traceRef.id}@${trace.rev}`;
-      const { edges, skippedUnresolved, unattributedUpdates } = deriveEdges(events, spans, resolveNode, casRef);
+      // (D-357 G0 fix: pass the full {ns, id, rev} triple, not the derived string)
+      const { edges, skippedUnresolved, unattributedUpdates } = deriveEdges(events, spans, resolveNode, {
+        ns: traceRef.ns, id: traceRef.id, rev: trace.rev,
+      });
 
       // 5. drift vs the prior observation of the same fixture (data, never error)
       const observationId = { ns: DISCOVERY_NS, id: `observation:${name}` };
@@ -201,7 +203,7 @@ startPlugin(definePlugin({
         ns: observationId.ns,
         id: observationId.id,
         data: observation,
-        meta: { type: "observation", fixture: name, edgesCount: edges.length, driftCount: drift.length, evidenceObject: casRef },
+        meta: { type: "observation", fixture: name, edgesCount: edges.length, driftCount: drift.length, evidenceObject: `${traceRef.ns}/${traceRef.id}@${trace.rev}` },
         refs: provenanceRefs,
       });
 

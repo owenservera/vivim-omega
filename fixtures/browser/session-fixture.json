@@ -1,0 +1,27 @@
+{
+  "url": "https://mail.fixture.test/compose",
+  "recordedAt": 1735689600000,
+  "request": {
+    "method": "POST",
+    "url": "https://mail.fixture.test/send",
+    "headers": {
+      "content-type": "application/json",
+      "x-api-key": "sk-fixture-0123456789abcdef"
+    },
+    "body": "{\"to\":\"peter@fixture.test\",\"subject\":\"Quarterly report\",\"body\":\"Hello Peter, the quarterly report is attached.\"}"
+  },
+  "response": {
+    "status": 302,
+    "headers": {
+      "set-cookie": "sid=9f8e7d6c5b4a; Path=/; HttpOnly",
+      "location": "https://mail.fixture.test/next?token=q99topsecret&next=%2Fsent"
+    },
+    "body": ""
+  },
+  "events": [
+    { "type": "click", "target": "button.compose", "latencyMs": 80 },
+    { "type": "type", "target": "input.to", "latencyMs": 240 },
+    { "type": "click", "target": "button.send", "latencyMs": 310 },
+    { "type": "navigate", "target": "https://mail.fixture.test/sent", "latencyMs": 640 }
+  ]
+}

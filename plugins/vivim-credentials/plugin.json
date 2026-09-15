@@ -1,0 +1,22 @@
+{
+  "manifestVersion": "1",
+  "id": "vivim.credentials",
+  "version": "0.1.0",
+  "description": "XC-2/D-356 — the credentials spine, built against docs/SURFACES.md §'The credential law' (the existing spec — not re-derived): secrets never ride payloads or environments; credential.use@1 is a capability only the user-signed Recipe can grant (law 7) and NO in-sandbox composition grants it — the live path is dead by construction, fail-closed if provoked. Ops: credential.put@1 (MUTATION, consent-gated by policy rule — storing a credential is the security-sensitive bar; the sandbox stores sim-synthetic REFERENCE rows only, never material), credential.use@1 (READ, capability-gated by the recipe layer), credential.redact@1 (READ — M12's redaction-before-append surface: REDACTION_POLICY_V1 versioned policy data applied to captured bytes BEFORE the vault sees them; output-only, cannot reveal secrets).",
+  "entry": "src/index.ts",
+  "publisher": { "keyId": "", "signature": "" },
+  "contributions": {
+    "contract": [
+      { "kind": "contract", "id": "credential.put", "version": "1", "risk": "MUTATION", "doc": "put {credentialId, sim: true, meta?} → vault.append@1 (ns credentials, id credential:<credentialId>) → {credentialId, rev, record}. Stores a sim-synthetic REFERENCE row; refuses any payload carrying value/secret/key material (fail-closed) and any non-sim put (live secrets never enter the sandbox — SURFACES.md credential law 3). Consent required by policy rule (D-356)." },
+      { "kind": "contract", "id": "credential.use", "version": "1", "risk": "READ", "doc": "use {credentialId} → {credential, rev} — the by-reference flow: the caller presents credentialId, the spine returns the reference row (sim-synthetic in-sandbox; a live owner-machine tier would exchange it for secret material per-call, post-v1). Capability-gated: only the user-signed Recipe grants port:credential.use@1; no in-sandbox composition grants it." },
+      { "kind": "contract", "id": "credential.redact", "version": "1", "risk": "READ", "doc": "redact {bytes} → {redacted, redactions, policyVersion} — applies REDACTION_POLICY_V1 (versioned, inspectable policy data owned HERE — credential-derived patterns are the spine's domain, not regex spaghetti in a consumer) to captured text BEFORE it is appended to the vault (M12). Output-only: returns redacted bytes, never secret material." }
+    ]
+  },
+  "dependencies": [],
+  "capabilities": {
+    "requested": ["port:vault.append@1", "port:vault.get@1"],
+    "justification": "Reference rows persist in the USER'S VAULT (ns 'credentials') via port:vault.append@1; use resolves a row via port:vault.get@1. The composition grants exactly these two per user-signed Recipe — never this manifest. Nothing here can read a secret: no secret material exists in the sandbox at all (SURFACES.md credential law 1–3)."
+  },
+  "runtime": { "tier": "worker-thread", "budget": { "cpuMs": 500, "memMB": 128 } },
+  "contentHash": ""
+}

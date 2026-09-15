@@ -37,7 +37,15 @@ export const NODE_KINDS = ["control", "field", "button", "list", "container", "m
 export type NodeKind = (typeof NODE_KINDS)[number];
 
 export interface EvidenceRef {
-  /** '<ns>/<id>@<rev>' — the vault object holding the capture bytes (resolvable via vault.get@1). */
+  /** G0 minimum (D-338/D-357 falsifier fix): the vault object coordinates —
+   *  the triple inference's normalizeEvidence requires. Perception used to
+   *  emit casRef-only refs, which inference's fail-closed filter dropped →
+   *  perceive→infer produced zero evidenced candidates end-to-end (the seam
+   *  was never exercised until the browser falsifier ran the full chain). */
+  ns: string;
+  id: string;
+  rev: number;
+  /** '<ns>/<id>@<rev>' — DERIVED from the triple (kept for byte-span citation readers). */
   casRef: string;
   /** UTF-8 byte offsets [start, end) into the referenced capture bytes (whole-capture citations carry no span). */
   span?: { start: number; end: number };

@@ -66,13 +66,22 @@ describe("D-351 — risk parity net: manifest-declared risk === policy classific
     expect(mismatches, `D-351 parity violated — the manifest gate-trigger and the policy gate-truth disagree:\n${table}\nFix the policy table (exact rows outrank prefixes) or the manifest declaration; never let the two sources drift silently.`).toEqual([]);
   });
 
-  test("policy version carries the parity amendment (1.1.0, D-351)", () => {
-    expect(LAW_POLICY_V1.version).toBe("1.1.0");
+  test("policy version carries the parity amendments (1.2.0, D-351 + D-356)", () => {
+    expect(LAW_POLICY_V1.version).toBe("1.2.0");
   });
 
   test("the three repaired rows classify as declared, standalone of any composition", () => {
     expect(classifyRisk(LAW_POLICY_V1, "vault.roundtrip@1")).toBe("EXTERNAL_MUTATION"); // exact row outranks vault.*
     expect(classifyRisk(LAW_POLICY_V1, "providers.session.start@1")).toBe("MUTATION");  // exact row outranks defaultRisk
     expect(classifyRisk(LAW_POLICY_V1, "note.write@1")).toBe("MUTATION");               // repaired prefix row
+  });
+
+  test("D-356: credential.put@1 is vault-internal MUTATION with a deliberate consent bar", () => {
+    // The class is vault-internal (not default-riding): the exact row decides.
+    expect(classifyRisk(LAW_POLICY_V1, "credential.put@1")).toBe("MUTATION");
+    // The consent bar is POLICY DATA (a rule), not a class misstatement —
+    // storing a credential requires consent even though the class is MUTATION.
+    const rule = LAW_POLICY_V1.rules.find((r) => r.match.op === "credential.put@1");
+    expect(rule?.decision).toBe("require-consent");
   });
 });
