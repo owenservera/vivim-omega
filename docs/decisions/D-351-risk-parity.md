@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -106,4 +106,4 @@ parity fail-closed at the gate layer:
   parity across all shipped compositions, version pin, standalone row checks).
 - `plugins/vivim-law/test/law.test.ts` — policy table test de-fictionalized
   (`note.write@1`, `vault.get@1` prefix checks).
-- Full `bun run omega:gate` GREEN on this commit (624 + 4 parity tests).
+- Ratification: owner directive 2026-09-15 ("Setup and continue using the two 360 MD as guide" — the 360 review names L1 as needing a D-record before the M0/M7 re-land wave); landed PROPOSED in 865451d; full `bun run omega:gate` GREEN on 865451d (628/628, host 984/1000, attest ddf2c58) — ratified on that evidence.
