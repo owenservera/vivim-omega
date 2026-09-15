@@ -37,16 +37,24 @@ export interface PolicyDoc {
   rules: PolicyRule[];                          // principal/op rules, deny rows first
 }
 
-/** The shipped Ω1 baseline policy (D-215 semantics: gate data, not code). */
+/** The shipped Ω1 baseline policy (D-215 semantics: gate data, not code).
+ *  1.1.0 (D-351): parity with manifest-declared risk — the host's `riskyOps()`
+ *  (manifest) decides WHETHER law.check fires; this table decides WHAT the gate
+ *  says. Two sources, one truth: every routed contract op with declared non-READ
+ *  risk must classify identically here (exact rows added for `vault.roundtrip@1`
+ *  and `providers.session.start@1`; `notes.*` repaired to `note.*` — it matched
+ *  nothing). Enforced fail-closed by the parity net (D-351). */
 export const LAW_POLICY_V1: PolicyDoc = {
   policyId: "law.policy",
-  version: "1.0.0",
+  version: "1.1.0",
   description: "Ω1 baseline: risk-class defaults, mutation journaling, principal deny-list",
   riskTable: [
     { op: "risky.op@1", risk: "EXTERNAL_MUTATION" },
     { op: "risky.read@1", risk: "READ" },
+    { op: "vault.roundtrip@1", risk: "EXTERNAL_MUTATION" }, // D-351: exact row outranks the vault.* prefix (was silently downgraded)
+    { op: "providers.session.start@1", risk: "MUTATION" },  // D-351: exact row outranks the fail-closed default (was silently upgraded)
     { op: "vault.*", risk: "MUTATION" },
-    { op: "notes.*", risk: "MUTATION" },
+    { op: "note.*", risk: "MUTATION" },                     // D-351: repaired from "notes.*" (note.write@1 never matched)
   ],
   defaultRisk: "EXTERNAL_MUTATION", // unknown ops are treated as the strictest class (fail-closed)
   riskDefaults: {

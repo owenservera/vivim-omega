@@ -132,7 +132,8 @@ describe("Ω1 policy — the table decides (data, not switches)", () => {
     const root = LAW_POLICY_V1;
     expect(evalPolicy(root, "root", "risky.op@1").risk).toBe("EXTERNAL_MUTATION");
     expect(evalPolicy(root, "root", "vault.append@1").risk).toBe("MUTATION");
-    expect(evalPolicy(root, "root", "notes.write@1").risk).toBe("MUTATION");
+    expect(evalPolicy(root, "root", "note.write@1").risk).toBe("MUTATION"); // D-351: prefix row repaired notes.* → note.* (the real op family)
+    expect(evalPolicy(root, "root", "vault.get@1").risk).toBe("MUTATION");  // prefix mechanism, live row
     expect(evalPolicy(root, "root", "unknown.op@1").risk).toBe("EXTERNAL_MUTATION"); // defaultRisk
   });
 
