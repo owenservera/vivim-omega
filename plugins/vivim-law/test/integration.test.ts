@@ -304,3 +304,92 @@ describe("D-310 — forbidden-action overlay through the real gate", () => {
     expect(after.ok && (after.value as { decision: string }).decision).toBe(baseline);
   });
 });
+
+// ---- D-353 — the human principal (user:<id>) through the REAL gate ----------
+// Zero new tables: the forbidden overlay, the consent table, and the policy
+// walk are all keyed per-principal already. user:<id> only needs acceptance of
+// the prefix — and the describe read making the state inspectable, the same
+// way agent.describe@1 makes an agent's state inspectable (D-309 discipline).
+describe("D-353 — user:<id> is a first-class principal end-to-end (real law.json boot)", () => {
+  let vault: string;
+  let host: BootedHost;
+
+  beforeAll(async () => {
+    vault = join("/tmp/omega-law", `d336-${Date.now()}-${process.pid}`);
+    rmSync(vault, { recursive: true, force: true });
+    mkdirSync(vault, { recursive: true });
+    const { rootKey } = ensureVault(vault);
+    const { recipe, buildDir } = compileComposition(loadSpec(join(vault, "law-journal.jsonl")), join(SPEC, ".."), vault, rootKey);
+    host = await bootComposition(recipe, buildDir, vault);
+  });
+  afterAll(async () => { await host.shutdown(); });
+
+  const call = (op: string, payload?: unknown) => host.router.callAsRoot(op, payload ?? {});
+
+  test("user:ada's require-consent names HER stable id; grant-with-narrowing → allow; describe attributes the consent to her", async () => {
+    const refused = await call("law.check@1", { principal: "user:ada", op: "risky.op@1" });
+    expect(refused.ok).toBe(true);
+    let decision = (refused.value as { decision: string; consentId?: string });
+    expect(decision.decision).toBe("require-consent");
+    expect(decision.consentId).toBe(consentIdFor("user:ada", "risky.op@1")); // the user's OWN consent id — not root's, not shared
+
+    const grant = await call("law.consent.grant@1", { consentId: decision.consentId, principal: "user:ada", scope: "risky.op@1" });
+    expect(grant.ok).toBe(true);
+
+    const allowed = await call("law.check@1", { principal: "user:ada", op: "risky.op@1" });
+    decision = (allowed.value as { decision: string; reason?: string });
+    expect(decision.decision).toBe("allow");
+    expect(String(decision.reason)).toContain("consent");
+
+    const described = await call("law.describe@1", { principal: "user:ada" });
+    expect(described.ok).toBe(true);
+    if (described.ok) {
+      const d = described.value as { principal: string; kind: string; consents: Array<{ consentId: string; active: boolean }>; forbidden: { ops: string[]; persisted: boolean } };
+      expect(d.principal).toBe("user:ada");
+      expect(d.kind).toBe("user");
+      expect(d.consents).toHaveLength(1); // narrowed: ada's grant, and nothing else
+      expect(d.consents[0]!.consentId).toBe(consentIdFor("user:ada", "risky.op@1"));
+      expect(d.consents[0]!.active).toBe(true);
+      expect(d.forbidden.ops).toEqual([]);
+      expect(d.forbidden.persisted).toBe(false); // law.json is memory-only by composition
+    }
+  });
+
+  test("per-user forbidden scoping: user:ada is forbidden an op, sibling user:bob is unaffected (zero new tables)", async () => {
+    const set = await call("law.forbidden.set@1", { principal: "user:ada", ops: ["vault.append@1"] });
+    expect(set.ok).toBe(true);
+
+    const adaDenied = await call("law.check@1", { principal: "user:ada", op: "vault.append@1" });
+    expect((adaDenied.value as { decision: string }).decision).toBe("deny"); // the overlay precedes policy eval
+    const bobNotDenied = await call("law.check@1", { principal: "user:bob", op: "vault.append@1" });
+    expect((bobNotDenied.value as { decision: string }).decision).toBe("allow"); // vault.append is MUTATION → allow + journal
+
+    const adaDesc = await call("law.describe@1", { principal: "user:ada" });
+    const bobDesc = await call("law.describe@1", { principal: "user:bob" });
+    expect(((adaDesc.value as { forbidden: { ops: string[] } }).forbidden).ops).toEqual(["vault.append@1"]);
+    expect(((bobDesc.value as { forbidden: { ops: string[] } }).forbidden).ops).toEqual([]);
+    expect(((bobDesc.value as { consents: unknown[] }).consents)).toEqual([]); // sibling isolation in the describe read too
+  });
+
+  test("all principal kinds classify through the real gate (agent-channel regression included)", async () => {
+    for (const [principal, kind] of [
+      ["root", "host"],
+      ["µhost-gate", "host"],
+      ["agent:worker-7", "agent"],
+      ["user:ada", "user"],
+      ["vivim.director", "composition"],
+      ["omega.risky", "composition"],
+      ["some-future-shape", "composition"], // unknown stays LEGAL — classification is never rejection
+    ] as const) {
+      const d = await call("law.describe@1", { principal });
+      expect(d.ok).toBe(true);
+      if (d.ok) expect((d.value as { kind: string }).kind).toBe(kind);
+    }
+  });
+
+  test("malformed payload → DEGRADED (fail-closed, never a fabricated describe)", async () => {
+    const r = await call("law.describe@1", {});
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.error).toBe("DEGRADED");
+  });
+});

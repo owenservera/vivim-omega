@@ -111,7 +111,7 @@ describe("D-330 live — warm reboot is unobservable; changed sources miss", () 
       daemon: { compileCache: { hits: number; misses: number; entries: number; lastEvent: { kind: string } } };
     };
     expect(v2.router.routedOps).toEqual(routed1); // byte-identical routing
-    expect(v2.manifests["omega.echo"]?.version).toBe("0.1.0");
+    expect(v2.manifests["omega.echo"]?.version).toBe("0.2.0"); // D-352: echo.stream@1 falsifier op landed (0.1.0 → 0.2.0)
     expect(v2.daemon.compileCache.misses).toBe(2);
     expect(v2.daemon.compileCache.hits).toBe(1);
     expect(v2.daemon.compileCache.lastEvent.kind).toBe("hit");

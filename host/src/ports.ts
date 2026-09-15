@@ -1,7 +1,7 @@
 // µhost — ports.ts: the Port Router. B3: capability tokens are verified HERE, in the host
 // process, outside every compartment. Risk gating is data-driven (manifest CONTRACT risk
 // declarations) — no policy lives in the host; law.check is a plugin call.
-import type { LawDecision, PortResult, PluginManifest, CompositionEntry, Recipe } from "@vivim/omega-contracts";
+import type { LawDecision, PortResult, PluginManifest, CompositionEntry, Recipe, StreamChunk } from "@vivim/omega-contracts";
 import { routableOps, riskyOps, HOST_OPS, HOST_CAPS } from "@vivim/omega-contracts";
 export { HOST_OPS, HOST_CAPS };
 import type { CompartmentHandle, FromWorker, CallMsg } from "./worker.ts";
@@ -41,7 +41,7 @@ export class PortRouter {
   private tokens = new Map<string, TokenRecord>();   // token -> record
   private generation = 1;
   private callSeq = 0;
-  private pending = new Map<string, { resolve: (r: PortResult) => void; timer: ReturnType<typeof setTimeout> }>();
+  private pending = new Map<string, { resolve: (r: PortResult) => void; timer: ReturnType<typeof setTimeout>; onChunk?: (c: StreamChunk) => void }>();
   private inflightByCompartment = new Map<string, Set<string>>();
   private dormant = new Map<string, DormantEntry>(); // verified, never started (D-331)
   private spawning = new Map<string, Promise<void>>(); // singleflight per dormant id
@@ -141,8 +141,9 @@ export class PortRouter {
 
   private nextCausation(): string { return `c_${++this.callSeq}`; }
 
-  /** Compartment-originated messages: `return` resolves a pending deliver; `call` is a new op request (B3-checked); `ready` flips state. */
+  /** Compartment-originated messages: `return` resolves a pending deliver; `chunk` relays an ordered partial to its sink — or drops it (D-352 cold fallback: a caller that never asked to stream observes nothing); `call` is a new op request (B3-checked); `ready` flips state. */
   private onWorkerMessage(pluginId: string, m: FromWorker): void {
+    if (m.type === "chunk") { this.pending.get(m.causationId)?.onChunk?.(m.chunk); return; }
     if (m.type === "return") {
       const p = this.pending.get(m.causationId);
       if (p) {
@@ -172,7 +173,7 @@ export class PortRouter {
   }
 
   /** The Gate → Resolve → Execute step for a structurally-valid call. Risk gating is data-driven. */
-  private async dispatch(principal: string, op: string, payload: unknown, deadlineMs: number, causationId: string, token: string): Promise<PortResult> {
+  private async dispatch(principal: string, op: string, payload: unknown, deadlineMs: number, causationId: string, token: string, onChunk?: (c: StreamChunk) => void): Promise<PortResult> {
     const target = this.opRoute.get(op);
     if (!target) return { ok: false, error: "REFUSED", detail: `no routed implementation for ${op}` };
     const risk = this.opRisk.get(op);
@@ -199,7 +200,7 @@ export class PortRouter {
       return { ok: false, error: "DEGRADED", detail: `implementation ${target} is ${targetHandle?.state ?? "absent"}` };
     }
     const deadlineAbs = deadlineMs > 0 ? Date.now() + deadlineMs : 0;
-    return this.deliver(target, { type: "deliver", causationId, op, payload, deadlineMs, from: principal });
+    return this.deliver(target, { type: "deliver", causationId, op, payload, deadlineMs, from: principal }, onChunk);
   }
 
   /** law.check is itself never gated (it IS the gate) — the one loop exception, by construction. */
@@ -209,7 +210,7 @@ export class PortRouter {
     return this.deliver(lawId, { type: "deliver", causationId, op: "law.check@1", payload: { principal, op, payload, causationId }, deadlineMs: 500, from: "µhost-gate" });
   }
 
-  deliver(targetId: string, msg: { type: "deliver"; causationId: string; op: string; payload: unknown; deadlineMs: number; from: string }): Promise<PortResult> {
+  deliver(targetId: string, msg: { type: "deliver"; causationId: string; op: string; payload: unknown; deadlineMs: number; from: string }, onChunk?: (c: StreamChunk) => void): Promise<PortResult> {
     const handle = this.compartments.get(targetId);
     if (!handle) return Promise.resolve({ ok: false, error: "REFUSED", detail: `no compartment ${targetId}` });
     handle.stats.delivered++;
@@ -218,7 +219,7 @@ export class PortRouter {
       const timer = msg.deadlineMs > 0 ? setTimeout(() => {
         if (this.pending.delete(key)) { this.decInflight(targetId, key); resolve({ ok: false, error: "BUDGET", detail: `deadline ${msg.deadlineMs}ms exceeded (op ${msg.op})` }); }
       }, msg.deadlineMs) : null;
-      this.pending.set(key, { resolve, timer });
+      this.pending.set(key, { resolve, timer, ...(onChunk ? { onChunk } : {}) });
       this.incInflight(targetId, key);
       handle.post(msg);
     });
@@ -276,6 +277,17 @@ export class PortRouter {
     if (this.isHostOp(op)) return this.hostOp("root", op, payload);
     const causationId = this.nextCausation();
     return this.dispatch("root", op, payload, deadlineMs, causationId, "root");
+  }
+
+  /** D-352 the streaming root call — the ONLY host surface the primitive adds
+   *  (D-329 placement law): ordered chunks flow to `onChunk`, the terminating
+   *  PortResult stays the single authoritative outcome, and the stream id IS
+   *  the delivering call's causation id (one stream per call, by construction). */
+  async callAsRootStream(op: string, payload: unknown, onChunk: (c: StreamChunk) => void, deadlineMs = 5000): Promise<{ streamId: string; result: PortResult }> {
+    if (this.isHostOp(op)) return { streamId: "n/a", result: await this.hostOp("root", op, payload) };
+    const causationId = this.nextCausation();
+    const result = await this.dispatch("root", op, payload, deadlineMs, causationId, "root", onChunk);
+    return { streamId: causationId, result };
   }
 
   journal(entry: Record<string, unknown>): void {

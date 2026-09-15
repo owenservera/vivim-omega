@@ -80,7 +80,7 @@ describe("daemon — protocol (ping/call/status/shutdown) + auth", () => {
     };
     expect(sv.router.routedOps).toContain("echo.ping@1");
     expect(sv.recipe.name).toBe("echo-cli");
-    expect(sv.manifests["omega.echo"]?.version).toBe("0.1.0");
+    expect(sv.manifests["omega.echo"]?.version).toBe("0.2.0"); // D-352: echo.stream@1 falsifier op landed (0.1.0 → 0.2.0)
     expect(sv.daemon.callsServed).toBe(1);
   }, 30_000);
 

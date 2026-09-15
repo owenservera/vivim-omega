@@ -6,6 +6,7 @@ import { ConsentTable, consentIdFor } from "../src/consent.ts";
 import { ForbiddenTable, FORBIDDEN_NS, FORBIDDEN_ID_PREFIX, forbiddenVaultId, toRecord, fromRecord } from "../src/forbidden.ts";
 import { LAW_POLICY_V1, evalPolicy, normalizeShadowSpec } from "../src/policy.ts";
 import { ShadowAmendment } from "../src/amendment.ts";
+import { principalKind } from "@vivim/omega-contracts";
 
 // ---- seeded deterministic PRNG (mulberry32) — the property test is reproducible ----
 function mulberry32(seed: number): () => number {
@@ -244,5 +245,62 @@ describe("D-310 forbidden-action overlay — exact-match deny table", () => {
     expect(() => t.set("agent:x", "a@1" as never)).toThrow(/array/);
     expect(() => t.set("agent:x", [""])).toThrow(/non-empty/);
     expect(t.clear("agent:missing")).toBe(false);
+  });
+});
+
+// ---- D-353 — the human principal: kind classification + the narrowed describe read ----
+
+describe("D-353 — principalKind (pure, TOTAL: unknown strings stay legal composition principals)", () => {
+  test("grammar table", () => {
+    expect(principalKind("agent:a1")).toBe("agent");
+    expect(principalKind("agent:")).toBe("agent"); // prefix decides, not the id body
+    expect(principalKind("user:ada")).toBe("user");
+    expect(principalKind("user:42")).toBe("user");
+    expect(principalKind("root")).toBe("host");
+    expect(principalKind("µhost-gate")).toBe("host");
+    expect(principalKind("µhost")).toBe("host");
+    expect(principalKind("vivim.director")).toBe("composition");
+    expect(principalKind("vivim.law")).toBe("composition");
+    expect(principalKind("omega.risky")).toBe("composition");
+  });
+
+  test("TOTAL: never throws, unknown shapes stay composition (classification is never rejection)", () => {
+    expect(principalKind("")).toBe("composition");
+    expect(principalKind("agent")).toBe("composition"); // no colon — not the identity prefix
+    expect(principalKind("usernaut")).toBe("composition");
+    expect(principalKind("Agent:1")).toBe("composition"); // case-sensitive prefixes
+    expect(principalKind("user:ada:extra")).toBe("user"); // prefix law, not shape law
+  });
+});
+
+describe("D-353 — ConsentTable.listFor (principal-narrowed active grants only)", () => {
+  test("narrowed grants list for their owner only; un-narrowed grants are honestly excluded; revoked excluded; global count unaffected", () => {
+    const t = new ConsentTable();
+    const adaOp = consentIdFor("user:ada", "risky.op@1");
+    const bobOp = consentIdFor("user:bob", "risky.op@1");
+    const unNarrowed = consentIdFor("root", "vault.append@1");
+
+    t.grant(adaOp, { principal: "user:ada", scope: "risky.op@1" });
+    t.grant(bobOp, { principal: "user:bob", scope: "risky.op@1" });
+    t.grant(unNarrowed); // hash-keyed, no principal — cannot be attributed
+
+    const ada = t.listFor("user:ada");
+    expect(ada.map((r) => r.consentId)).toEqual([adaOp]); // narrowed only
+    expect(t.listFor("user:bob").map((r) => r.consentId)).toEqual([bobOp]);
+    expect(t.listFor("user:carol")).toEqual([]); // a sibling user sees nothing
+
+    // un-narrowed grant is live (hasMatchingGrant for root still finds it) but
+    // honestly ABSENT from every listFor — it belongs to no one
+    expect(t.hasMatchingGrant("root", "vault.append@1")).not.toBeNull();
+    expect(t.listFor("root")).toEqual([]);
+
+    // revocation removes from listFor (active only) and does not disturb others
+    t.revoke(adaOp);
+    expect(t.listFor("user:ada")).toEqual([]);
+    expect(t.listFor("user:bob")).toHaveLength(1);
+
+    // the global view (list()) is untouched by the narrowing discipline
+    expect(t.list()).toHaveLength(3);
+    expect(t.activeCount()).toBe(2);
   });
 });

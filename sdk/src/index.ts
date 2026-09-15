@@ -5,3 +5,4 @@ export * from "./schema.ts";
 export * from "./validate.ts";
 export * from "./sign.ts";
 export * from "./client.ts";
+export * from "./stream.ts"; // D-352 — the streaming consumer half

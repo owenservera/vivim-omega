@@ -7,14 +7,14 @@
       "bootPhase": 0,
       "grant": {
         "capabilities": ["host.journal.append"],
-        "contracts": ["law.check@1", "law.registry@1", "law.consent.grant@1"]
+        "contracts": ["law.check@1", "law.registry@1", "law.consent.grant@1", "law.describe@1"]
       }
     },
     {
       "id": "omega.echo",
       "source": "../examples/plugin-echo",
       "bootPhase": 1,
-      "grant": { "capabilities": [], "contracts": ["echo.ping@1"] }
+      "grant": { "capabilities": [], "contracts": ["echo.ping@1", "echo.stream@1"] }
     },
     {
       "id": "omega.counter",

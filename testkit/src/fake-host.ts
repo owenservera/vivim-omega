@@ -24,8 +24,8 @@
 //  - `degrade()` is the crash/health observation surface (v1: a crashed
 //    compartment never comes back — the only honest path to state "degraded").
 import type { PluginDef, PluginContext } from "@vivim/omega-shim";
-import type { PluginManifest, PortResult, LawDecision, LifecycleState, RiskClass, CompositionEntry, ConsentGrant } from "@vivim/omega-contracts";
-import { routableOps, riskyOps, HOST_OPS, HOST_CAPS } from "@vivim/omega-contracts";
+import type { PluginManifest, PortResult, LawDecision, LifecycleState, RiskClass, CompositionEntry, ConsentGrant, StreamChunk, StreamEmit } from "@vivim/omega-contracts";
+import { routableOps, riskyOps, HOST_OPS, HOST_CAPS, STREAM_SEQ_START } from "@vivim/omega-contracts";
 import { HOST_OP_TO_CAP, mintToken } from "@vivim/omega-host";
 
 // ---- consent ids (derived exactly like vivim.law's ConsentTable) -----------------
@@ -65,6 +65,8 @@ export interface CallOptions {
   principal?: string;   // default "root" (host-held caller; risky ops still gated)
   deadlineMs?: number;  // default 5000 — BUDGET law
   token?: string;       // required for non-root principals (B3)
+  onChunk?: (c: StreamChunk) => void; // D-352: sink for ordered partials (absent ⇒ chunks dropped — cold fallback, mirrored from the host)
+  causationId?: string; // pre-minted causation (callAsRootStream uses it so chunk.streamId === the returned streamId, exactly like the real host)
 }
 
 interface TokenRecord { token: string; pluginId: string; cap: string; gen: number }
@@ -281,6 +283,15 @@ export class FakeHost {
     return this.call(op, payload, { principal: "root", deadlineMs });
   }
 
+  /** D-352 differential mirror of the host router's streaming root call: mint
+   *  the causation id first, deliver with the sink attached, return
+   *  { streamId, result } — the stream id IS the delivering call's causation id. */
+  async callAsRootStream(op: string, payload: unknown, onChunk: (c: StreamChunk) => void, deadlineMs = 5000): Promise<{ streamId: string; result: PortResult }> {
+    const streamId = `c_${++this.callSeq}`;
+    const result = await this.call(op, payload, { principal: "root", deadlineMs, onChunk, causationId: streamId });
+    return { streamId, result };
+  }
+
   /**
    * THE call path — Gate → Resolve → Execute with B1–B4 semantics:
    * token law (B3) → host ops → routing (B1) → risk gate (B4) → delivery (B2).
@@ -309,7 +320,7 @@ export class FakeHost {
 
     // B4: risk gate — law.check@1 is itself never gated (the loop exception)
     const risk = this.opRisk.get(op);
-    const causationId = `c_${++this.callSeq}`;
+    const causationId = opts.causationId ?? `c_${++this.callSeq}`;
     if (risk) {
       const gate = await this.callLaw(principal, op, payload, causationId);
       if (!gate.ok) return gate;
@@ -328,7 +339,7 @@ export class FakeHost {
       });
     }
 
-    return this.deliver(target, op, payload, principal, opts.deadlineMs ?? 5000, causationId);
+    return this.deliver(target, op, payload, principal, opts.deadlineMs ?? 5000, causationId, opts.onChunk);
   }
 
   private checkToken(principal: string, token: string, op: string): PortResult | null {
@@ -374,14 +385,24 @@ export class FakeHost {
     return { ok: true, value: { decision: "allow", reason: `${risk} default: allow + journal (no law.check@1 routed)` } satisfies LawDecision };
   }
 
-  /** B2 delivery to a handler: missing handler → REFUSED; throw → DEGRADED; deadline → BUDGET. */
-  private async deliver(target: InstalledPlugin, op: string, payload: unknown, from: string, deadlineMs: number, causationId: string): Promise<PortResult> {
+  /** B2 delivery to a handler: missing handler → REFUSED; throw → DEGRADED; deadline → BUDGET.
+   *  D-352: the handler's meta.emit mirrors the shim exactly (strict 1-based
+   *  contiguous seq, close-once, emit-after-final throws ⇒ DEGRADED); chunks
+   *  relay to the call's sink or drop when absent (cold fallback). */
+  private async deliver(target: InstalledPlugin, op: string, payload: unknown, from: string, deadlineMs: number, causationId: string, onChunk?: (c: StreamChunk) => void): Promise<PortResult> {
     target.stats.delivered++;
     const handler = target.def.ops?.[op];
     if (!handler) return { ok: false, error: "REFUSED", detail: `no handler for ${op}` };
+    let seq = STREAM_SEQ_START, closed = false;
+    const emit: StreamEmit = (data, final = false) => {
+      if (closed) throw new Error(`emit after final (stream ${causationId}) — protocol violation`);
+      if (final) closed = true;
+      const chunk: StreamChunk = { streamId: causationId, seq: seq++, data, final };
+      if (onChunk) onChunk(chunk); // no sink ⇒ drop: non-streaming callers observe nothing
+    };
     let timer: ReturnType<typeof setTimeout> | undefined;
     const handlerPromise = Promise.resolve()
-      .then(() => handler(payload, target.ctx!, { causationId, deadlineMs, from }))
+      .then(() => handler(payload, target.ctx!, { causationId, deadlineMs, from, emit }))
       .then((value) => ({ ok: true as const, value: value ?? null, freshness: "CURRENT" as const }));
     handlerPromise.catch(() => {}); // a late rejection (after BUDGET won the race) is attributed, never unhandled
     try {

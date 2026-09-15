@@ -92,6 +92,14 @@ export class ConsentTable {
     return [...this.grants.values()].map((r) => ({ ...r }));
   }
 
+  /** Active grants narrowed to one principal (D-353 — the describe read's
+   *  consent slice). Hash-keyed grants WITHOUT a principal are honestly
+   *  excluded: they cannot be attributed to anyone, so listing them here
+   *  would overstate what this principal holds. Revoked grants excluded. */
+  listFor(principal: string): ConsentRecord[] {
+    return [...this.grants.values()].filter((r) => r.active && r.principal === principal).map((r) => ({ ...r }));
+  }
+
   /** Table generation — the per-grant generation counter (monotone). */
   generation(): number {
     return this.gen;

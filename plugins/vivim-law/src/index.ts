@@ -1,12 +1,12 @@
 // vivim.law — index.ts (Ω1 spine)
 // The gate. Wiring: policy (data) + consent table + forbidden-action overlay +
-// shadow amendment + registry, exposed as six READ-risk contracts. Mutating host
+// shadow amendment + registry, exposed as eight READ-risk contracts. Mutating host
 // capabilities (journal append, tokens revoke) are exercised ONLY through ports,
 // and journaling is best-effort — a law decision is never blocked by a journal failure.
 import { definePlugin, startPlugin } from "@vivim/omega-shim";
 import type { PluginContext, CallMeta } from "@vivim/omega-shim";
-import { HOST_OPS } from "@vivim/omega-contracts";
-import type { LawDecision, PortResult, ConsentGrant } from "@vivim/omega-contracts";
+import { HOST_OPS, principalKind } from "@vivim/omega-contracts";
+import type { LawDecision, PortResult, ConsentGrant, PrincipalKind } from "@vivim/omega-contracts";
 import { LAW_POLICY_V1, evalPolicy, type PolicyDoc } from "./policy.ts";
 import { ConsentTable } from "./consent.ts";
 import { ForbiddenTable, FORBIDDEN_NS, FORBIDDEN_ID_PREFIX, forbiddenVaultId, toRecord, fromRecord } from "./forbidden.ts";
@@ -364,6 +364,42 @@ startPlugin(definePlugin({
       if (!ctx) throw new Error("law.forbidden.reload: no plugin context — missing dependency vivim.vault queryable");
       const count = await reloadForbidden(ctx);
       return { loaded: true, persistence: true, count };
+    },
+
+    /** D-353 — the principal describe read (agent.describe@1's law-side mirror).
+     *  One call answers: who is this principal (kind), what may they NEVER do
+     *  (the forbidden overlay, with its persistence posture), which consents
+     *  are theirs (principal-narrowed active grants only), and the law
+     *  generation they were described at. READ — mutates nothing; the
+     *  combination rule (identity.state × contract.state, D-315) is realized
+     *  by the same per-principal walk every other law op uses: forbidden,
+     *  policy, and consent tables are all keyed per-principal already, so
+     *  `user:<id>` needs zero new tables — only this acceptance of the prefix. */
+    "law.describe@1": (payload: unknown, _ctx: PluginContext | null, _meta: CallMeta) => {
+      const p = asObj(payload);
+      const principal = str(p["principal"]);
+      if (!principal) throw new Error("law.describe: payload requires {principal}");
+      registry.countEvent();
+      const entry = forbiddenTable.list().find((e) => e.principal === principal);
+      const forbidden: { ops: string[]; persisted: boolean } = {
+        ops: entry?.ops ?? [],
+        persisted: forbiddenPersistence,
+      };
+      const consents = consentTable.listFor(principal).map((r) => ({
+        consentId: r.consentId,
+        grantedAt: r.grantedAt,
+        generation: r.generation,
+        active: r.active,
+        ...(r.scope !== undefined ? { scope: r.scope } : {}),
+      }));
+      const out: { principal: string; kind: PrincipalKind; forbidden: { ops: string[]; persisted: boolean }; consents: ReturnType<typeof consents>; generation: number } = {
+        principal,
+        kind: principalKind(principal),
+        forbidden,
+        consents,
+        generation,
+      };
+      return out;
     },
   },
 }));

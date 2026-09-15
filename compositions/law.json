@@ -18,7 +18,8 @@
           "law.consent.grant@1",
           "law.tokens.revoke@1",
           "law.forbidden.set@1",
-          "law.amendment@1"
+          "law.amendment@1",
+          "law.describe@1"
         ]
       },
       "config": { "journalPath": "" }
@@ -33,7 +34,7 @@
       "id": "omega.echo",
       "source": "../examples/plugin-echo",
       "bootPhase": 1,
-      "grant": { "capabilities": [], "contracts": ["echo.ping@1"] }
+      "grant": { "capabilities": [], "contracts": ["echo.ping@1", "echo.stream@1"] }
     }
   ]
 }

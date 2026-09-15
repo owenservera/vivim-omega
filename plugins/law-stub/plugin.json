@@ -9,7 +9,8 @@
     "contract": [
       { "kind": "contract", "id": "law.check", "version": "1", "risk": "READ" },
       { "kind": "contract", "id": "law.registry", "version": "1", "risk": "READ" },
-      { "kind": "contract", "id": "law.consent.grant", "version": "1", "risk": "READ" }
+      { "kind": "contract", "id": "law.consent.grant", "version": "1", "risk": "READ" },
+      { "kind": "contract", "id": "law.describe", "version": "1", "risk": "READ" }
     ]
   },
   "dependencies": [],

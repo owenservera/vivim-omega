@@ -1,12 +1,15 @@
 {
   "manifestVersion": "1",
   "id": "omega.echo",
-  "version": "0.1.0",
-  "description": "Ω0 demo plugin: echoes payloads (delayMs supported for deadline tests).",
+  "version": "0.2.0",
+  "description": "Ω0 demo plugin: echoes payloads (delayMs supported for deadline tests); echo.stream is the D-352 ordered-chunk falsifier op.",
   "entry": "src/index.ts",
   "publisher": { "keyId": "", "signature": "" },
   "contributions": {
-    "contract": [{ "kind": "contract", "id": "echo.ping", "version": "1", "risk": "READ" }]
+    "contract": [
+      { "kind": "contract", "id": "echo.ping", "version": "1", "risk": "READ" },
+      { "kind": "contract", "id": "echo.stream", "version": "1", "risk": "READ" }
+    ]
   },
   "dependencies": [],
   "capabilities": { "requested": [] },

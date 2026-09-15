@@ -1,8 +1,8 @@
 {
   "manifestVersion": "1",
   "id": "vivim.law",
-  "version": "0.1.0",
-  "description": "Ω1 law spine: the gate (law.check), consent grants, capability-handle algebra, registry (journal replay), per-principal forbidden-action overlay (law.forbidden.set, D-310; vault-durable per D-325 with law.forbidden.reload), and shadow amendment. Replaces the Ω0 law-stub via recipe re-compile + atomic pin swap (D-213).",
+  "version": "0.2.0",
+  "description": "Ω1 law spine: the gate (law.check), consent grants, capability-handle algebra, registry (journal replay), per-principal forbidden-action overlay (law.forbidden.set, D-310; vault-durable per D-325 with law.forbidden.reload), shadow amendment, and the principal describe read (law.describe, D-353: kind + forbidden + narrowed consents). Replaces the Ω0 law-stub via recipe re-compile + atomic pin swap (D-213).",
   "entry": "src/index.ts",
   "publisher": { "keyId": "", "signature": "" },
   "contributions": {
@@ -13,7 +13,8 @@
       { "kind": "contract", "id": "law.tokens.revoke", "version": "1", "risk": "READ" },
       { "kind": "contract", "id": "law.forbidden.set", "version": "1", "risk": "READ" },
       { "kind": "contract", "id": "law.forbidden.reload", "version": "1", "risk": "READ" },
-      { "kind": "contract", "id": "law.amendment", "version": "1", "risk": "READ" }
+      { "kind": "contract", "id": "law.amendment", "version": "1", "risk": "READ" },
+      { "kind": "contract", "id": "law.describe", "version": "1", "risk": "READ" }
     ]
   },
   "dependencies": [],

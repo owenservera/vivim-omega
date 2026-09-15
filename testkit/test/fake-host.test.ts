@@ -2,7 +2,7 @@
 // degradation, lifecycle, causation ids. All in-process, no workers, no vault.
 import { describe, test, expect } from "bun:test";
 import { definePlugin, type PluginDef } from "@vivim/omega-shim";
-import type { PortResult, PluginManifest } from "@vivim/omega-contracts";
+import type { PortResult, PluginManifest, StreamChunk } from "@vivim/omega-contracts";
 import { HOST_OPS } from "@vivim/omega-contracts";
 import { FakeHost, consentIdFor } from "@vivim/omega-testkit";
 
@@ -427,5 +427,54 @@ describe("Ω4 FakeHost — BUDGET / DEGRADED / lifecycle", () => {
     expect(ids.every((id) => /^c_\d+$/.test(id))).toBe(true);
     const nums = ids.map((id) => Number(id.slice(2)));
     for (let i = 1; i < nums.length; i++) expect(nums[i]).toBeGreaterThan(nums[i - 1]);
+  });
+});
+
+// ---- D-352 differential mirror: the FakeHost streams exactly like the real host/shim pair ----
+
+describe("D-352 FakeHost — streaming mirror (same emit discipline, same registers)", () => {
+  function streamingDef(): PluginDef {
+    return definePlugin({
+      ops: {
+        "fx.stream@1": async (payload, _ctx, meta) => {
+          const p = (payload ?? {}) as { chunks?: unknown[]; violateAfterFinal?: boolean };
+          const items = Array.isArray(p.chunks) ? p.chunks : [];
+          items.forEach((item, i) => meta.emit(item, i === items.length - 1));
+          if (p.violateAfterFinal) meta.emit("after-final", true);
+          return { streamed: items.length };
+        },
+      },
+    });
+  }
+
+  test("callAsRootStream: ordered chunks with seq 1..n, streamId === the returned stream id, result ok", async () => {
+    const fake = new FakeHost();
+    await fake.install(streamingDef(), manifest("omega.fx", [{ id: "fx.stream" }]));
+    const got: Array<{ seq: number; data: unknown; final: boolean; streamId: string }> = [];
+    const { streamId, result } = await fake.callAsRootStream("fx.stream@1", { chunks: ["a", "b", "c"] }, (c) => got.push(c));
+    expect(got.map((c) => c.data)).toEqual(["a", "b", "c"]);
+    expect(got.map((c) => c.seq)).toEqual([1, 2, 3]);
+    expect(got.map((c) => c.final)).toEqual([false, false, true]);
+    expect(got.every((c) => c.streamId === streamId)).toBe(true); // pre-minted causation, exactly like the real host
+    expect(result.ok).toBe(true);
+    if (result.ok) expect((result.value as { streamed: number }).streamed).toBe(3);
+  });
+
+  test("cold fallback: no sink ⇒ chunks dropped, terminating value still ok (non-streaming callers observe nothing)", async () => {
+    const fake = new FakeHost();
+    await fake.install(streamingDef(), manifest("omega.fx", [{ id: "fx.stream" }]));
+    const r = await fake.callAsRoot("fx.stream@1", { chunks: ["x", "y"] });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect((r.value as { streamed: number }).streamed).toBe(2);
+  });
+
+  test("emit-after-final ⇒ DEGRADED (the mirrored fail-closed producer side)", async () => {
+    const fake = new FakeHost();
+    await fake.install(streamingDef(), manifest("omega.fx", [{ id: "fx.stream" }]));
+    const got: StreamChunk[] = [];
+    const { result } = await fake.callAsRootStream("fx.stream@1", { chunks: ["x"], violateAfterFinal: true }, (c) => got.push(c));
+    expect(got.map((c) => c.data)).toEqual(["x"]); // the legal prefix still flowed
+    expect(result.ok).toBe(false);
+    if (!result.ok) { expect(result.error).toBe("DEGRADED"); expect(String(result.detail)).toMatch(/emit after final/); }
   });
 });

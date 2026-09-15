@@ -10,7 +10,7 @@
 // the crash-loop quarantine in vivim.run covers crashes, not consumption.
 // (Watchdog design deferred — see the resourceLimits decision record.)
 import { Worker } from "node:worker_threads";
-import type { PortResult } from "@vivim/omega-contracts";
+import type { PortResult, StreamChunk } from "@vivim/omega-contracts";
 import { join } from "node:path";
 
 export interface CompartmentInit {
@@ -49,6 +49,7 @@ export type FromWorker =
   | { type: "ready" }
   | { type: "call"; callId: string; capabilityToken: string; op: string; payload: unknown; deadlineMs: number }
   | { type: "return"; causationId: string; result: PortResult }
+  | { type: "chunk"; causationId: string; chunk: StreamChunk } // D-352: ordered partial (relay-or-drop — additive)
   | { type: "log"; level: string; args: unknown[] };
 
 export interface CompartmentHandle {

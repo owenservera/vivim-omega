@@ -3,9 +3,10 @@
 // v1 transport: postMessage over worker_threads. The shape is WIT-ready: when the
 // transport becomes WASM, this file changes, plugin code does not.
 import { parentPort } from "node:worker_threads";
-import type { PortResult, PluginManifest } from "@vivim/omega-contracts";
+import type { PortResult, PluginManifest, StreamChunk, StreamEmit } from "@vivim/omega-contracts";
+import { STREAM_SEQ_START } from "@vivim/omega-contracts";
 
-export interface CallMeta { causationId: string; deadlineMs: number; from: string }
+export interface CallMeta { causationId: string; deadlineMs: number; from: string; emit: StreamEmit }
 export interface PluginContext {
   manifest: PluginManifest;
   capabilities: string[];
@@ -24,7 +25,7 @@ export interface PluginDef {
 export function definePlugin(def: PluginDef): PluginDef { return def; }
 
 type InitMsg = { type: "init"; manifest: PluginManifest; tokens: Record<string, string>; capabilities: string[] };
-type ToHost = { type: "ready" } | { type: "call"; callId: string; capabilityToken: string; op: string; payload: unknown; deadlineMs: number } | { type: "return"; causationId: string; result: PortResult } | { type: "log"; level: string; args: unknown[] };
+type ToHost = { type: "ready" } | { type: "call"; callId: string; capabilityToken: string; op: string; payload: unknown; deadlineMs: number } | { type: "return"; causationId: string; result: PortResult } | { type: "chunk"; causationId: string; chunk: StreamChunk } | { type: "log"; level: string; args: unknown[] };
 
 export function startPlugin(def: PluginDef): void {
   const port = parentPort;
@@ -71,8 +72,18 @@ export function startPlugin(def: PluginDef): void {
       const { causationId, op, payload, deadlineMs, from } = m;
       const handler = def.ops?.[op];
       if (!handler) { send({ type: "return", causationId, result: { ok: false, error: "REFUSED", detail: `no handler for ${op}` } }); return; }
+      // D-352 per-delivery emit: strict 1-based contiguous seq, close-once.
+      // Emitting after `final` throws — the .catch below converts any
+      // producer-side violation into a DEGRADED return (fail-closed: an
+      // out-of-discipline stream never masquerades as a good result).
+      let seq = STREAM_SEQ_START, closed = false;
+      const emit: StreamEmit = (data, final = false) => {
+        if (closed) throw new Error(`emit after final (stream ${causationId}) — protocol violation`);
+        if (final) closed = true;
+        send({ type: "chunk", causationId, chunk: { streamId: causationId, seq: seq++, data, final } satisfies StreamChunk });
+      };
       Promise.resolve()
-        .then(() => handler(payload, ctx!, { causationId, deadlineMs, from }))
+        .then(() => handler(payload, ctx!, { causationId, deadlineMs, from, emit }))
         .then((value) => send({ type: "return", causationId, result: { ok: true, value: value ?? null, freshness: "CURRENT" } satisfies PortResult }))
         .catch((e) => send({ type: "return", causationId, result: { ok: false, error: "DEGRADED", detail: `handler ${op} threw: ${String(e)}` } satisfies PortResult }));
       return;
