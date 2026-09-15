@@ -31,7 +31,10 @@ function fakeCtx(over: Partial<PluginContext> = {}): PluginContext {
   };
 }
 
-const META = { causationId: "c_test", deadlineMs: 5000, from: "root" } as const;
+// D-358: the shim ALWAYS supplies meta.emit (the host relay's sink-or-drop
+// is the drop side here — the unit harness observes no chunks, exactly like
+// a single-shot caller).
+const META = { causationId: "c_test", deadlineMs: 5000, from: "root", emit: () => {} } as const;
 
 async function complete(payload: unknown, ctx: PluginContext = fakeCtx()): Promise<unknown> {
   return await def.ops!["chat.complete@1"]!(payload, ctx, META);

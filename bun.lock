@@ -177,6 +177,18 @@
         "@vivim/omega-testkit": "workspace:*",
       },
     },
+    "plugins/vivim-chat": {
+      "name": "@vivim/plugin-vivim-chat",
+      "version": "0.1.0",
+      "dependencies": {
+        "@vivim/omega-contracts": "workspace:*",
+        "@vivim/omega-shim": "workspace:*",
+      },
+      "devDependencies": {
+        "@vivim/omega-host": "workspace:*",
+        "@vivim/omega-sdk": "workspace:*",
+      },
+    },
     "plugins/vivim-credentials": {
       "name": "@vivim/plugin-vivim-credentials",
       "version": "0.1.0",
@@ -405,6 +417,8 @@
     "@vivim/plugin-plugin-risky": ["@vivim/plugin-plugin-risky@workspace:examples/plugin-risky"],
 
     "@vivim/plugin-provider-browser": ["@vivim/plugin-provider-browser@workspace:plugins/provider-browser"],
+
+    "@vivim/plugin-vivim-chat": ["@vivim/plugin-vivim-chat@workspace:plugins/vivim-chat"],
 
     "@vivim/plugin-vivim-credentials": ["@vivim/plugin-vivim-credentials@workspace:plugins/vivim-credentials"],
 

@@ -21,8 +21,8 @@
 // Consent-required refusals surface as MCP tool errors: isError: true with the
 // consentId (and how to grant it) in the text content.
 import { join } from "node:path";
-import { routableOps, riskyOps } from "@vivim/omega-contracts";
-import type { PluginManifest, PortResult } from "@vivim/omega-contracts";
+import { surfaceOpMeta } from "@vivim/omega-contracts";
+import type { PluginManifest, PortResult, SurfaceOpMeta } from "@vivim/omega-contracts";
 import { bootSurface, SurfaceBootError } from "./boot.ts";
 import type { SurfaceBoot } from "./boot.ts";
 
@@ -56,22 +56,12 @@ function opToToolName(op: string): string {
   return op.replaceAll(".", "_").replaceAll("@", "_");
 }
 
-interface OpMeta { pluginId: string; risk: string }
+// D-359: the op → {owner plugin, declared risk} derivation moved to contracts
+// (`surfaceOpMeta`, type `SurfaceOpMeta`) when chat resolution became the third
+// consumer of the same derivation (A2: one source, N consumers — never a third
+// binding). This module imports both; the local duplicate is gone.
 
-/** op → {owner plugin, declared risk} from the composition's verified manifests. */
-function buildOpMeta(manifests: Map<string, PluginManifest>): Map<string, OpMeta> {
-  const map = new Map<string, OpMeta>();
-  for (const [pluginId, m] of manifests) {
-    const risky = riskyOps(m); // non-READ risks only; READ is the ungated default
-    for (const op of routableOps(m)) {
-      const risk = risky.get(op);
-      map.set(op, { pluginId, risk: risk ?? "READ" });
-    }
-  }
-  return map;
-}
-
-function toolDescription(op: string, meta: OpMeta | undefined): string {
+function toolDescription(op: string, meta: SurfaceOpMeta | undefined): string {
   return `VIVIM routed op ${op} — owner ${meta?.pluginId ?? "?"}, declared risk ${meta?.risk ?? "READ"}. ` +
     "Calling it runs router.callAsRoot; the tool arguments are the op payload verbatim.";
 }
@@ -85,7 +75,7 @@ const genericInputSchema = (op: string) => ({
 
 // ---- the server -------------------------------------------------------------------
 
-interface McpServerDeps { boot: SurfaceBoot; opMeta: Map<string, OpMeta>; toolToOp: Map<string, string> }
+interface McpServerDeps { boot: SurfaceBoot; opMeta: Map<string, SurfaceOpMeta>; toolToOp: Map<string, string> }
 
 async function handleLine(deps: McpServerDeps, line: string): Promise<void> {
   let msg: JsonRpcRequest;
@@ -244,8 +234,9 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  // tools = routed ops of the booted composition (THE rule; build once)
-  const opMeta = buildOpMeta(boot.host.manifests);
+  // tools = routed ops of the booted composition (THE rule; build once).
+  // The op-meta derivation is the SHARED contracts one (D-359/A2).
+  const opMeta = surfaceOpMeta(boot.host.manifests);
   const toolToOp = new Map<string, string>();
   for (const op of boot.host.router.status().routedOps) toolToOp.set(opToToolName(op), op);
   const deps: McpServerDeps = { boot, opMeta, toolToOp };

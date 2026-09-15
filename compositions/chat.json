@@ -1,0 +1,54 @@
+{
+  "name": "chat",
+  "_note": "CHAT PILOT composition (D-358/D-359) — M2 chat storage (vivim.chat, the first writer of vault ns 'chat') + M4 resolution wiring (deterministic half in vivim.chat; the ambiguous half through the SHARED classifier in vivim.director). The user principal comes from D-353 (user:<id>), storage from D-335 (vault as-is), streaming from D-352 (chat.complete@1's additive line-chunk emission). Both MUTATION chat ops carry exact LAW_POLICY_V1 rows (1.3.0) — the D-351 parity net covers them from the first boot.",
+  "entries": [
+    {
+      "id": "vivim.law",
+      "source": "../plugins/vivim-law",
+      "bootPhase": 0,
+      "grant": {
+        "capabilities": ["host.journal.append", "host.tokens.revoke"],
+        "contracts": ["law.check@1", "law.registry@1", "law.consent.grant@1", "law.tokens.revoke@1", "law.amendment@1", "law.describe@1"]
+      },
+      "config": { "journalPath": "" }
+    },
+    {
+      "id": "vivim.vault",
+      "source": "../plugins/vivim-vault",
+      "bootPhase": 1,
+      "grant": {
+        "capabilities": [],
+        "contracts": ["vault.append@1", "vault.get@1", "vault.query@1", "vault.search@1", "vault.verify@1", "vault.compact@1", "vault.roundtrip@1"]
+      },
+      "config": { "dataDir": "/tmp/omega-chat/vault-data" }
+    },
+    {
+      "id": "vivim.director",
+      "source": "../plugins/vivim-director",
+      "bootPhase": 1,
+      "grant": {
+        "capabilities": ["port:vault.append@1", "port:vault.query@1", "port:vault.get@1"],
+        "contracts": ["resolve.classify@1", "resolve.report@1"]
+      },
+      "config": { "intervalMs": 3600000 }
+    },
+    {
+      "id": "provider.llm",
+      "source": "../plugins/provider-llm",
+      "bootPhase": 1,
+      "grant": {
+        "capabilities": [],
+        "contracts": ["chat.complete@1"]
+      }
+    },
+    {
+      "id": "vivim.chat",
+      "source": "../plugins/vivim-chat",
+      "bootPhase": 1,
+      "grant": {
+        "capabilities": ["port:vault.append@1", "port:vault.get@1", "port:vault.query@1", "port:resolve.classify@1"],
+        "contracts": ["chat.open@1", "chat.append@1", "chat.history@1", "chat.resolve@1"]
+      }
+    }
+  ]
+}

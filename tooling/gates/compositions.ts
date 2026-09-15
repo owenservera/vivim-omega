@@ -38,6 +38,12 @@ const DRIFT_ALLOWLIST: Record<string, string> = {
   // reload contract, D-325). The variance is watched, not free — any NEW shape
   // of drift still fails until allowlisted with a pointer.
   "vivim.law": "D-325: per-composition law scope (memory-only law.json … vault-durable agent.json); new shapes fail until allowlisted",
+  // vivim.director's surface varies by composition role: console/run carry the
+  // full director surface (rules/teach/tick + its action ports), chat.json
+  // grants ONLY the resolution half (resolve.classify@1 + resolve.report@1 +
+  // the vault ports those two use) — the chat pilot is a resolution consumer,
+  // not an automation host (D-359). New shapes still fail until allowlisted.
+  "vivim.director": "D-358/D-359: chat.json grants the resolution half only (resolve.classify/report + their vault ports); console/run carry the full director surface",
   // run.json lists the host-op aliases explicitly (with a _note about token-table
   // ordering under an older host); spine.json grants only the guard. Effective
   // authority is identical under the current host (mintTokensFor auto-mints the

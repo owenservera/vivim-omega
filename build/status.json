@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-09-15T16:56:35.874Z",
+  "generatedAt": "2026-09-15T18:19:49.550Z",
   "repo": "vivim-omega",
   "branch": "omega",
-  "head": "efcba24",
+  "head": "77593bf",
   "waves": [
     {
       "id": "Ω0",
@@ -90,7 +90,7 @@
     }
   ],
   "gate": {
-    "startedAt": "2026-09-15T16:55:29.730Z",
+    "startedAt": "2026-09-15T18:18:43.799Z",
     "checks": {
       "host-loc": {
         "ok": true,
@@ -110,32 +110,35 @@
       "decisions": {
         "ok": true,
         "detail": {
-          "rows": 61,
-          "records": 35,
+          "rows": 63,
+          "records": 37,
           "ratified": 31,
           "grandfatherBelow": 313,
           "openQuestions": {
-            "count": 4,
+            "count": 6,
             "ids": [
               313,
               314,
               316,
-              317
+              317,
+              358,
+              359
             ],
-            "board": "fresh"
+            "board": "stale"
           }
         }
       },
       "compositions": {
         "ok": true,
         "detail": {
-          "specs": 15,
-          "entries": 61,
+          "specs": 16,
+          "entries": 66,
           "driftAllowlisted": {
             "vivim.law": {
               "files": [
                 "agent.json",
                 "browser.json",
+                "chat.json",
                 "console.json",
                 "credentials.json",
                 "demo.json",
@@ -152,6 +155,13 @@
               ],
               "reason": "D-325: per-composition law scope (memory-only law.json … vault-durable agent.json); new shapes fail until allowlisted"
             },
+            "vivim.director": {
+              "files": [
+                "chat.json",
+                "console.json"
+              ],
+              "reason": "D-358/D-359: chat.json grants the resolution half only (resolve.classify/report + their vault ports); console/run carry the full director surface"
+            },
             "vivim.run": {
               "files": [
                 "run.json",
@@ -160,7 +170,7 @@
               "reason": "alias-style variance run.json vs spine.json: same effective authority (HOST_OP_TO_CAP auto-mint); convergence deferred, see _note in run.json"
             }
           },
-          "contractTypes": 80,
+          "contractTypes": 94,
           "callSiteAllowlisted": [
             "CompositionSpecEntry",
             "LangContribution",
@@ -179,7 +189,7 @@
       "tests": {
         "ok": true,
         "detail": {
-          "pass": 691,
+          "pass": 718,
           "fail": 0,
           "maxConcurrency": 4
         }
@@ -187,8 +197,8 @@
       "attest": {
         "ok": true,
         "detail": {
-          "compileMs": 4,
-          "bootMs": 33,
+          "compileMs": 3,
+          "bootMs": 32,
           "echo": true,
           "counterBump": true,
           "counterValue": {
@@ -211,7 +221,7 @@
   },
   "hostLoc": 997,
   "tests": {
-    "pass": 691,
+    "pass": 718,
     "fail": 0
   },
   "benchmarks": {

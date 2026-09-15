@@ -1,0 +1,23 @@
+{
+  "manifestVersion": "1",
+  "id": "vivim.chat",
+  "version": "0.1.0",
+  "description": "D-358/D-359 — the chat pilot: the FIRST WRITER of vault ns 'chat' (D-335's email-style convention: vault as-is, namespace row same-commit, retention open with a named revisit trigger) and M4's resolution wiring (D-337's deterministic-first philosophy via the SHARED classifier — no parallel resolution logic; capability names derived from the booted composition's routed ops per docs/SURFACES.md's tool-generation rule, 360 addendum A2). Conversation.principal is a plain string (D-353) — zero new authority machinery.",
+  "entry": "src/index.ts",
+  "publisher": { "keyId": "", "signature": "" },
+  "contributions": {
+    "contract": [
+      { "kind": "contract", "id": "chat.open", "version": "1", "risk": "MUTATION", "doc": "open {principal, title?} → {conversationId, rev, createdAt} — creates the conversation row (ns chat, id conv_*); principal is a plain non-empty string (user:<id>, agent:<id>, composition principals — D-353: classification is never rejection)." },
+      { "kind": "contract", "id": "chat.append", "version": "1", "risk": "MUTATION", "doc": "append {conversationId, role, content, providerId?, realizationRef?, streamRef?} → {messageId, rev, seq} — appends a message to an existing conversation (attributable refusal when it does not exist); seq is writer-assigned (prior count + 1); realizationRef ties the message to the ProviderRealization that produced it; streamRef references M1's chunk envelope when the message arrived streamed (D-352 persistence hook — ordered chunk refs → assembled content, never a separate store)." },
+      { "kind": "contract", "id": "chat.history", "version": "1", "risk": "READ", "doc": "history {conversationId, limit?} → {conversation, messages, total} — bounded (CHAT_HISTORY_CAP), seq-ascending, sibling-conversation-proof history of one conversation." },
+      { "kind": "contract", "id": "chat.resolve", "version": "1", "risk": "READ", "doc": "resolve {conversationId, utterance, capabilities} → {decisionId, branch, kind, capability, reason, source} — M4/D-337: the deterministic half (the utterance exactly names a passed capability → rule branch, DETERMINISTIC; ledgered here as a ns-resolve ResolveDecision row) and the ambiguous half via the SHARED resolve.classify@1 (realization/human branches, the director's own ledger row). Resolution ≠ execution: the caller executes through the router and reports via resolve.report@1. capabilities is the caller-side output of contracts capabilityNamesFromRouted (the same derivation MCP tools/list consults — A2)." }
+    ]
+  },
+  "dependencies": [],
+  "capabilities": {
+    "requested": ["port:vault.append@1", "port:vault.get@1", "port:vault.query@1", "port:resolve.classify@1"],
+    "justification": "Conversation/message rows persist in the USER'S VAULT (ns 'chat') via vault.append/get/query (D-335: vault as-is, no new store); the ambiguous resolution half consults the SHARED classifier via port:resolve.classify@1 (D-337: no parallel resolution logic). The composition grants exactly these per user-signed Recipe — never this manifest. Resolution never executes the resolved capability (the caller does, through the law-gated router)."
+  },
+  "runtime": { "tier": "worker-thread", "budget": { "cpuMs": 500, "memMB": 128 } },
+  "contentHash": ""
+}

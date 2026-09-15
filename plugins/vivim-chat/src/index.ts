@@ -1,0 +1,214 @@
+// plugins/vivim-chat — index.ts (D-358 + D-359, the chat pilot wave)
+// The FIRST WRITER of vault ns "chat" (D-335's email-style convention; the
+// namespace row in docs/VAULT-NAMESPACES.md lands in the same commit).
+//
+// Ops exposed (CONTRACT contributions, see plugin.json):
+//   chat.open@1     MUTATION  {principal, title?} → {conversationId, rev, createdAt}
+//                             the conversation row D-353's consequence names —
+//                             principal is a plain string (user:<id> / agent:<id> /
+//                             composition principals — classification is never rejection).
+//   chat.append@1   MUTATION  {conversationId, role, content, providerId?,
+//                             realizationRef?, streamRef?} → {messageId, rev, seq}
+//                             conversation must resolve (attributable refusal);
+//                             seq assigned by the writer (prior count + 1).
+//   chat.history@1  READ      {conversationId, limit?} → {conversation, messages, scanned}
+//                             bounded (CHAT_HISTORY_CAP), seq-ascending, sibling-proof.
+//   chat.resolve@1  READ      {conversationId, utterance, capabilities} → resolution
+//                             (D-359/M4): deterministic half here (exact command /
+//                             known op name → rule branch), ambiguous half via the
+//                             SHARED classifier resolve.classify@1 — no parallel
+//                             resolution logic (D-337). Resolution ≠ execution.
+//
+// Handlers throw on bad payloads / failed port calls → DEGRADED at the boundary.
+import { definePlugin, startPlugin } from "@vivim/omega-shim";
+import type { PluginContext, CallMeta } from "@vivim/omega-shim";
+import type { PortResult, ResolveDecision, ChatConversation } from "@vivim/omega-contracts";
+import {
+  CHAT_NS, asChatConversation, asChatMessage, chatConversationId, chatMessageId, resolveDecisionId,
+} from "@vivim/omega-contracts";
+import { randomBytes } from "node:crypto";
+import {
+  CHAT_HISTORY_CAP, checkContent, checkPrincipal, checkRole, nextMessageSeq,
+  orderMessages, parseAppendInput, parseHistoryInput,
+} from "./chat.ts";
+import {
+  CHAT_CONSULT_OP, deterministicMatch, deterministicVerdict, parseResolveInput,
+} from "./resolve.ts";
+import type { ChatResolveVerdict } from "./resolve.ts";
+
+interface VaultAppendResult { rev: number; cid: string; seq: number }
+interface VaultGetResult { rev: number; cid: string; data: unknown; meta: unknown; refs: unknown }
+interface VaultQueryRow { id: string; rev: number; cid: string }
+
+/** Port call that fails closed: a non-ok result becomes a thrown error → DEGRADED. */
+async function portCall<T>(ctx: PluginContext, op: string, payload: unknown): Promise<T> {
+  const r: PortResult = await ctx.port.call(op, payload);
+  if (!r.ok) throw new Error(`vivim.chat: ${op} ${r.error}: ${r.detail ?? ""}`);
+  return r.value as T;
+}
+
+/** Read-or-null: a failed get becomes null so the caller's BAR can produce
+ *  the attributable refusal (a missing conversation is a named error, not a
+ *  raw vault DEGRADED). */
+async function tryGet<T>(ctx: PluginContext, op: string, payload: unknown): Promise<T | null> {
+  const r: PortResult = await ctx.port.call(op, payload);
+  return r.ok ? (r.value as T) : null;
+}
+
+async function getRow(ctx: PluginContext, ns: string, id: string): Promise<VaultGetResult | null> {
+  return tryGet<VaultGetResult>(ctx, "vault.get@1", { ns, id });
+}
+
+/** Load + narrow a conversation row, or throw the attributable refusal. */
+async function mustLoadConversation(ctx: PluginContext, conversationId: string): Promise<ChatConversation> {
+  const got = await getRow(ctx, CHAT_NS, conversationId);
+  if (!got) throw new Error(`vivim.chat: conversation ${conversationId} does not exist in ns ${CHAT_NS} — refusing (attributable)`);
+  const conv = asChatConversation(got.data);
+  if (!conv) throw new Error(`vivim.chat: conversation row ${conversationId} is malformed — refusing (fail-closed)`);
+  return conv;
+}
+
+/** All messages of one conversation (bounded scan; sibling-proof by data filter). */
+async function loadConversationMessages(ctx: PluginContext, conversationId: string) {
+  const rows = await portCall<VaultQueryRow[]>(ctx, "vault.query@1", { ns: CHAT_NS, filter: { idPrefix: "msg_" } });
+  const messages = [];
+  for (const row of rows.slice(0, CHAT_HISTORY_CAP)) {
+    const got = await getRow(ctx, CHAT_NS, row.id);
+    if (!got) continue; // unreadable rows can't be history — skipped, not fatal
+    const m = asChatMessage(got.data);
+    if (!m || m.conversationId !== conversationId) continue; // sibling conversations never leak
+    messages.push(m);
+  }
+  return messages;
+}
+
+export const def = definePlugin({
+  ops: {
+    "chat.open@1": async (payload: unknown, ctx: PluginContext) => {
+      const op = "chat.open@1";
+      if (payload === null || typeof payload !== "object" || Array.isArray(payload)) {
+        throw new Error(`${op}: payload must be an object {principal, title?}`);
+      }
+      const p = payload as Record<string, unknown>;
+      const principal = checkPrincipal(op, p["principal"]);
+      if (p["title"] !== undefined && (typeof p["title"] !== "string" || p["title"].length === 0)) {
+        throw new Error(`${op}: title must be a non-empty string when provided`);
+      }
+      const title = p["title"] as string | undefined;
+      const id = chatConversationId(`conv_${randomBytes(8).toString("hex")}`);
+      const createdAt = Date.now();
+      const append = await portCall<VaultAppendResult>(ctx, "vault.append@1", {
+        ns: CHAT_NS, id,
+        data: { id, principal, ...(title !== undefined ? { title } : {}), createdAt },
+        meta: { type: "conversation", principal },
+        refs: [],
+      });
+      ctx.log(`vivim.chat: opened ${id} for ${principal}`);
+      return { conversationId: id, rev: append.rev, createdAt };
+    },
+
+    "chat.append@1": async (payload: unknown, ctx: PluginContext) => {
+      const op = "chat.append@1";
+      const input = parseAppendInput(payload); // throws → DEGRADED
+      const conv = await mustLoadConversation(ctx, input.conversationId);
+      const prior = await loadConversationMessages(ctx, input.conversationId);
+      if (prior.length >= CHAT_HISTORY_CAP) {
+        throw new Error(`${op}: conversation ${conv.id} reached the ${CHAT_HISTORY_CAP}-message scan cap — compaction/retention revisit trigger (D-335), refusing fail-closed`);
+      }
+      const seq = nextMessageSeq(prior.length);
+      const id = chatMessageId(`msg_${randomBytes(8).toString("hex")}`);
+      const createdAt = Date.now();
+      const message = {
+        id,
+        conversationId: conv.id,
+        role: input.role,
+        seq,
+        content: input.content,
+        ...(input.providerId !== undefined ? { providerId: input.providerId } : {}),
+        ...(input.realizationRef !== undefined ? { realizationRef: input.realizationRef } : {}),
+        ...(input.streamRef !== undefined ? { streamRef: input.streamRef } : {}),
+        createdAt,
+      };
+      const append = await portCall<VaultAppendResult>(ctx, "vault.append@1", {
+        ns: CHAT_NS, id, data: message,
+        meta: { type: "message", conversationId: conv.id, role: input.role, seq },
+        refs: [{ ns: CHAT_NS, id: conv.id, rev: 1 }],
+      });
+      return { messageId: id, rev: append.rev, seq };
+    },
+
+    "chat.history@1": async (payload: unknown, ctx: PluginContext) => {
+      const input = parseHistoryInput(payload); // throws → DEGRADED
+      const conv = await mustLoadConversation(ctx, input.conversationId);
+      const messages = orderMessages(await loadConversationMessages(ctx, input.conversationId));
+      const limit = input.limit ?? messages.length;
+      return {
+        conversation: conv,
+        messages: messages.slice(0, limit),
+        total: messages.length,
+      };
+    },
+
+    "chat.resolve@1": async (payload: unknown, ctx: PluginContext) => {
+      const input = parseResolveInput(payload); // throws → DEGRADED
+      const conv = await mustLoadConversation(ctx, input.conversationId);
+
+      // ── Deterministic half (D-337): exact command / known op name ──────
+      const hit = deterministicMatch(input.utterance, input.capabilities);
+      let verdict: ChatResolveVerdict;
+      let decisionId: string;
+      if (hit !== null) {
+        verdict = deterministicVerdict(hit);
+        // Ledger it as a ResolveDecision row (ns resolve, rev 1) — the same
+        // record shape the director writes; vivim.chat is the writer for
+        // chat-originated deterministic verdicts (D-359; the ns resolve row
+        // in VAULT-NAMESPACES.md names this writer same-commit).
+        decisionId = `chat_${randomBytes(8).toString("hex")}`;
+        const data: ResolveDecision = {
+          decisionId,
+          kind: verdict.kind,
+          capability: verdict.capability,
+          branch: verdict.branch,
+          reason: verdict.reason,
+          evidenceRefs: [{ ns: CHAT_NS, id: conv.id, rev: 1, epistemicStatus: "INFERRED" }],
+          buildDecisionRef: "D-323",
+          createdAt: Date.now(),
+        };
+        await portCall<VaultAppendResult>(ctx, "vault.append@1", {
+          ns: "resolve", id: resolveDecisionId(decisionId), data,
+          meta: { type: "resolve-decision", kind: verdict.kind, branch: verdict.branch, source: verdict.source },
+          refs: [{ ns: CHAT_NS, id: conv.id, rev: 1 }],
+        });
+      } else {
+        // ── Ambiguous half (D-337): the SHARED classifier decides ─────────
+        // resolve.classify@1 rules on the chat archetype: a PROMOTED
+        // realization → the realization branch (class-mapped kind per
+        // D-323), none → HUMAN (empty capability — routes nowhere). The
+        // director writes its own decision row; never duplicated here.
+        const cr: PortResult = await ctx.port.call("resolve.classify@1", { op: CHAT_CONSULT_OP });
+        if (!cr.ok) throw new Error(`vivim.chat: chat.resolve@1 resolve.classify@1 ${cr.error}: ${cr.detail ?? ""}`);
+        const c = cr.value as { decisionId: string; kind: string; capability: string; branch: string; reason: string };
+        verdict = {
+          source: "resolve-classify",
+          branch: c.branch as ChatResolveVerdict["branch"],
+          kind: c.kind as ChatResolveVerdict["kind"],
+          capability: c.capability,
+          reason: c.reason,
+        };
+        decisionId = c.decisionId;
+      }
+      return {
+        decisionId,
+        conversationId: conv.id,
+        utterance: input.utterance,
+        branch: verdict.branch,
+        kind: verdict.kind,
+        capability: verdict.capability,
+        reason: verdict.reason,
+        source: verdict.source,
+      };
+    },
+  },
+});
+
+startPlugin(def);
