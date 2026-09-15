@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -93,3 +93,5 @@ compartment under the governed-parser discipline. Concretely:
   — green on the ratified tree.
 - Ratification: owner directive 2026-09-15 ("Continue working on the items
   in the 360 MD docs") — gate-proven on the wave SHA before RATIFIED.
+- - Gate evidence: full `bun run omega:gate` GREEN on the wave tree (1dc96ee): 691/691 tests, host 997/1000, host-loc/fresh-tree/decisions/compositions/attest all pass; attest commit 6e15aa7.
+- Ratification: owner directive 2026-09-15 ("Continue working on the items in the 360 MD docs") — gate-proven on the wave SHA before RATIFIED.
