@@ -1,15 +1,15 @@
 {
-  "at": "2026-09-13T12:39:39.856Z",
-  "bootMs": 166,
+  "at": "2026-09-15T19:59:53.866Z",
+  "bootMs": 10,
   "portRtt": {
     "n": 200,
-    "p50": 0.17,
-    "p99": 30.66,
+    "p50": 0.03,
+    "p99": 0.78,
     "unit": "ms"
   },
   "interCompartmentRtt": {
     "n": 50,
-    "p50": 0.86,
+    "p50": 0.1,
     "unit": "ms"
   },
   "envelope": {
@@ -19,8 +19,8 @@
   },
   "daemonCallRtt": {
     "n": 50,
-    "p50": 7.58,
+    "p50": 0.51,
     "unit": "ms"
   },
-  "coldCliCallMs": 655
+  "coldCliCallMs": 68
 }

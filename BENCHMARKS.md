@@ -18,3 +18,32 @@
 ## 2026-09-13T12:39:39.856Z — daemon warm path (D-322)
 - daemon call RTT p50: 7.58 ms over 50 protocol calls (TCP loopback + op, same demo composition)
 - cold CLI wall for one echo call: 655 ms (full child process, warm vault, --no-daemon — the spawn floor the warm path removes)
+## 2026-09-15T19:28:33.123Z — daemon warm path (D-322)
+- daemon call RTT p50: 0.36 ms over 50 protocol calls (TCP loopback + op, same demo composition)
+- cold CLI wall for one echo call: 102 ms (full child process, warm vault, --no-daemon — the spawn floor the warm path removes)
+## 2026-09-15T19:28:37.235Z — daemon warm path (D-322)
+- daemon call RTT p50: 0.3 ms over 50 protocol calls (TCP loopback + op, same demo composition)
+- cold CLI wall for one echo call: 97 ms (full child process, warm vault, --no-daemon — the spawn floor the warm path removes)
+## 2026-09-15T19:59:53.866Z — daemon warm path (D-322)
+- daemon call RTT p50: 0.51 ms over 50 protocol calls (TCP loopback + op, same demo composition)
+- cold CLI wall for one echo call: 68 ms (full child process, warm vault, --no-daemon — the spawn floor the warm path removes)
+
+## 2026-09-16 — external-review remediation wave (D-360…D-364)
+- boot (demo composition, min of 3): **27 ms → 10 ms** — the D-363 event-driven
+  readiness swap (router `ready` message resolves waiters; the 25ms poll tick is
+  gone from the critical path). Falsifier for §3 of the review met: drop ≈ the
+  poll interval's worst case, on the same box at the same HEAD lineage.
+- D-360 falsifier 13 (CPU-wedged compartment, sync infinite loop): watchdog
+  eviction + hard terminate wall ≈ **2.9s** at intervalMs 100 / missLimit 3
+  (detection ≈ 300ms; the rest is the bounded graceful-shutdown wait before the
+  hard kill). Sibling compartments answer echo.ping@1 throughout, zero crashes.
+- D-360 falsifier 14 (responsive heap bomber over its declared 32MB budget):
+  detection ≈ 2 over-budget samples (≈ 200ms past the first over sample), full
+  eviction wall ≈ **3.7s**. Siblings unaffected.
+- D-321 resourceLimits re-verification on Linux (Bun 1.3.14, this tree):
+  `tooling/watchdog/resourcelimits-probe.ts` — maxOldGenerationSizeMb 32 grew to
+  **130MB heap, no error, exit 0** (old-gen object pressure). NOT ENFORCED,
+  consistent with D-321's Windows observation (217MB). The README law #3 wording
+  is downgraded accordingly ("coupling, not exhaustion").
+- node --test canary (D-362): canon round-trip suite 5/5 under Node 24 — the
+  production tree's core logic is runtime-neutral outside the one sqlite adapter.

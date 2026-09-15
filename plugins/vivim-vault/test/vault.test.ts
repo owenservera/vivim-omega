@@ -1,7 +1,7 @@
 // vivim.vault — unit tests (Ω2): vault format v1 on-disk contract, exercised module-level
 // with temp dirs. Integration (router + compartments) lives in integration.test.ts.
 import { describe, test, expect } from "bun:test";
-import { Database } from "bun:sqlite";
+import { openDatabase } from "../src/db.ts"; // D-361: tests ride the adapter too
 import { existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { basename, join } from "node:path";
 
@@ -42,7 +42,7 @@ describe("Ω2 driver decision", () => {
   // worker_threads compartment (the plugin's actual runtime) — see the worker probe
   // in the work log and the router-level search tests in integration.test.ts.
   test("bun:sqlite FTS5 confirmed — virtual table, MATCH, rank", () => {
-    const db = new Database(":memory:");
+    const db = openDatabase(":memory:");
     db.exec("CREATE VIRTUAL TABLE fts USING fts5(ns UNINDEXED, id UNINDEXED, rev UNINDEXED, body)");
     db.query("INSERT INTO fts (ns, id, rev, body) VALUES (?, ?, ?, ?)").run("a", "1", 1, "the quick brown fox");
     db.query("INSERT INTO fts (ns, id, rev, body) VALUES (?, ?, ?, ?)").run("a", "2", 1, "a lazy dog");
@@ -128,7 +128,7 @@ describe("Ω2 vault format v1 — canonical JSON, CAS, Merkle", () => {
     expect(prev).toBe(rows[rows.length - 1].entry_hash);
 
     // tamper with a second connection on the same file → verify reports the corrupt seq
-    const attacker = new Database(dbPath(dir));
+    const attacker = openDatabase(dbPath(dir));
     attacker.exec("UPDATE changelog SET cid = 'tampered' WHERE seq = 2");
     attacker.close();
     const bad = verify(v);
@@ -289,7 +289,7 @@ describe("Ω2 single-writer law (WAL, queue, crash-sim)", () => {
     // simulate a crashed/abandoned writer: a NEW Database on the same file while the
     // original connection is still open — the data lives in the WAL, uncheckpointed,
     // and SQLite recovers it for the new reader (crash-sim, WAL recovery)
-    const second = new Database(dbPath(dir));
+    const second = openDatabase(dbPath(dir));
     const seen = (second.query("SELECT COUNT(*) AS n FROM changelog").get() as { n: number }).n;
     expect(seen).toBe(2);
     const obj = second.query("SELECT rev, cid, meta FROM objects WHERE ns = 'crash' AND id = 'x' ORDER BY rev").all();

@@ -5,8 +5,7 @@ import { mkdirSync, existsSync, writeFileSync, chmodSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { generateRootKey, loadRootKeyPem } from "./canon.ts";
 import { verifyRecipeSignature, verifyCompositionInvariants, verifyEntryWithRoot } from "./recipe.ts";
-import { buildRoutingTable } from "./ports.ts";
-import { PortRouter } from "./ports.ts";
+import { buildRoutingTable, PortRouter } from "./ports.ts";
 import { checkoutCompartment } from "./worker.ts";
 
 export interface BootedHost {
@@ -64,7 +63,7 @@ export async function bootComposition(recipe: Recipe, buildDir: string, vaultDir
     const handle = await checkoutCompartment(d.entry.id, d.srcDir, d.entryFile);
     router.register(d.entry, d.manifest, handle, d.tokens);
     handle.post({ type: "init", manifest: d.manifest, tokens: d.tokens, capabilities: d.entry.grant.capabilities, ...(d.config ? { config: d.config } : {}) });
-    await waitForActive(router, id);
+    await router.waitActive(id); // D-363: event path — bounded, no poll
   };
   const eager: string[] = [];
   const phases = [...recipe.composition].sort((a, b) => a.bootPhase - b.bootPhase);
@@ -81,36 +80,7 @@ export async function bootComposition(recipe: Recipe, buildDir: string, vaultDir
       router.registerDormant(e, m, tokens, { srcDir, entryFile: m.entry, ...(e.config ? { config: e.config } : {}) });
     }
   }
-  await waitReady(router, recipe, eager);
+  // D-363: readiness rides the router's `ready` message (waitActive) — same 10s bound, minus the 25ms tick.
+  await Promise.all(eager.map((id) => router.waitActive(id)));
   return { recipe, buildDir, router, manifests, shutdown: () => router.shutdown() };
-}
-
-/** One dormant id reaches active (bounded — a wedged spawn fails the touch, never hangs boot). */
-function waitForActive(router: PortRouter, id: string): Promise<void> {
-  const deadline = Date.now() + 10_000;
-  return new Promise((resolve, reject) => {
-    const tick = () => {
-      const st = router.status().compartments as Record<string, { state: string }>;
-      if (st[id]?.state === "active") return resolve();
-      if (st[id]?.state === "degraded") return reject(new Error(`dormant ${id} degraded while spawning on first touch`));
-      if (Date.now() > deadline) return reject(new Error(`dormant ${id} spawn timeout on first touch`));
-      setTimeout(tick, 25);
-    };
-    tick();
-  });
-}
-
-function waitReady(router: PortRouter, recipe: Recipe, eager: string[]): Promise<void> {
-  const deadline = Date.now() + 10_000;
-  return new Promise((resolve, reject) => {
-    const tick = () => {
-      const st = router.status().compartments as Record<string, { state: string }>;
-      const states = eager.map((id) => st[id]?.state);
-      if (states.every((s) => s === "active")) return resolve();
-      if (states.some((s) => s === "degraded")) return reject(new Error(`compartment degraded during boot: ${JSON.stringify(st)}`));
-      if (Date.now() > deadline) return reject(new Error(`boot timeout: ${JSON.stringify(st)}`));
-      setTimeout(tick, 25);
-    };
-    tick();
-  });
 }

@@ -5,7 +5,8 @@
 // JSON.stringify scalars, undefined-valued object keys dropped, arrays in order) so
 // host-side and vault-side digests of the same value can never diverge. It is
 // duplicated here (not imported) because plugin src/ may import ONLY
-// @vivim/omega-shim / @vivim/omega-contracts + bun:sqlite + node builtins (B2).
+// @vivim/omega-shim / @vivim/omega-contracts + the vault's sqlite adapter (db.ts,
+// D-361) + node builtins (B2).
 //
 // On-disk contract pinned in D3 03-WAVE-SPECS §1 (vault format v1):
 //   cid        = sha256( canonicalJson(data) )            — CAS address

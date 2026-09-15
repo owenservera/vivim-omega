@@ -8,7 +8,8 @@
 // by Bun). So compartments are isolated against each other, not against starving
 // the process. Do not rely on this layer against an actively adversarial plugin;
 // the crash-loop quarantine in vivim.run covers crashes, not consumption.
-// (Watchdog design deferred — see the resourceLimits decision record.)
+// (D-360's watchdog — tooling/watchdog — bounds DETECTION time via probes; the
+// resourceLimits decision record keeps the numbers and the re-verify protocol.)
 import { Worker } from "node:worker_threads";
 import type { PortResult, StreamChunk } from "@vivim/omega-contracts";
 import { join } from "node:path";
@@ -54,6 +55,8 @@ export type FromWorker =
 
 export interface CompartmentHandle {
   pluginId: string;
+  /** Raw worker — host-side only (D-360: lets the out-of-tree watchdog probe without touching the Port Protocol). */
+  worker: Worker;
   state: "booting" | "active" | "degraded" | "stopped";
   stats: { delivered: number; calls: number; errors: number; crashes: number; bootedAt: number; lastError?: string };
   post(msg: ToWorker): void;
@@ -65,6 +68,7 @@ export interface CompartmentHandle {
 export function wrapWorker(pluginId: string, worker: Worker): CompartmentHandle {
   const handle: CompartmentHandle = {
     pluginId,
+    worker,
     state: "booting",
     stats: { delivered: 0, calls: 0, errors: 0, crashes: 0, bootedAt: Date.now() },
     post: (msg) => worker.postMessage(msg),

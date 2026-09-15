@@ -24,8 +24,12 @@ export interface PluginDef {
 }
 export function definePlugin(def: PluginDef): PluginDef { return def; }
 
+/** Runtime-neutral sync sleep (Atomics.wait) — D-361: the sanctioned sleep for
+ *  compartment code (the runtime-specific sleepSync is not on Node); this is on both. */
+export function sleepSync(ms: number): void { Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms); }
+
 type InitMsg = { type: "init"; manifest: PluginManifest; tokens: Record<string, string>; capabilities: string[] };
-type ToHost = { type: "ready" } | { type: "call"; callId: string; capabilityToken: string; op: string; payload: unknown; deadlineMs: number } | { type: "return"; causationId: string; result: PortResult } | { type: "chunk"; causationId: string; chunk: StreamChunk } | { type: "log"; level: string; args: unknown[] };
+type ToHost = { type: "ready" } | { type: "call"; callId: string; capabilityToken: string; op: string; payload: unknown; deadlineMs: number } | { type: "return"; causationId: string; result: PortResult } | { type: "chunk"; causationId: string; chunk: StreamChunk } | { type: "log"; level: string; args: unknown[] } | { type: "probeStat"; heapUsed: number; rss: number; cpuUs: number };
 
 export function startPlugin(def: PluginDef): void {
   const port = parentPort;
@@ -66,6 +70,15 @@ export function startPlugin(def: PluginDef): void {
         console.error(`[shim ${init.manifest.id}] onInit failed: ${String(e)}`);
         send({ type: "ready" }); // degraded-but-alive; law/health machinery observes failures later
       });
+      return;
+    }
+    if (m?.type === "probe") {
+      // D-360: the host-side watchdog samples compartment health through the raw
+      // worker (never the Port Protocol). A wedged event loop cannot answer —
+      // which is itself the signal the watchdog is measuring.
+      const mem = process.memoryUsage();
+      const cpu = process.cpuUsage();
+      send({ type: "probeStat", heapUsed: mem.heapUsed, rss: mem.rss, cpuUs: cpu.user + cpu.system });
       return;
     }
     if (m?.type === "deliver") {

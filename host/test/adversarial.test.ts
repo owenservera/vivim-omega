@@ -7,10 +7,13 @@ import { compileComposition, parseRecipe, pinRecipe, loadPinnedRecipe } from "@v
 import { ensureVault, verifyComposition, bootComposition } from "@vivim/omega-host";
 import { bootWithRecovery } from "@vivim/omega-host";
 import { generateRootKey } from "@vivim/omega-host";
+import { startWatchdog } from "../../tooling/watchdog/watchdog.ts";
 import type { Recipe } from "@vivim/omega-contracts";
 
 const SPEC = join(import.meta.dir, "../../compositions/demo.json");
 const spec = JSON.parse(readFileSync(SPEC, "utf-8"));
+const BOMB_SPEC = join(import.meta.dir, "../../fixtures/bomb-composition.json");
+const bombSpec = JSON.parse(readFileSync(BOMB_SPEC, "utf-8"));
 let vault: string;
 let recipe: Recipe;
 let buildDir: string;
@@ -171,4 +174,72 @@ describe("B1 manifest-or-nothing + B4 fail-closed", () => {
     expect(pinned!.name).toBe("demo2");
     await host!.shutdown();
   });
+});
+
+// D-360 falsifiers — the D-321 consumption exposure, bounded. A compartment that
+// consumes (CPU-wedged or heap-bombed) is EVICTED by the watchdog while sibling
+// compartments keep routing untouched. Detection latency is interval×N bounded.
+describe("D-360 consumption watchdog (attack, then evict)", () => {
+  const budgetsFrom = (m: Map<string, { runtime?: { budget?: Record<string, number> } }>): Map<string, Record<string, number>> =>
+    new Map([...m.entries()].map(([id, man]) => [id, man.runtime?.budget ?? {}]));
+
+  test("13 · CPU-wedged compartment (sync infinite loop) → unresponsive eviction, siblings unaffected", async () => {
+    const v = freshVault("watchdog-spin");
+    const { rootKey } = ensureVault(v);
+    const c = compileComposition(bombSpec, join(BOMB_SPEC, ".."), v, rootKey);
+    const host = await bootComposition(c.recipe, c.buildDir, v);
+    const wd = startWatchdog(host.router, { intervalMs: 100, missLimit: 3, budgets: budgetsFrom(host.manifests) });
+    const r = await host.router.callAsRoot("bomb.alloc@1", { mode: "spin" }, 250);
+    expect(r.ok).toBe(false); // the wedge cannot answer inside the deadline (BUDGET)
+    // bounded detection: 3 × 100ms samples, then terminate (hard-kill cap ~2.6s)
+    const stopped = await (async () => {
+      for (let i = 0; i < 100; i++) {
+        const evicted = wd.evictions().some((e) => e.id === "omega.bomb");
+        const st = (host.router.status().compartments as Record<string, { state: string }>)["omega.bomb"];
+        if (evicted && (st?.state === "stopped" || st?.state === "degraded")) return true;
+        await new Promise((res) => setTimeout(res, 100));
+      }
+      return false;
+    })();
+    expect(stopped).toBe(true);
+    expect(wd.evictions()[0].reason).toContain("unresponsive");
+    // the point of the exercise: siblings route and answer as if nothing happened
+    const echo = await host.router.callAsRoot("echo.ping@1", { hello: "omega" });
+    expect(echo.ok).toBe(true);
+    const st = host.router.status().compartments as Record<string, { state: string; crashes: number }>;
+    expect(st["vivim.law"].state).toBe("active");
+    expect(st["vivim.law"].crashes).toBe(0);
+    expect(st["omega.echo"].state).toBe("active");
+    expect(st["omega.echo"].crashes).toBe(0);
+    wd.stop();
+    await host.shutdown();
+  }, 30_000);
+
+  test("14 · responsive heap bomb (over declared memMB) → memory eviction, siblings unaffected", async () => {
+    const v = freshVault("watchdog-heap");
+    const { rootKey } = ensureVault(v);
+    const c = compileComposition(bombSpec, join(BOMB_SPEC, ".."), v, rootKey);
+    const host = await bootComposition(c.recipe, c.buildDir, v);
+    const wd = startWatchdog(host.router, { intervalMs: 100, missLimit: 3, budgets: budgetsFrom(host.manifests) });
+    const r = await host.router.callAsRoot("bomb.alloc@1", { mode: "heap" }, 5_000);
+    expect(r.ok).toBe(true); // the bomber answers, keeps the loop alive, keeps growing
+    const stopped = await (async () => {
+      for (let i = 0; i < 100; i++) {
+        const evicted = wd.evictions().some((e) => e.id === "omega.bomb");
+        const st = (host.router.status().compartments as Record<string, { state: string }>)["omega.bomb"];
+        if (evicted && (st?.state === "stopped" || st?.state === "degraded")) return true;
+        await new Promise((res) => setTimeout(res, 100));
+      }
+      return false;
+    })();
+    expect(stopped).toBe(true);
+    expect(wd.evictions()[0].reason).toContain("heap over budget");
+    const echo = await host.router.callAsRoot("echo.ping@1", { hello: "omega" });
+    expect(echo.ok).toBe(true);
+    const st = host.router.status().compartments as Record<string, { state: string; crashes: number }>;
+    expect(st["omega.echo"].state).toBe("active");
+    expect(st["omega.echo"].crashes).toBe(0);
+    wd.stop();
+    await host.shutdown();
+  }, 30_000);
 });

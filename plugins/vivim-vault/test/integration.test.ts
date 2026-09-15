@@ -4,7 +4,7 @@
 import { describe, test, expect, afterAll } from "bun:test";
 import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync, existsSync } from "node:fs";
 import { basename, join } from "node:path";
-import { Database } from "bun:sqlite";
+import { openDatabase } from "../src/db.ts"; // D-361: tests ride the adapter too
 import { bootComposition, compileComposition, ensureVault } from "@vivim/omega-host";
 import type { BootedHost } from "@vivim/omega-host";
 import type { CompositionSpec } from "@vivim/omega-contracts";
@@ -166,7 +166,7 @@ describe("Ω2 integration — Merkle tamper (second Database on the same file)",
     }
     // worker compartment holds its own connection on this file; the tamper happens
     // through a second Database connection in the test process (cross-process WAL)
-    const attacker = new Database(dbPath(dataDir));
+    const attacker = openDatabase(dbPath(dataDir));
     attacker.exec("UPDATE changelog SET cid = 'tampered' WHERE seq = 2");
     attacker.close();
 

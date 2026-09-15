@@ -105,7 +105,38 @@ try {
   else fail("compositions", c.issues.join("; "));
 } catch (e) { fail("compositions", String(e)); }
 
-// 5 · tests (gate evidence)
+// 5 · bun-surface (D-361): the production tree stays runtime-neutral — zero `Bun.*`
+// calls and zero `bun` imports except the ONE declared adapter (the vault's sqlite
+// module). Dev tooling (this gate runs `bun test`) and tests are out of scope by policy.
+try {
+  const PROD_DIRS = ["host/src", "shim/src", "contracts/src", "sdk/src", "testkit/src", "surfaces/cli/src", "surfaces/mcp/src", "surfaces/web/src", "surfaces/daemon/src", "surfaces/daemon-client/src"];
+  const ADAPTERS: Record<string, string> = {
+    "plugins/vivim-vault/src/db.ts": "D-361: the only bun:sqlite import (a Node build swaps this one module)",
+  };
+  for (const e of readdirSync(join(ROOT, "plugins"), { withFileTypes: true })) {
+    if (e.isDirectory()) PROD_DIRS.push(`plugins/${e.name}/src`);
+  }
+  const BUN_RE = /Bun\.|from\s+["']bun|import\s*\(\s*["']bun|require\(\s*["']bun/;
+  const hits: string[] = [];
+  for (const dir of PROD_DIRS) {
+    const abs = join(ROOT, dir);
+    if (!existsSync(abs)) continue;
+    for (const f of readdirSync(abs)) {
+      if (!f.endsWith(".ts")) continue;
+      const rel = `${dir}/${f}`;
+      const text = readFileSync(abs + "/" + f, "utf-8");
+      for (const [i, line] of text.split("\n").entries()) {
+        if (BUN_RE.test(line) && !(ADAPTERS[rel] && /bun:sqlite/.test(line) && !/Bun\./.test(line))) {
+          hits.push(`${rel}:${i + 1}: ${line.trim().slice(0, 120)}`);
+        }
+      }
+    }
+  }
+  if (hits.length === 0) pass("bun-surface", { adapters: Object.keys(ADAPTERS), scan: PROD_DIRS.length + " prod dirs (incl. every plugins/*/src)" });
+  else fail("bun-surface", `Bun-specific code outside the declared adapters — ${hits.length} hits: ${hits.slice(0, 10).join(" | ")}`);
+} catch (e) { fail("bun-surface", String(e)); }
+
+// 6 · tests (gate evidence)
 // Concurrency is capped by box size (D-317): past core count, worker-heavy test
 // files thrash instead of parallelizing — measured 64s green at 4-wide vs
 // 300s+ flaking at default-20 on a loaded 4-core box. Same tests, same

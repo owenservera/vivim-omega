@@ -13,10 +13,8 @@ import { mkdirSync } from "node:fs";
 import { isAbsolute, relative, resolve } from "node:path";
 import { casCopyAll, casGet } from "./cas.ts";
 import { bodyText } from "./canon.ts";
-import { dbPath, DDL, ftsUpsert, openVault } from "./db.ts";
-import type { VaultDB } from "./db.ts";
+import { dbPath, DDL, ftsUpsert, openVault, openDatabase, type Database, type VaultDB } from "./db.ts";
 import { verify } from "./verify.ts";
-import { Database } from "bun:sqlite";
 
 export interface RoundtripResult { ok: boolean; entries: number; headHash: string; detail?: string; blobsCopied?: number }
 
@@ -38,7 +36,7 @@ export function roundtrip(v: VaultDB, targetDir: string): RoundtripResult {
   mkdirSync(dstRoot, { recursive: true });
   const blobsCopied = casCopyAll(v.dataDir, dstRoot);
 
-  const target = new Database(dbPath(dstRoot));
+  const target = openDatabase(dbPath(dstRoot));
   target.exec("PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL;");
   target.exec(DDL);
   try {

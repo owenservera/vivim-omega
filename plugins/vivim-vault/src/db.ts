@@ -16,10 +16,16 @@
 // Reads run directly on the connection and are never queued behind writes
 // (single-threaded worker: writes are synchronous blocks, reads execute between them).
 
+// D-361 ADAPTER: this file is the ONLY bun:sqlite importer in the production tree
+// (gate-enforced). A Node build swaps exactly this module (`node:sqlite` in recent
+// Node, or better-sqlite3) — no other call site changes.
 import { Database } from "bun:sqlite";
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { casGet } from "./cas.ts";
+
+export type { Database }; // the type every vault module shares, from the adapter
+export const openDatabase = (path: string): Database => new Database(path); // the only constructor call site
 
 export interface Ref { ns: string; id: string; rev: number }
 export interface MetaEnvelope { meta: unknown; refs: Ref[] }
@@ -72,7 +78,7 @@ export function dbPath(dataDir: string): string {
 export function openVault(dataDir: string): VaultDB {
   mkdirSync(dataDir, { recursive: true });
   mkdirSync(join(dataDir, "cas"), { recursive: true });
-  const db = new Database(dbPath(dataDir));
+  const db = openDatabase(dbPath(dataDir));
   db.exec("PRAGMA journal_mode = WAL;");
   db.exec("PRAGMA synchronous = NORMAL;");
   db.exec("PRAGMA foreign_keys = ON;");

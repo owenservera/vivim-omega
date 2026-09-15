@@ -5,6 +5,7 @@ import type { LawDecision, PortResult, PluginManifest, CompositionEntry, Recipe,
 import { routableOps, riskyOps, HOST_OPS, HOST_CAPS } from "@vivim/omega-contracts";
 export { HOST_OPS, HOST_CAPS };
 import type { CompartmentHandle, FromWorker, CallMsg } from "./worker.ts";
+import type { Worker } from "node:worker_threads";
 import { mintToken } from "./canon.ts";
 import { appendFileSync } from "node:fs";
 
@@ -45,6 +46,8 @@ export class PortRouter {
   private inflightByCompartment = new Map<string, Set<string>>();
   private dormant = new Map<string, DormantEntry>(); // verified, never started (D-331)
   private spawning = new Map<string, Promise<void>>(); // singleflight per dormant id
+  /** D-363: pending ready-waiters per compartment id — the `ready` message resolves them directly (no polling). */
+  private readyWaiters = new Map<string, Set<{ resolve: () => void; reject: (e: Error) => void; timer: ReturnType<typeof setTimeout> }>>();
   /** Injected by boot.ts: spawn + register + init-post one dormant id. */
   onDemandSpawn: ((id: string) => Promise<void>) | null = null;
   journalPath: string;
@@ -58,17 +61,20 @@ export class PortRouter {
     this.manifests.set(entry.id, manifest);
     for (const op of entry.grant.contracts) this.opRoute.set(op, entry.id);
     for (const [op, risk] of riskyOps(manifest)) this.opRisk.set(op, risk);
-    // One record per token. Alias keys ("port:host.compartment.stats@1") and their guarding
-    // capability ("host.compartment.admin") resolve to the SAME effective cap, so insertion
-    // order can never change what a token authorizes (order-independence is a B3 invariant).
+    this.installTokens(entry.id, tokens);
+    handle.onMessage((m) => this.onWorkerMessage(entry.id, m));
+    handle.onCrash(() => this.failInflight(entry.id, `compartment ${entry.id} crashed`));
+  }
+
+  /** One record per token. Alias keys ("port:host.compartment.stats@1") and their guarding
+   *  capability resolve to the SAME effective cap — insertion order never changes authority (B3). */
+  private installTokens(pluginId: string, tokens: Record<string, string>): void {
     for (const [key, token] of Object.entries(tokens)) {
       if (this.tokens.has(token)) continue;
       const aliasedOp = key.startsWith("port:") ? key.slice("port:".length) : null;
       const effectiveCap = aliasedOp && HOST_OP_TO_CAP[aliasedOp] ? HOST_OP_TO_CAP[aliasedOp] : key;
-      this.tokens.set(token, { token, pluginId: entry.id, cap: effectiveCap, gen: this.generation });
+      this.tokens.set(token, { token, pluginId, cap: effectiveCap, gen: this.generation });
     }
-    handle.onMessage((m) => this.onWorkerMessage(entry.id, m));
-    handle.onCrash(() => this.failInflight(entry.id, `compartment ${entry.id} crashed`));
   }
 
   /** Register a verified entry WITHOUT spawning (D-331): phase > 0 boots
@@ -78,12 +84,7 @@ export class PortRouter {
     this.manifests.set(entry.id, manifest);
     for (const op of entry.grant.contracts) this.opRoute.set(op, entry.id);
     for (const [op, risk] of riskyOps(manifest)) this.opRisk.set(op, risk);
-    for (const [key, token] of Object.entries(tokens)) {
-      if (this.tokens.has(token)) continue;
-      const aliasedOp = key.startsWith("port:") ? key.slice("port:".length) : null;
-      const effectiveCap = aliasedOp && HOST_OP_TO_CAP[aliasedOp] ? HOST_OP_TO_CAP[aliasedOp] : key;
-      this.tokens.set(token, { token, pluginId: entry.id, cap: effectiveCap, gen: this.generation });
-    }
+    this.installTokens(entry.id, tokens);
     this.dormant.set(entry.id, { entry, manifest, tokens, ...spawn });
   }
 
@@ -158,9 +159,34 @@ export class PortRouter {
     if (m.type === "ready") {
       const h = this.compartments.get(pluginId);
       if (h && h.state === "booting") h.state = "active";
+      this.wakeReady(pluginId);
       return;
     }
   }
+
+  /** D-363: resolves when `id` reports active — immediately if already there, else via the
+   *  `ready` message (event path; a crash or the timeout rejects). The old pollers' bounds. */
+  waitActive(id: string, timeoutMs = 10_000): Promise<void> {
+    const h = this.compartments.get(id);
+    if (h?.state === "active") return Promise.resolve();
+    if (h?.state === "degraded") return Promise.reject(new Error(`compartment ${id} degraded before ready`));
+    return new Promise((resolve, reject) => {
+      const w = { resolve, reject, timer: null as unknown as ReturnType<typeof setTimeout> };
+      w.timer = setTimeout(() => { this.readyWaiters.get(id)?.delete(w); reject(new Error(`compartment ${id} not active within ${timeoutMs}ms`)); }, timeoutMs);
+      if (!this.readyWaiters.has(id)) this.readyWaiters.set(id, new Set());
+      this.readyWaiters.get(id)!.add(w);
+    });
+  }
+
+  private wakeReady(id: string, err?: Error): void {
+    const set = this.readyWaiters.get(id);
+    if (!set) return;
+    this.readyWaiters.delete(id);
+    for (const w of set) { clearTimeout(w.timer); err ? w.reject(err) : w.resolve(); }
+  }
+
+  /** D-360: the raw worker behind a compartment — out-of-tree instrumentation only (the watchdog probes it; the host never does). */
+  compartmentWorker(id: string): Worker | undefined { return this.compartments.get(id)?.worker; }
 
   private async compartmentCall(callerId: string, m: CallMsg): Promise<void> {
     const fail = (r: PortResult) => this.compartments.get(callerId)?.post({ type: "result", callId: m.callId, causationId: "n/a", result: r });
@@ -299,6 +325,7 @@ export class PortRouter {
   private decInflight(id: string, key: string) { this.inflightByCompartment.get(id)?.delete(key); }
 
   private failInflight(pluginId: string, reason: string): void {
+    this.wakeReady(pluginId, new Error(reason)); // D-363: a crash rejects boot waiters too
     const keys = this.inflightByCompartment.get(pluginId);
     if (!keys) return;
     for (const key of [...keys]) {

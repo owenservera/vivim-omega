@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-09-15T18:27:46.600Z",
+  "generatedAt": "2026-09-15T20:08:05.698Z",
   "repo": "vivim-omega",
   "branch": "omega",
-  "head": "b384679",
+  "head": "4d4a6ef",
   "waves": [
     {
       "id": "Ω0",
@@ -90,12 +90,12 @@
     }
   ],
   "gate": {
-    "startedAt": "2026-09-15T18:26:40.627Z",
+    "startedAt": "2026-09-15T20:06:57.776Z",
     "checks": {
       "host-loc": {
         "ok": true,
         "detail": {
-          "loc": 997,
+          "loc": 999,
           "budget": 1000
         }
       },
@@ -110,17 +110,22 @@
       "decisions": {
         "ok": true,
         "detail": {
-          "rows": 63,
-          "records": 37,
+          "rows": 68,
+          "records": 42,
           "ratified": 33,
           "grandfatherBelow": 313,
           "openQuestions": {
-            "count": 4,
+            "count": 9,
             "ids": [
               313,
               314,
               316,
-              317
+              317,
+              360,
+              361,
+              362,
+              363,
+              364
             ],
             "board": "stale"
           }
@@ -184,10 +189,19 @@
           ]
         }
       },
+      "bun-surface": {
+        "ok": true,
+        "detail": {
+          "adapters": [
+            "plugins/vivim-vault/src/db.ts"
+          ],
+          "scan": "31 prod dirs (incl. every plugins/*/src)"
+        }
+      },
       "tests": {
         "ok": true,
         "detail": {
-          "pass": 718,
+          "pass": 733,
           "fail": 0,
           "maxConcurrency": 4
         }
@@ -196,7 +210,7 @@
         "ok": true,
         "detail": {
           "compileMs": 3,
-          "bootMs": 32,
+          "bootMs": 19,
           "echo": true,
           "counterBump": true,
           "counterValue": {
@@ -217,23 +231,23 @@
       }
     }
   },
-  "hostLoc": 997,
+  "hostLoc": 999,
   "tests": {
-    "pass": 718,
+    "pass": 733,
     "fail": 0
   },
   "benchmarks": {
-    "at": "2026-09-13T12:39:39.856Z",
-    "bootMs": 166,
+    "at": "2026-09-15T19:59:53.866Z",
+    "bootMs": 10,
     "portRtt": {
       "n": 200,
-      "p50": 0.17,
-      "p99": 30.66,
+      "p50": 0.03,
+      "p99": 0.78,
       "unit": "ms"
     },
     "interCompartmentRtt": {
       "n": 50,
-      "p50": 0.86,
+      "p50": 0.1,
       "unit": "ms"
     },
     "envelope": {
@@ -243,9 +257,9 @@
     },
     "daemonCallRtt": {
       "n": 50,
-      "p50": 7.58,
+      "p50": 0.51,
       "unit": "ms"
     },
-    "coldCliCallMs": 655
+    "coldCliCallMs": 68
   }
 }

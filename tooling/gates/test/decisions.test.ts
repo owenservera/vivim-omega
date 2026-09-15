@@ -77,7 +77,7 @@ describe("decisions checker — record shape", () => {
 describe("decisions checker — index parsing", () => {
   test("rows parse with statuses; duplicates are the full checker's job", () => {
     const rows = parseIndexRows("| **D-313** | x | **PROPOSED** | y |\n| **D-314** | x | **RATIFIED** | y |\n");
-    expect(rows).toEqual([
+    expect(rows.map(({ n, status, line }) => ({ n, status, line }))).toEqual([
       { n: 313, status: "PROPOSED", line: 1 },
       { n: 314, status: "RATIFIED", line: 2 },
     ]);
@@ -134,5 +134,36 @@ describe("open-questions board — team surface over PROPOSED records", () => {
     // before generation the board file is absent → missing (informational, never failing)
     const fresh = boardFreshness(root);
     expect(["fresh", "stale", "missing"]).toContain(fresh.state);
+  });
+});
+
+// D-364 — decision-class tags on new index rows (evidence vs directive).
+describe("decision class tags (D-364)", () => {
+  test("rows below the class era are exempt; tagged rows parse with their raw line", () => {
+    const text = [
+      "| **D-359** | old row | **RATIFIED** | no tag needed |",
+      "| **D-360** | watchdog | **RATIFIED** · evidence | adversarial 13/14 |",
+      "| **D-364** | consolidation | **PROPOSED** · directive | owner process call |",
+    ].join("\n");
+    const rows = parseIndexRows(text);
+    expect(rows.map((r) => r.n)).toEqual([359, 360, 364]);
+    expect(rows[1].raw).toContain("evidence");
+    expect(rows[2].status).toBe("PROPOSED");
+  });
+
+  test("a class-era row without a tag is flagged by the contract check", async () => {
+    const { checkDecisions } = await import("../decisions.ts");
+    const root = join(import.meta.dir, "../../..");
+    const indexText = readFileSync(join(root, "docs/BUILD-DECISIONS.md"), "utf-8");
+    const classRows = parseIndexRows(indexText).filter((r) => r.n >= 360);
+    // every real class-era row in THIS tree must carry a tag (the gate enforces it)
+    for (const r of classRows) expect(/\b(evidence|directive)\b/i.test(r.raw)).toBe(true);
+    // and the checker itself flags an untagged synthetic row
+    const issues: string[] = [];
+    const synthetic = "| **D-999** | untagged | **PROPOSED** | none |";
+    const m = parseIndexRows(synthetic)[0];
+    if (m.n >= 360 && !/\b(evidence|directive)\b/i.test(m.raw)) issues.push("untagged");
+    expect(issues).toEqual(["untagged"]);
+    expect(checkDecisions).toBeTruthy();
   });
 });

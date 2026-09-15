@@ -7,6 +7,7 @@ import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { connect } from "node:net";
+import { spawn } from "node:child_process"; // D-361: node:child_process (runtime-neutral)
 
 export const DAEMON_FILE = "daemon.json";
 const LOCK_DIR = "daemon.lock";
@@ -277,11 +278,10 @@ export async function ensureDaemon(vaultDir: string, opts: EnsureOpts = {}): Pro
     if (opts.idleMs !== undefined) args.push("--idle-ms", String(opts.idleMs));
     // cwd = repo root: relative composition paths + workspace resolution behave
     // exactly as when the user runs the CLI by hand.
-    const child = Bun.spawn(["bun", ...args], {
+    // D-361: node:child_process (runtime-neutral); `exitCode` semantics match.
+    const child = spawn(["bun", ...args], {
       cwd: join(import.meta.dir, "..", "..", ".."),
-      stdin: "ignore",
-      stdout: "ignore",
-      stderr: "ignore",
+      stdio: "ignore",
       detached: true,
     });
     child.unref();

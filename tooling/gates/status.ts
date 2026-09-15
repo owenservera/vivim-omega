@@ -1,5 +1,6 @@
 // Status emitter: build/status.json — the machine-readable build state feeding the review console.
 import { writeFileSync, readFileSync, existsSync } from "node:fs";
+import { spawnSync } from "node:child_process"; // D-361: runtime-neutral
 import { join } from "node:path";
 
 const ROOT = join(import.meta.dir, "../..");
@@ -23,8 +24,8 @@ const WAVES: Array<{ id: string; title: string; deliverable: string; status: str
 ];
 
 export async function emitStatus(extra: { gate?: unknown; hostLoc?: number; tests?: { pass: number; fail: number } } = {}): Promise<void> {
-  const head = Bun.spawnSync(["git", "-C", ROOT, "rev-parse", "--short", "HEAD"]);
-  const headOut = new TextDecoder().decode(head.stdout).trim();
+  const head = spawnSync("git", ["-C", ROOT, "rev-parse", "--short", "HEAD"]);
+  const headOut = head.stdout.toString().trim();
   const benchmarks = readBenchmarks();
   const status = {
     generatedAt: new Date().toISOString(),

@@ -77,6 +77,7 @@ export function mintToken(prefix = "tok"): string {
   return `${prefix}_${randomBytes(24).toString("base64url")}`;
 }
 
+const sleepSync = (ms: number): void => { Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms); }; // D-361: runtime-neutral sync sleep (the runtime's sleepSync is not on Node)
 export function atomicWrite(path: string, data: string): void {
   // write-tmp → rename: the rename is the atomic durability boundary (B4).
   // writeFileSync (not a streaming writer) so no handle lingers for the rename.
@@ -91,7 +92,7 @@ export function atomicWrite(path: string, data: string): void {
       const code = (e as { code?: string }).code;
       if (code !== "EPERM" && code !== "EBUSY" && code !== "EACCES") throw e;
       last = e;
-      Bun.sleepSync(10 * (i + 1));
+      sleepSync(10 * (i + 1));
     }
   }
   throw last;

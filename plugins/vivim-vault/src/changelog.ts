@@ -11,8 +11,7 @@
 // revisions out of `objects` but never out of `changelog`, so revisions can never
 // collide with compacted history.
 
-import type { Database } from "bun:sqlite";
-import type { Ref, VaultDB } from "./db.ts";
+import type { Database, Ref, VaultDB } from "./db.ts";
 import { casPut } from "./cas.ts";
 import { bodyText, entryHash, GENESIS_HASH } from "./canon.ts";
 import { envelopeOf, ftsUpsert } from "./db.ts";

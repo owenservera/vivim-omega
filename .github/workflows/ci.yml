@@ -3,6 +3,12 @@
 # fresh-tree will report SKIPPED here (sibling legacy repos live outside this tree
 # and their pins don't exist in public snapshots) — loud in the summary, never green.
 # The import scan still runs in every layout.
+#
+# D-362: gate-reproduce re-runs omega:gate from a clean clone and compares the
+# structural claims (stage flags, host LOC, test counts) against the COMMITTED
+# build/status.json — the honor-system match becomes a mechanical one.
+# D-362/D-361: node-canary proves the core canon logic runs under plain Node
+# (the production tree is runtime-neutral by the gate's bun-surface stage, D-361).
 name: omega-gate
 
 on:
@@ -19,6 +25,25 @@ jobs:
       - uses: oven-sh/setup-bun@v2
       - run: bun install
       - run: bun run omega:gate
+
+  gate-reproduce:
+    name: status.json reproduces from the commit (D-362, required)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install
+      - run: bun run tooling/ci/verify-status.ts
+
+  node-canary:
+    name: core canon under plain node (D-361/D-362, required)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: node --test tooling/ci/canon-canary.test.mjs
 
   test-windows:
     name: bun test (windows, informational)

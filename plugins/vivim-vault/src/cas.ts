@@ -10,6 +10,7 @@
 import { closeSync, existsSync, fsyncSync, mkdirSync, openSync, readFileSync, renameSync, writeFileSync, readdirSync, copyFileSync } from "node:fs";
 import { join } from "node:path";
 import { canonicalJson, cidOf } from "./canon.ts";
+import { sleepSync } from "@vivim/omega-shim"; // D-361: the runtime-neutral sleep
 
 const CID_RE = /^[0-9a-f]{64}$/;
 
@@ -43,7 +44,7 @@ export function casPut(dataDir: string, data: unknown): string {
   // transient OS locks (AV/indexer, SMB/NFS contention, lazy handle release on
   // Windows) surface as EPERM/EBUSY/EACCES. Bounded retry with backoff, same
   // discipline as host atomicWrite (canon.ts); anything else throws immediately.
-  // (No spin-wait: Bun.sleepSync yields the thread; the boundary stays atomic.)
+  // (No spin-wait: sleepSync yields the thread; the boundary stays atomic.)
   let last: unknown = null;
   for (let i = 0; i < 10; i++) {
     try { renameSync(tmp, final); break; }
@@ -51,7 +52,7 @@ export function casPut(dataDir: string, data: unknown): string {
       const code = (e as { code?: string }).code;
       if (code !== "EPERM" && code !== "EBUSY" && code !== "EACCES") throw e;
       last = e;
-      Bun.sleepSync(10 * (i + 1));
+      sleepSync(10 * (i + 1));
     }
     if (i === 9) throw last;
   }

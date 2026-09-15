@@ -1,6 +1,6 @@
 // surfaces/web/src/boot.ts — the v1 surface boot (duplicated per surface package by law;
 // see surfaces/cli/src/boot.ts header — surfaces stay independent, no cross-surface imports).
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { compileComposition, ensureVault, bootWithRecovery } from "@vivim/omega-host";
 import type { BootedHost, RecoveryReport } from "@vivim/omega-host";
@@ -34,7 +34,7 @@ export async function bootSurface(
   }
   let spec: CompositionSpec;
   try {
-    spec = JSON.parse(await Bun.file(specPath).text()) as CompositionSpec;
+    spec = JSON.parse(readFileSync(specPath, "utf-8")) as CompositionSpec; // D-361: node:fs (runtime-neutral)
   } catch (e) {
     throw new SurfaceBootError(`composition spec unparseable: ${String(e)}`, failedReport(`composition spec unparseable: ${String(e)}`));
   }

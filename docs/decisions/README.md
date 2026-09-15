@@ -61,10 +61,50 @@ PROPOSED ──(owner confirms / gate green on the change)──▶ RATIFIED
   `docs/decisions/D-<n>-*.md`); rows `< D-313` are exempt (index-only era).
 - Every `RATIFIED` record (any number) has Evidence containing a resolvable commit SHA.
 - Statuses agree between index row and record file both directions.
+- **D-364:** every index row `D-360+` carries a class tag — `· evidence` or
+  `· directive` — in its status cell (see below).
 
 What it deliberately does NOT check: whether the decision was *wise*. That is the
 owner's job and the reviewer's job. The contract guarantees the decision is
 *legible* — options visible, criteria explicit, evidence cited — so wisdom is auditable.
+
+## Decision classes (D-364)
+
+From **D-360** on, every index row declares its class in the status cell — one tag,
+visible at a glance, gate-enforced:
+
+- **`· evidence`** — the decision is backed by a probe/test falsifier that exists in
+  the tree (a D-351-class catch, an adversarial case, a measured benchmark). The
+  record's Evidence section names it. These are the rows the gate process's
+  load-bearing claim rests on.
+- **`· directive`** — an owner call (naming, placement, process, scope). Legitimate
+  and fast; honestly labeled so an auditor knows which rows survived a falsifier
+  and which record intent.
+
+The tag is `**RATIFIED** · evidence` / `**PROPOSED** · directive` etc. — appended
+to the status cell, never a new column. Rows before D-360 are grandfathered untagged
+(the audit trail stays as it was; the consolidation page carries the synthesis).
+
+## Cooling-off for B1–B4 evidence-class decisions (D-364)
+
+Boot-security laws are where a same-day rubber stamp costs the most. For an
+**evidence-class decision that touches B1–B4**:
+
+1. The named falsifier (the adversarial test or probe that would catch the regression)
+   must be IN the record **before** the status flips to RATIFIED — not referenced
+   afterward. (Several pre-360 rows already do this — D-352, D-357 — it is now the template.)
+2. A second gate run must follow ratification (the status-refresh re-run counts).
+   Same-day ratification stays legal for **directive-class** rows — solo-owner speed,
+   honestly labeled.
+
+## Consolidation pass (D-364)
+
+Every ~30 ratified decisions (or once per wave-set, whichever comes first), refresh
+`docs/decisions/CURRENT-INVARIANTS.md` — the one-page snapshot of present-day law
+(B1–B5 in current language, the Ω laws, the adapter inventory, watchdog policy,
+process law). A fresh reader (human or new agent instance) should be able to state
+the top-5 invariants from that page alone. The full log is never pruned, rewritten,
+or renumbered — the page is a synthesis layer, the log stays the audit trail.
 
 ## Team surface: open questions board
 

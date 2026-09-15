@@ -12,6 +12,7 @@
 // content rehash) and reboots on drift; a different spec/recipe always reboots.
 // Recipe identity itself is sha256 over the compiled recipe bytes (cheap — KBs).
 import { createHash } from "node:crypto";
+import { createServer, type Server } from "node:net"; // D-361: node:net listener (runtime-neutral)
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve, dirname } from "node:path";
 import { bootWithRecovery, compileComposition, contentHashDir, ensureVault, setPoolHook } from "@vivim/omega-host";
@@ -43,7 +44,7 @@ let running: Running | null = null;
 let idleTimer: ReturnType<typeof setTimeout> | null = null;
 let vaultDir = "";
 let shuttingDown = false;
-let listener: ReturnType<typeof Bun.listen> | null = null;
+let listener: Server | null = null;
 
 // D-330 content-hash compile cache (per daemon process): specKey → verified
 // entry hashes + mtime baseline + buildDir. A hit skips compileComposition
@@ -161,7 +162,7 @@ async function cleanup(): Promise<void> {
   setPoolHook(null);
   try { await isolatePool?.shutdown(); } catch { /* best effort */ }
   isolatePool = null;
-  try { listener?.stop(); } catch { /* best effort */ }
+  try { listener?.close(); } catch { /* best effort */ } // D-361: node:net close
   listener = null;
   try { rmSync(join(vaultDir, DAEMON_FILE), { force: true }); } catch { /* best effort */ }
 }
@@ -211,49 +212,48 @@ export async function startDaemon(opts: {
     idleMs,
   };
   const buffers = new Map<object, string>();
-  listener = Bun.listen({
-    hostname: "127.0.0.1",
-    port: opts.port ?? 0,
-    socket: {
-      open() {},
-      data(sock, data) {
-        const buf = (buffers.get(sock) ?? "") + Buffer.from(data).toString("utf-8");
-        const lines = buf.split("\n");
-        buffers.set(sock, lines.pop() ?? "");
-        void (async () => {
-          for (const line of lines) {
-            const text = line.trim();
-            if (!text) continue;
-            let req: WireRequest;
-            try {
-              req = JSON.parse(text) as WireRequest;
-            } catch {
-              continue;
-            }
-            const r = await handle(req);
-            try {
-              sock.write(JSON.stringify({ id: req.id ?? null, ...r }) + "\n");
-            } catch { /* client gone */ }
+  // D-361: node:net server — same newline-delimited JSON protocol, runtime-neutral,
+  // the production tree. Ephemeral port resolved from address() once listening.
+  listener = createServer((sock) => {
+    sock.on("data", (data: Buffer) => {
+      const buf = (buffers.get(sock) ?? "") + data.toString("utf-8");
+      const lines = buf.split("\n");
+      buffers.set(sock, lines.pop() ?? "");
+      void (async () => {
+        for (const line of lines) {
+          const text = line.trim();
+          if (!text) continue;
+          let req: WireRequest;
+          try {
+            req = JSON.parse(text) as WireRequest;
+          } catch {
+            continue;
           }
-        })();
-      },
-      close(sock) {
-        buffers.delete(sock);
-      },
-      error(_sock, e) {
-        console.error(`[daemon] socket error: ${String(e)}`);
-      },
-    },
+          const r = await handle(req);
+          try {
+            sock.write(JSON.stringify({ id: req.id ?? null, ...r }) + "\n");
+          } catch { /* client gone */ }
+        }
+      })();
+    });
+    sock.on("close", () => { buffers.delete(sock); });
+    sock.on("error", (e) => { console.error(`[daemon] socket error: ${String(e)}`); });
   });
-  writeDaemonFile(listener.port);
-  console.error(`[daemon] up on 127.0.0.1:${listener.port} for vault ${vaultDir} (idle ${running.idleMs}ms)`);
+  const boundPort = await new Promise<number>((res, rej) => {
+    listener!.once("listening", () => { const a = listener!.address(); res(typeof a === "object" && a ? a.port : 0); });
+    listener!.once("error", rej);
+    listener!.listen({ host: "127.0.0.1", port: opts.port ?? 0 });
+  });
+  const port = boundPort;
+  writeDaemonFile(port);
+  console.error(`[daemon] up on 127.0.0.1:${port} for vault ${vaultDir} (idle ${running.idleMs}ms)`);
   armIdle();
   const info = {
-    port: listener.port, pid: process.pid,
+    port, pid: process.pid,
     startedAt: running.startedAt, specPath: running.specPath, recipeSha: running.recipeSha,
   };
   return {
-    port: listener.port,
+    port,
     info,
     close: async () => {
       shuttingDown = true;

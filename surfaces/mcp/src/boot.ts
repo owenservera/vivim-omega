@@ -13,7 +13,7 @@
 //
 // (Duplicated per surface package — surfaces stay independent packages with no
 // cross-surface imports; same discipline as plugin-side canon.ts duplication.)
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { compileComposition, ensureVault, bootWithRecovery } from "@vivim/omega-host";
 import type { BootedHost, RecoveryReport } from "@vivim/omega-host";
@@ -50,7 +50,7 @@ export async function bootSurface(
   }
   let spec: CompositionSpec;
   try {
-    spec = JSON.parse(await Bun.file(specPath).text()) as CompositionSpec;
+    spec = JSON.parse(readFileSync(specPath, "utf-8")) as CompositionSpec; // D-361: node:fs (runtime-neutral)
   } catch (e) {
     throw new SurfaceBootError(`composition spec unparseable: ${String(e)}`, failedReport(`composition spec unparseable: ${specPath}`));
   }

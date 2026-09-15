@@ -3,14 +3,23 @@
 // unit-tested (tooling/gates/test/decisions.test.ts); checkDecisions() is the gate
 // entry (wired as the `decisions` stage of omega:gate) and the standalone runner
 // (`bun run omega:decisions`). Fast: file reads + regex + git cat-file only.
-import { readdirSync, readFileSync } from "node:fs";
+import { readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { spawnSync as nodeSpawnSync } from "node:child_process";
 import { join } from "node:path";
 
+/** D-361: node:child_process with a Bun-spawnSync-shaped result — the checker is
+ *  runtime-neutral (the node --test canary story), not tied to one toolchain. */
+function spawnSync(cmd: string[], opts: { cwd: string }): { exitCode: number; stdout: Buffer; stderr: Buffer } {
+  const p = nodeSpawnSync(cmd[0], cmd.slice(1), { cwd: opts.cwd, encoding: "buffer" });
+  return { exitCode: p.status ?? 1, stdout: p.stdout as Buffer, stderr: p.stderr as Buffer };
+}
+
 export const GRANDFATHER_BELOW = 313; // index rows below this are the index-only era (exempt from file rules)
+export const DECISION_CLASS_FROM = 360; // rows from here on declare a class tag: evidence (probe/test-backed) or directive (owner call)
 const REQUIRED_SECTIONS = ["Status", "Context", "Options", "Decision", "Consequences", "Evidence"];
 const LEGAL_STATUSES = ["PROPOSED", "RATIFIED", "SUPERSEDED", "REJECTED"];
 
-export interface IndexRow { n: number; status: string; line: number }
+export interface IndexRow { n: number; status: string; line: number; raw: string }
 export interface RecordDoc {
   n: number; file: string; sections: string[]; status: string;
   optionsText: string; decisionLine: string; evidenceText: string; raw: string;
@@ -25,7 +34,7 @@ export function parseIndexRows(text: string): IndexRow[] {
     if (!m) return;
     // word match, not exact cell: old rows carry notes ("RATIFIED (owner directive, …)")
     const s = /\b(PROPOSED|RATIFIED|SUPERSEDED|REJECTED)\b/.exec(line.toUpperCase());
-    out.push({ n: Number(m[1]), status: s ? s[1] : "", line: i + 1 });
+    out.push({ n: Number(m[1]), status: s ? s[1] : "", line: i + 1, raw: line });
   });
   return out;
 }
@@ -106,7 +115,7 @@ export interface DecisionsResult { ok: boolean; detail: Record<string, unknown>;
 
 function defaultShaExists(root: string): (sha: string) => boolean {
   return (sha: string) => {
-    const p = Bun.spawnSync(["git", "cat-file", "-t", sha], { cwd: root });
+    const p = spawnSync(["git", "cat-file", "-t", sha], { cwd: root });
     return p.exitCode === 0 && p.stdout.toString().trim() === "commit";
   };
 }
@@ -125,6 +134,11 @@ export async function checkDecisions(
     if (seen.has(r.n)) issues.push(`BUILD-DECISIONS.md: duplicate D-${r.n} (lines ${seen.get(r.n)} and ${r.line})`);
     else seen.set(r.n, r.line);
     if (r.status === "") issues.push(`BUILD-DECISIONS.md:${r.line}: D-${r.n} has no recognizable status`);
+    // D-364: new rows declare their class — evidence (backed by a probe/test falsifier)
+    // or directive (owner call). Makes "how many RATIFIED rows survive a falsifier" auditable at a glance.
+    if (r.n >= DECISION_CLASS_FROM && !/\b(evidence|directive)\b/i.test(r.raw)) {
+      issues.push(`BUILD-DECISIONS.md:${r.line}: D-${r.n} carries no class tag (want "· evidence" or "· directive" in the status cell)`);
+    }
   }
   const dir = join(root, "docs/decisions");
   const files = readdirSync(dir).filter((f) => /^D-\d+-.+\.md$/.test(f) && f !== "README.md");
@@ -207,7 +221,7 @@ export function listOpenQuestions(root: string): OpenQuestion[] {
 
 function headSha(root: string): string {
   try {
-    const p = Bun.spawnSync(["git", "rev-parse", "HEAD"], { cwd: root });
+    const p = spawnSync(["git", "rev-parse", "HEAD"], { cwd: root });
     const sha = p.exitCode === 0 ? p.stdout.toString().trim() : "";
     return /^[0-9a-f]{7,40}$/.test(sha) ? sha : "unknown";
   } catch {
@@ -233,16 +247,16 @@ export function boardFreshness(root: string): { state: "fresh" | "stale" | "miss
   }
   if (base === "" || head === "unknown") return { state: "stale", base, head };
   try {
-    const ancestor = Bun.spawnSync(["git", "merge-base", "--is-ancestor", base, "HEAD"], { cwd: root });
+    const ancestor = spawnSync(["git", "merge-base", "--is-ancestor", base, "HEAD"], { cwd: root });
     if (ancestor.exitCode !== 0) return { state: "stale", base, head };
-    const committed = Bun.spawnSync(
+    const committed = spawnSync(
       ["git", "diff", "--quiet", `${base}..HEAD`, "--",
         "docs/decisions", "docs/BUILD-DECISIONS.md", ":(exclude)docs/decisions/OPEN-QUESTIONS.md"],
       { cwd: root },
     );
     if (committed.exitCode !== 0) return { state: "stale", base, head };
     // uncommitted worktree edits to decision inputs also stale the board
-    const worktree = Bun.spawnSync(["git", "status", "--porcelain", "--", "docs/decisions", "docs/BUILD-DECISIONS.md"], { cwd: root });
+    const worktree = spawnSync(["git", "status", "--porcelain", "--", "docs/decisions", "docs/BUILD-DECISIONS.md"], { cwd: root });
     const dirty = worktree.exitCode === 0
       ? worktree.stdout.toString().split("\n").some((l) => l.trim() && !l.endsWith("OPEN-QUESTIONS.md"))
       : true;
@@ -292,7 +306,7 @@ if (import.meta.main) {
     const head = headSha(root);
     const md = renderOpenQuestionsBoard(root, head, new Date().toISOString());
     const dest = join(root, "docs/decisions/OPEN-QUESTIONS.md");
-    await Bun.write(dest, md);
+    writeFileSync(dest, md);
     const n = listOpenQuestions(root).length;
     console.log(`wrote docs/decisions/OPEN-QUESTIONS.md (${n} open, base ${head})`);
   } else {

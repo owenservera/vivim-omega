@@ -1,0 +1,17 @@
+{
+  "manifestVersion": "1",
+  "id": "omega.bomb",
+  "version": "0.1.0",
+  "description": "D-360 falsifier fixture (D-321's named attack): a compartment that consumes. Never ships — fixtures/ sits outside the compositions net; only the adversarial suite compiles it.",
+  "entry": "src/index.ts",
+  "publisher": { "keyId": "", "signature": "" },
+  "contributions": {
+    "contract": [
+      { "kind": "contract", "id": "bomb.alloc", "version": "1", "risk": "READ" }
+    ]
+  },
+  "dependencies": [],
+  "capabilities": { "requested": [] },
+  "runtime": { "tier": "worker-thread", "budget": { "cpuMs": 50, "memMB": 32 } },
+  "contentHash": ""
+}
