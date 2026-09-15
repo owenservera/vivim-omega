@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-09-15T18:24:50.157Z",
+  "generatedAt": "2026-09-15T18:26:36.278Z",
   "repo": "vivim-omega",
   "branch": "omega",
-  "head": "4edf95e",
+  "head": "4101ceb",
   "waves": [
     {
       "id": "Ω0",
@@ -89,120 +89,6 @@
       "status": "built"
     }
   ],
-  "gate": {
-    "startedAt": "2026-09-15T18:23:44.612Z",
-    "checks": {
-      "host-loc": {
-        "ok": true,
-        "detail": {
-          "loc": 997,
-          "budget": 1000
-        }
-      },
-      "fresh-tree": {
-        "ok": true,
-        "skipped": true,
-        "detail": {
-          "reason": "no sibling legacy repos present (clean clone / CI) — nothing to verify untouched",
-          "legacyImports": 0
-        }
-      },
-      "decisions": {
-        "ok": false,
-        "detail": "D-358: status mismatch (index PROPOSED, record RATIFIED)"
-      },
-      "compositions": {
-        "ok": true,
-        "detail": {
-          "specs": 16,
-          "entries": 66,
-          "driftAllowlisted": {
-            "vivim.law": {
-              "files": [
-                "agent.json",
-                "browser.json",
-                "chat.json",
-                "console.json",
-                "credentials.json",
-                "demo.json",
-                "discovery-mind.json",
-                "discovery.json",
-                "email.json",
-                "healing.json",
-                "law.json",
-                "llm.json",
-                "notes.json",
-                "run.json",
-                "spine.json",
-                "vault.json"
-              ],
-              "reason": "D-325: per-composition law scope (memory-only law.json … vault-durable agent.json); new shapes fail until allowlisted"
-            },
-            "vivim.director": {
-              "files": [
-                "chat.json",
-                "console.json"
-              ],
-              "reason": "D-358/D-359: chat.json grants the resolution half only (resolve.classify/report + their vault ports); console/run carry the full director surface"
-            },
-            "vivim.run": {
-              "files": [
-                "run.json",
-                "spine.json"
-              ],
-              "reason": "alias-style variance run.json vs spine.json: same effective authority (HOST_OP_TO_CAP auto-mint); convergence deferred, see _note in run.json"
-            }
-          },
-          "contractTypes": 94,
-          "callSiteAllowlisted": [
-            "CompositionSpecEntry",
-            "LangContribution",
-            "LangFamilyChar",
-            "LangFrameSlot",
-            "LangLexiconEntry",
-            "LangOpFrame",
-            "LangSlotKind",
-            "OutcomeStatus",
-            "PROMOTION_INVARIANT",
-            "PortErrorCode",
-            "ProvenanceTier"
-          ]
-        }
-      },
-      "tests": {
-        "ok": false,
-        "detail": "717 pass / 1 fail — failing: [\"decisions checker — self-hosting run against the real tree > the live register + records validate clean (mixed PROPOSED/RATIFIED, pre-313 grandfathered)\",\"decisions checker — self-hosting run against the real tree > the live register + records validate clean (mixed PROPOSED/RATIFIED, pre-313 grandfathered)\"]"
-      },
-      "attest": {
-        "ok": true,
-        "detail": {
-          "compileMs": 3,
-          "bootMs": 32,
-          "echo": true,
-          "counterBump": true,
-          "counterValue": {
-            "count": 1
-          },
-          "compartments": [
-            "vivim.law",
-            "omega.echo",
-            "omega.counter"
-          ],
-          "refusalRegister": "REFUSED",
-          "budgetRegister": "BUDGET",
-          "recovery": {
-            "midSwapCleaned": true,
-            "replayRefused": true
-          }
-        }
-      }
-    }
-  },
-  "hostLoc": 997,
-  "tests": {
-    "pass": 717,
-    "fail": 1
-  },
   "benchmarks": {
     "at": "2026-09-13T12:39:39.856Z",
     "bootMs": 166,
