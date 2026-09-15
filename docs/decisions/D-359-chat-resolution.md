@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -101,7 +101,13 @@ conversation names; D-358 supplies the storage the exchange lands in.
   mapping) + `plugins/vivim-chat/test/pilot.test.ts` (the real boot: all
   three branches ledgered, the consult path through a real director, report
   rev 2 appended, sibling isolation).
-- Gate evidence: full `bun run omega:gate` GREEN on the wave tree — counts
-  + SHA stamped at RATIFIED.
+- Gate evidence: full `bun run omega:gate` GREEN on the wave tree (0cfb7bc):
+  718/718 tests, host 997/1000, all stages; attest commit 64f0fb2. The
+  D-332 call-site net counts both new contracts exports as wired
+  (SurfaceOpMeta typed into the MCP surface's deps; ChatConversation typed
+  into the chat wiring); the D-351 compositions net carries the
+  vivim.director allowlist entry with this record as its pointer.
 - Ratification: owner directive 2026-09-15 ("continue developing" — the
-  map's begin order names the chat pilot wave from D-358).
+  map's begin order names the chat pilot wave from D-358); landed PROPOSED
+  in 0cfb7bc; full `bun run omega:gate` GREEN on 0cfb7bc (718/718, host
+  997/1000, all stages) — ratified on that evidence.

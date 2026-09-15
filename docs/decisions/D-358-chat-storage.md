@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -114,7 +114,12 @@ vault ns `chat` — plus the shared record vocabulary:
   history, sibling isolation, streamRef round-trip through
   `callAsRootStream`, attributable refusals) +
   `plugins/vivim-law/test/policy-parity.test.ts` (policy 1.3.0 rows).
-- Gate evidence: full `bun run omega:gate` GREEN on the wave tree —
-  counts + SHA stamped at RATIFIED.
+- Gate evidence: full `bun run omega:gate` GREEN on the wave tree (0cfb7bc):
+  718/718 tests (+27 vs the M0 wave's 691), host 997/1000,
+  host-loc/fresh-tree/decisions/compositions/attest all pass; attest commit
+  64f0fb2. The D-351 parity net covers chat.open@1/chat.append@1 from the
+  first boot (exact rows, policy 1.3.0).
 - Ratification: owner directive 2026-09-15 ("continue developing" — the
-  map's begin order names the chat pilot wave from D-358).
+  map's begin order names the chat pilot wave from D-358); landed PROPOSED
+  in 0cfb7bc; full `bun run omega:gate` GREEN on 0cfb7bc (718/718, host
+  997/1000, all stages) — ratified on that evidence.
