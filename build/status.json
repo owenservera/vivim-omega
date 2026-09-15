@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-09-15T14:32:34.910Z",
+  "generatedAt": "2026-09-15T15:21:52.601Z",
   "repo": "vivim-omega",
   "branch": "omega",
-  "head": "865451d",
+  "head": "1d966dc",
   "waves": [
     {
       "id": "Ω0",
@@ -90,12 +90,12 @@
     }
   ],
   "gate": {
-    "startedAt": "2026-09-15T14:31:30.898Z",
+    "startedAt": "2026-09-15T15:20:47.763Z",
     "checks": {
       "host-loc": {
         "ok": true,
         "detail": {
-          "loc": 984,
+          "loc": 997,
           "budget": 1000
         }
       },
@@ -110,18 +110,19 @@
       "decisions": {
         "ok": true,
         "detail": {
-          "rows": 55,
-          "records": 29,
-          "ratified": 24,
+          "rows": 57,
+          "records": 31,
+          "ratified": 25,
           "grandfatherBelow": 313,
           "openQuestions": {
-            "count": 5,
+            "count": 6,
             "ids": [
               313,
               314,
               316,
               317,
-              351
+              352,
+              353
             ],
             "board": "stale"
           }
@@ -159,7 +160,7 @@
               "reason": "alias-style variance run.json vs spine.json: same effective authority (HOST_OP_TO_CAP auto-mint); convergence deferred, see _note in run.json"
             }
           },
-          "contractTypes": 68,
+          "contractTypes": 74,
           "callSiteAllowlisted": [
             "CompositionSpecEntry",
             "LangContribution",
@@ -178,7 +179,7 @@
       "tests": {
         "ok": true,
         "detail": {
-          "pass": 628,
+          "pass": 651,
           "fail": 0,
           "maxConcurrency": 4
         }
@@ -208,9 +209,9 @@
       }
     }
   },
-  "hostLoc": 984,
+  "hostLoc": 997,
   "tests": {
-    "pass": 628,
+    "pass": 651,
     "fail": 0
   },
   "benchmarks": {

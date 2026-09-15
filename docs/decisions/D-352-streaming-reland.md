@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -90,4 +90,6 @@ non-streaming callers observe nothing, falsifier-first:
   `testkit/test/fake-host.test.ts` D-352 mirror (3 tests). Full
   `bun run omega:gate` GREEN on this wave (651/651, host 989/1000).
 - Ratification: owner directive 2026-09-15 ("Setup here the DevOps hub and
-  continue developing" — the map's begin order names M1+M3 from D-352).
+  continue developing" — the map's begin order names M1+M3 from D-352); landed
+  PROPOSED in 1d966dc; full `bun run omega:gate` GREEN on 1d966dc
+  (651/651, host 997/1000, all stages) — ratified on that evidence.
