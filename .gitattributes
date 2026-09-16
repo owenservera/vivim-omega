@@ -1,0 +1,18 @@
+# Windows attribute defaults (D-371 takeover: the team works on Windows from here).
+# Normalize code to LF on commit so diffs stay clean across editors; check out
+# with native line endings. Archives and keys stay binary-exact.
+* text=auto
+*.ts text eol=lf
+*.mjs text eol=lf
+*.cjs text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.gitignore text eol=lf
+*.bundle binary
+*.tar.gz binary
+*.tgz binary
+*.zip binary
+*.sqlite binary
+*.pem binary

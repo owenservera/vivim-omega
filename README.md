@@ -9,6 +9,8 @@ we will later backend into the new core."* The legacy repos (`../vivim-final-enh
 `../vivim-final-program`) are **untouched** by this build (see `tooling/gates` fresh-tree guard);
 they become backfill sources after the core exists.
 
+**On Windows?** Read `docs/WINDOWS.md` first (setup, `omega:quick`, soak-flake notes). One command to start: `bun install`, then `bun run omega:quick`.
+
 ## The Ω laws in ten lines
 
 1. The µhost is boring and may not grow: `host/src` ≤ **1,100 LOC**, hard gate (B5, frozen D-365 as sole owner — no new host surface without removing old surface in the same commit).
