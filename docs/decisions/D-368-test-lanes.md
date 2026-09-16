@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -32,3 +32,4 @@ D-317 set the sharding trigger at ~700 tests (count, not wall clock). Tree now r
 - `bun run omega:quick` green on the landing commit (structural stages only).
 - Lane runs green: watchdog+sdk/chat suites 36/36, adversarial 15/15 (incl. 13/14 with D-366 fast/graceful paths), MCP isolated 11/11, decisions 11/11 with --timeout 60000.
 - Full-serial soak on Windows: 727/735 with 8 MCP stdio `uv_spawn EUNKNOWN` flakes (handle exhaustion after ~200s of worker spawns); clean-tree baseline on the same box: 730/733 with 3 same-suite flakes — pre-existing environment soak flake, not a regression. Merge gate stays full `omega:gate`; Linux CI (`gate-reproduce`) is the green arbiter for this wave.
+- Landed in 7d2cea7 (owner wave 001 PROPOSED; quick GREEN, lanes GREEN).

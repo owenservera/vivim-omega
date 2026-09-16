@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -30,3 +30,4 @@ PROPOSED
 ## Evidence
 
 - Process record (directive — gate green on the landing commit suffices per D-364 directive rule).
+- Landed in 7d2cea7 (owner wave 001 PROPOSED; quick GREEN).

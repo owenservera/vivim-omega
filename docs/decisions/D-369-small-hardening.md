@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -29,3 +29,4 @@ Owner line-review of 4a108d7..5a9e148 surfaced five small items, each fail-close
 
 - Lane runs green on the landing commit (watchdog 8/8 incl. D-366 fast/budgetStatus, stream/chat/credentials suites unchanged green, adversarial 15/15, `omega:quick` green).
 - Full-serial soak caveat per D-368 (Windows MCP `uv_spawn` flake, pre-existing on clean tree) — no new failures attributable to these five items (all five paths covered by the green lanes above).
+- Landed in 7d2cea7 (owner wave 001 PROPOSED; quick GREEN, lanes GREEN).

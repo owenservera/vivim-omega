@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -32,3 +32,4 @@ PROPOSED
 - Gate `host-loc` green on the landing commit (1013/1100; was 999/1000).
 - `bun run omega:quick` green (structural stages only).
 - `verify-status.ts` log line updated to /1100.
+- Landed in 7d2cea7 (owner wave 001 PROPOSED; quick GREEN structural, lanes GREEN per D-368).

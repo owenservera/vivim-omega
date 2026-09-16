@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -29,3 +29,4 @@ D-361 claims production-tree runtime neutrality (one sqlite adapter) with only a
 ## Evidence
 
 - Plan record (directive — no falsifier; the spike's boot log becomes the evidence for the follow-up row).
+- Landed in 7d2cea7 (owner wave 001 PROPOSED; quick GREEN).
