@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -47,3 +47,4 @@ README points at the runbook.
 
 - `bun run omega:quick` green on the landing commit (structural stages).
 - Host boot-path suites green (every boot exercises `ensureVault`).
+- Landed in 7a2ab02 (windows takeover PROPOSED; quick GREEN, lanes 37/37).
