@@ -11,6 +11,7 @@ import type { CompositionSpec, PortResult } from "@vivim/omega-contracts";
 import { parseManifest, validateManifest } from "@vivim/omega-sdk";
 import { asCredentialRecord, credentialVaultId, fromRecord } from "../src/record.ts";
 import { applyRedaction, REDACTION_POLICY_V1, REDACT_MAX_BYTES } from "../src/redact.ts";
+import { omegaTmp } from "@vivim/omega-platform"; // D-372 Phase 3: scratch through the seam
 
 const OMEGA_ROOT = join(import.meta.dir, "../../..");
 const hosts: BootedHost[] = [];
@@ -134,7 +135,7 @@ describe("D-356 end-to-end — put ceremony, use by reference, redact through th
   beforeAll(async () => {
     const SPEC = join(OMEGA_ROOT, "compositions/credentials.json");
     const spec = JSON.parse(readFileSync(SPEC, "utf-8")) as CompositionSpec;
-    const root = join("/tmp/omega-credentials-test", `spine-${Date.now()}-${Math.floor(Math.random() * 1e6)}`);
+    const root = omegaTmp("omega-credentials-test", `spine-${Date.now()}-${Math.floor(Math.random() * 1e6)}`);
     rmSync(root, { recursive: true, force: true });
     const vaultDir = join(root, "vault");
     mkdirSync(vaultDir, { recursive: true });

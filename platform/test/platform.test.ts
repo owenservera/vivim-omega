@@ -4,7 +4,7 @@ import { describe, test, expect } from "bun:test";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { TMP_TOKEN, tmpRoot, omegaTmp, isGrandfatheredTmp, resolveDataDir, ownerOnly } from "../src/platform.ts";
+import { TMP_TOKEN, tmpRoot, omegaTmp, isGrandfatheredTmp, resolveDataDir, ownerOnly, retryOsLock } from "../src/platform.ts";
 
 describe("platform seam (D-372)", () => {
   test("tmpRoot is the machine scratch root", () => {
@@ -50,5 +50,41 @@ describe("platform seam (D-372)", () => {
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
+  });
+
+  test("retryOsLock returns the first success (transient locks absorbed)", () => {
+    let n = 0;
+    const v = retryOsLock(() => {
+      n++;
+      if (n < 3) throw Object.assign(new Error("locked"), { code: "EBUSY" });
+      return "ok";
+    });
+    expect(v).toBe("ok");
+    expect(n).toBe(3);
+  });
+
+  test("retryOsLock rethrows non-retryable errors immediately", () => {
+    let n = 0;
+    expect(() =>
+      retryOsLock(() => {
+        n++;
+        throw new Error("permanent");
+      }),
+    ).toThrow(/permanent/);
+    expect(n).toBe(1);
+  });
+
+  test("retryOsLock exhausts the budget then rethrows the last error", () => {
+    let n = 0;
+    expect(() =>
+      retryOsLock(
+        () => {
+          n++;
+          throw Object.assign(new Error("busy"), { code: "EPERM" });
+        },
+        { tries: 3, baseMs: 1 },
+      ),
+    ).toThrow(/busy/);
+    expect(n).toBe(3);
   });
 });

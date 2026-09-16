@@ -3,7 +3,7 @@
 // we administer compartment lifecycle through capability-gated host ops.
 // Ops contributed: run.submit@1 (bounded task execution), run.stats@1,
 // run.health@1 (compartment snapshot + quarantine ledger + event ring).
-import { cpus } from "node:os";
+import { cpus } from "node:os"; // capacity default reads machine shape — OS contact outside the os-surface fence BY DESIGN (the fence covers tmp/platform/chmod; cpus() is the named seventh touchpoint, grandfathered — see MERGED-MASTER ISS-020)
 import { setTimeout as nodeSetTimeout } from "node:timers";
 import { definePlugin, startPlugin } from "@vivim/omega-shim";
 import { TaskPool, type SubmitOutcome, type TaskResult } from "./pool.ts";

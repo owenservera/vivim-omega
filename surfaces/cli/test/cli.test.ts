@@ -8,6 +8,7 @@ import { mkdirSync, rmSync, existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { startDaemon, type DaemonHandle } from "../../daemon/src/daemon.ts";
 import { callDaemon, readDaemonInfo } from "@vivim/daemon-client";
+import { omegaTmp, retryOsLock } from "@vivim/omega-platform"; // D-372 Phase 3: scratch through the seam
 
 const CLI = join(import.meta.dir, "../src/cli.ts");
 const ECHO_SPEC = join(import.meta.dir, "fixtures/echo.json");
@@ -15,7 +16,7 @@ const RISK_SPEC = join(import.meta.dir, "fixtures/risk.json");
 
 /** Unique temp vault per case (surfaces boot + pin real recipes into them). */
 function tempVault(name: string): string {
-  const v = join("/tmp/omega-cli-test", `${name}-${Date.now()}-${Math.floor(Math.random() * 1e6)}`);
+  const v = omegaTmp("omega-cli-test", `${name}-${Date.now()}-${Math.floor(Math.random() * 1e6)}`);
   rmSync(v, { recursive: true, force: true });
   mkdirSync(v, { recursive: true });
   return v;
@@ -37,7 +38,14 @@ async function runCli(args: string[], timeoutMs = 30_000, opts: { daemon?: boole
   // route warm (which would also leak a persistent daemon per temp vault).
   // Pass { daemon: true } ONLY to deliberately exercise the warm path.
   const fullArgs = opts.daemon || args.includes("--no-daemon") || args[0] === "daemon" ? args : [...args, "--no-daemon"];
-  const proc = Bun.spawn(["bun", "run", CLI, ...fullArgs], { stdin: "ignore", stdout: "pipe", stderr: "pipe" });
+  // Same soak hardening as the MCP suite (D-368): Windows can refuse spawns
+  // after hundreds of worker/process spawns in a long run — bounded sync retry,
+  // same shared helper; a genuinely broken command still throws after budget.
+  const proc = retryOsLock(() => Bun.spawn(["bun", "run", CLI, ...fullArgs], { stdin: "ignore", stdout: "pipe", stderr: "pipe" }), {
+    tries: 5,
+    baseMs: 250,
+    retryOn: () => true,
+  });
   const [stdout, stderr, code] = await Promise.all([
     new Response(proc.stdout).text(),
     new Response(proc.stderr).text(),
@@ -222,7 +230,7 @@ describe("GATE-Ω6 — CLI msg sugar over the real email composition (Ω5 wave)"
 
     // search (READ, ungated) finds the message just sent through the sugar.
     // NOTE: fixtures/email.json pins vivim.vault dataDir to the shared
-    // /tmp/omega-cli-test/email-fixture/vault-data (not per-case tempVault),
+    // ${TMP}/omega-cli-test/email-fixture/vault-data (not per-case tempVault),
     // so the DB accumulates every historic run and message.search caps at 50.
     // Searching the generic body ("surface sugar") therefore truncates the
     // newest row once history exceeds the cap. Search the unique subject in

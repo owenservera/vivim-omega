@@ -59,20 +59,50 @@ async function getRow(ctx: PluginContext, ns: string, id: string): Promise<Vault
   return tryGet<VaultGetResult>(ctx, "vault.get@1", { ns, id });
 }
 
-/** Load + narrow a conversation row, or throw the attributable refusal. */
-async function mustLoadConversation(ctx: PluginContext, conversationId: string): Promise<ChatConversation> {
+/** Load + narrow a conversation row, or throw the attributable refusal.
+ *  Returns the record AND its vault rev (callers cite the real rev in
+ *  evidence refs — never a hardcoded 1). */
+async function mustLoadConversation(ctx: PluginContext, conversationId: string): Promise<{ conv: ChatConversation; rev: number }> {
   const got = await getRow(ctx, CHAT_NS, conversationId);
   if (!got) throw new Error(`vivim.chat: conversation ${conversationId} does not exist in ns ${CHAT_NS} — refusing (attributable)`);
   const conv = asChatConversation(got.data);
   if (!conv) throw new Error(`vivim.chat: conversation row ${conversationId} is malformed — refusing (fail-closed)`);
-  return conv;
+  return { conv, rev: got.rev };
 }
 
-/** All messages of one conversation (bounded scan; sibling-proof by data filter). */
+/** Per-conversation append serialization (C-1): the compartment is
+ *  single-threaded but async handlers interleave — two concurrent appends
+ *  would otherwise read the same prior count and mint the same seq. Calls
+ *  for one conversation run strictly in arrival order; different
+ *  conversations proceed in parallel. First-writer discipline (one vivim.chat
+ *  instance owns ns "chat") makes this in-compartment chain sufficient — no
+ *  second writer exists to race it. */
+const appendChains = new Map<string, Promise<void>>();
+async function serializeAppend<T>(conversationId: string, fn: () => Promise<T>): Promise<T> {
+  const tail = appendChains.get(conversationId) ?? Promise.resolve();
+  let release!: () => void;
+  const mine = new Promise<void>((r) => { release = r; });
+  appendChains.set(conversationId, tail.then(() => mine));
+  await tail;
+  try {
+    return await fn();
+  } finally {
+    release();
+    if (appendChains.get(conversationId) === mine) appendChains.delete(conversationId);
+  }
+}
+
+/** All messages of one conversation (sibling-proof by data filter).
+ *  C-2: filter BEFORE any bound — slicing the raw row list first would let
+ *  sibling conversations crowd out this conversation's messages (undercounted
+ *  history AND duplicated seqs). The per-conversation CHAT_HISTORY_CAP is
+ *  enforced by the caller (append refuses at cap); the scan itself is bounded
+ *  by total ns size — pilot scale, with the D-335 retention revisit as the
+ *  named trigger for a bounded-scan redesign. */
 async function loadConversationMessages(ctx: PluginContext, conversationId: string) {
   const rows = await portCall<VaultQueryRow[]>(ctx, "vault.query@1", { ns: CHAT_NS, filter: { idPrefix: "msg_" } });
   const messages = [];
-  for (const row of rows.slice(0, CHAT_HISTORY_CAP)) {
+  for (const row of rows) {
     const got = await getRow(ctx, CHAT_NS, row.id);
     if (!got) continue; // unreadable rows can't be history — skipped, not fatal
     const m = asChatMessage(got.data);
@@ -110,36 +140,41 @@ export const def = definePlugin({
     "chat.append@1": async (payload: unknown, ctx: PluginContext) => {
       const op = "chat.append@1";
       const input = parseAppendInput(payload); // throws → DEGRADED
-      const conv = await mustLoadConversation(ctx, input.conversationId);
-      const prior = await loadConversationMessages(ctx, input.conversationId);
-      if (prior.length >= CHAT_HISTORY_CAP) {
-        throw new Error(`${op}: conversation ${conv.id} reached the ${CHAT_HISTORY_CAP}-message scan cap — compaction/retention revisit trigger (D-335), refusing fail-closed`);
-      }
-      const seq = nextMessageSeq(prior.length);
-      const id = chatMessageId(`msg_${randomBytes(8).toString("hex")}`);
-      const createdAt = Date.now();
-      const message = {
-        id,
-        conversationId: conv.id,
-        role: input.role,
-        seq,
-        content: input.content,
-        ...(input.providerId !== undefined ? { providerId: input.providerId } : {}),
-        ...(input.realizationRef !== undefined ? { realizationRef: input.realizationRef } : {}),
-        ...(input.streamRef !== undefined ? { streamRef: input.streamRef } : {}),
-        createdAt,
-      };
-      const append = await portCall<VaultAppendResult>(ctx, "vault.append@1", {
-        ns: CHAT_NS, id, data: message,
-        meta: { type: "message", conversationId: conv.id, role: input.role, seq },
-        refs: [{ ns: CHAT_NS, id: conv.id, rev: 1 }],
+      // Serialized per conversation (C-1): seq assignment + append are one
+      // critical section — concurrent appends can neither duplicate seqs nor
+      // interleave reads and writes.
+      return serializeAppend(input.conversationId, async () => {
+        const { conv, rev: convRev } = await mustLoadConversation(ctx, input.conversationId);
+        const prior = await loadConversationMessages(ctx, input.conversationId);
+        if (prior.length >= CHAT_HISTORY_CAP) {
+          throw new Error(`${op}: conversation ${conv.id} reached the ${CHAT_HISTORY_CAP}-message scan cap — compaction/retention revisit trigger (D-335), refusing fail-closed`);
+        }
+        const seq = nextMessageSeq(prior.length);
+        const id = chatMessageId(`msg_${randomBytes(8).toString("hex")}`);
+        const createdAt = Date.now();
+        const message = {
+          id,
+          conversationId: conv.id,
+          role: input.role,
+          seq,
+          content: input.content,
+          ...(input.providerId !== undefined ? { providerId: input.providerId } : {}),
+          ...(input.realizationRef !== undefined ? { realizationRef: input.realizationRef } : {}),
+          ...(input.streamRef !== undefined ? { streamRef: input.streamRef } : {}),
+          createdAt,
+        };
+        const append = await portCall<VaultAppendResult>(ctx, "vault.append@1", {
+          ns: CHAT_NS, id, data: message,
+          meta: { type: "message", conversationId: conv.id, role: input.role, seq },
+          refs: [{ ns: CHAT_NS, id: conv.id, rev: convRev }],
+        });
+        return { messageId: id, rev: append.rev, seq };
       });
-      return { messageId: id, rev: append.rev, seq };
     },
 
     "chat.history@1": async (payload: unknown, ctx: PluginContext) => {
       const input = parseHistoryInput(payload); // throws → DEGRADED
-      const conv = await mustLoadConversation(ctx, input.conversationId);
+      const { conv } = await mustLoadConversation(ctx, input.conversationId);
       const messages = orderMessages(await loadConversationMessages(ctx, input.conversationId));
       const limit = input.limit ?? messages.length;
       return {
@@ -151,7 +186,7 @@ export const def = definePlugin({
 
     "chat.resolve@1": async (payload: unknown, ctx: PluginContext) => {
       const input = parseResolveInput(payload); // throws → DEGRADED
-      const conv = await mustLoadConversation(ctx, input.conversationId);
+      const { conv, rev: convRev } = await mustLoadConversation(ctx, input.conversationId);
 
       // ── Deterministic half (D-337): exact command / known op name ──────
       const hit = deterministicMatch(input.utterance, input.capabilities);
@@ -170,14 +205,14 @@ export const def = definePlugin({
           capability: verdict.capability,
           branch: verdict.branch,
           reason: verdict.reason,
-          evidenceRefs: [{ ns: CHAT_NS, id: conv.id, rev: 1, epistemicStatus: "INFERRED" }],
+          evidenceRefs: [{ ns: CHAT_NS, id: conv.id, rev: convRev, epistemicStatus: "INFERRED" }],
           buildDecisionRef: "D-323",
           createdAt: Date.now(),
         };
         await portCall<VaultAppendResult>(ctx, "vault.append@1", {
           ns: "resolve", id: resolveDecisionId(decisionId), data,
           meta: { type: "resolve-decision", kind: verdict.kind, branch: verdict.branch, source: verdict.source },
-          refs: [{ ns: CHAT_NS, id: conv.id, rev: 1 }],
+          refs: [{ ns: CHAT_NS, id: conv.id, rev: convRev }],
         });
       } else {
         // ── Ambiguous half (D-337): the SHARED classifier decides ─────────

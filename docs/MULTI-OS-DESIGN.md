@@ -102,6 +102,11 @@ rejected: it would bake machine-local temp dirs into signed recipes and fork
 portability at the signature boundary. `/tmp/...` keeps working (mapped +
 identical result) so old vaults and docs never break silently.
 
+Relative dataDirs (e.g. `console.json`'s `dev-vault/console/vault-data`) pass
+through verbatim and resolve against the process cwd — persistent-home
+semantics for dev vaults. Prefer `${TMP}` for machine-local scratch; use
+relative paths only when the composition intentionally names a repo-anchored home.
+
 ## 6. Enforcement: a new `os-surface` gate stage (D-361 pattern, copied)
 
 Fail-closed from the day it lands, allowlist = `platform/src/*` only:
@@ -131,7 +136,7 @@ fail-closed with the seam present. Two commits, no mystery reds.
 | 1 | `platform/` package + `os-surface` stage warn-mode, then fail-closed; `host` + `ensureVault` adopt `ownerOnly` | `omega:quick` green; stage lists exactly the allowlist |
 | 2 | 10 dataDir values → `${TMP}` spelling + consumption-side resolution in the vault (recipes stay portable); grandfather mapping covered by vault + seam tests | All composition suites green; one boot per OS prints resolved dirs |
 | 3 | Test files → `omegaTmp()` helper (mechanical, lane by lane) | Full suites green per lane; zero `/tmp` literals outside seam |
-| 4 | Windows CI lane → required; macOS lane added informational | Three green checkmarks on one commit |
+| 4 | Windows lane hardened (serial full gate via `OMEGA_TEST_CONCURRENCY=1`, stays informational until the soak flake retires by observation) + macOS informational lane; required-flag flip is the fast follow-up | ubuntu-required + both informational lanes green on one commit |
 | 5 | Ratify D-372 (falsifier = Phase 4 matrix green) + CURRENT-INVARIANTS consolidation touch-up | Board refresh |
 
 ## 8. Acceptance criteria (when D-372 may ratify)

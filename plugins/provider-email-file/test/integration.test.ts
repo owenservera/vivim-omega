@@ -17,6 +17,7 @@ import { join } from "node:path";
 import { bootComposition, compileComposition, ensureVault } from "@vivim/omega-host";
 import type { BootedHost } from "@vivim/omega-host";
 import type { CompositionSpec, PortResult } from "@vivim/omega-contracts";
+import { omegaTmp } from "@vivim/omega-platform"; // D-372 Phase 3: scratch through the seam
 
 const OMEGA_ROOT = join(import.meta.dir, "../../.."); // test/ → provider-email-file/ → plugins/ → root
 const hosts: BootedHost[] = [];
@@ -54,7 +55,7 @@ interface Case { host: BootedHost; root: string; vaultDir: string; dataDir: stri
 
 /** Boots a unique temp case: own vault dir + build; the dataDir defaults INSIDE the case root (unique per run), overridable for the sovereignty swap. */
 async function bootEmail(caseName: string, specFactory: (dataDir: string) => CompositionSpec, opts: { dataDir?: string } = {}): Promise<Case> {
-  const root = join("/tmp/omega-email-test", `${caseName}-${Date.now()}-${Math.floor(Math.random() * 1e6)}`);
+  const root = omegaTmp("omega-email-test", `${caseName}-${Date.now()}-${Math.floor(Math.random() * 1e6)}`);
   rmSync(root, { recursive: true, force: true });
   const vaultDir = join(root, "vault");
   mkdirSync(vaultDir, { recursive: true });
@@ -332,11 +333,11 @@ describe("GATE-Ω5 — the email loop through vault + consent (compositions/emai
   test("the SHIPPED compositions/email.json boots (spec copy with an overridden temp dataDir) and gates send", async () => {
     const SPEC = join(OMEGA_ROOT, "compositions/email.json");
     const spec = JSON.parse(readFileSync(SPEC, "utf-8")) as CompositionSpec;
-    const root = join("/tmp/omega-email-test", `shipped-${Date.now()}-${Math.floor(Math.random() * 1e6)}`);
+    const root = omegaTmp("omega-email-test", `shipped-${Date.now()}-${Math.floor(Math.random() * 1e6)}`);
     rmSync(root, { recursive: true, force: true });
     const vaultDir = join(root, "vault");
     mkdirSync(vaultDir, { recursive: true });
-    // spec copy: only the dataDir moves (tests never touch /tmp/omega-email-test/main —
+    // spec copy: only the dataDir moves (tests never touch the shipped spec's ${TMP} default —
     // the shipped path stays deterministic for repeated CLI gate runs)
     const shipped = JSON.parse(JSON.stringify(spec));
     const vaultEntry = shipped.entries.find((e: { id: string }) => e.id === "vivim.vault");

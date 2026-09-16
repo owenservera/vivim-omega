@@ -2,6 +2,9 @@
 // Seeded, DETERMINISTIC generators (the reproducibility law): the same integer
 // seed always yields byte-identical output. Randomness never leaks Date.now(),
 // Math.random, or iteration order — every decision comes from the seeded PRNG.
+// Scope note (ISS-018): this law binds test *assertions and fixtures* —
+// production tmp names (CAS, scratch dirs) may use ambient randomness freely;
+// only what a test asserts on must be seeded.
 import type { PluginManifest } from "@vivim/omega-contracts";
 import { CONTRIBUTION_KINDS } from "@vivim/omega-contracts";
 

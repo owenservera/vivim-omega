@@ -11,6 +11,7 @@ import { join } from "node:path";
 import { compileComposition, ensureVault, bootComposition } from "@vivim/omega-host";
 import type { BootedHost } from "@vivim/omega-host";
 import type { CompositionSpec, PortResult } from "@vivim/omega-contracts";
+import { omegaTmp } from "@vivim/omega-platform"; // D-372 Phase 3: scratch through the seam
 
 const OMEGA_ROOT = join(import.meta.dir, "../../..");
 
@@ -54,7 +55,7 @@ async function vaultGet(host: BootedHost, ns: string, id: string): Promise<{ rev
 
 describe("D-326 — PROMOTED → DEGRADED → TESTING → REQUIRES_REDISCOVERY → PROMOTED (real vault reads)", () => {
   test("full lifecycle round trip through discovery.verify@1 + discovery.heal@1", async () => {
-    const root = join("/tmp/omega-heal-d326", `lifecycle-${Date.now()}-${process.pid}`);
+    const root = omegaTmp("omega-heal-d326", `lifecycle-${Date.now()}-${process.pid}`);
     rmSync(root, { recursive: true, force: true });
     const vaultDir = join(root, "vault");
     const dataDir = join(root, "vault-data");
@@ -167,7 +168,7 @@ describe("D-326 — PROMOTED → DEGRADED → TESTING → REQUIRES_REDISCOVERY �
   }, 90_000);
 
   test("heal without provider identity still decides (realization skipped loudly, decision stands)", async () => {
-    const root = join("/tmp/omega-heal-d326", `noid-${Date.now()}-${process.pid}`);
+    const root = omegaTmp("omega-heal-d326", `noid-${Date.now()}-${process.pid}`);
     rmSync(root, { recursive: true, force: true });
     const vaultDir = join(root, "vault");
     const dataDir = join(root, "vault-data");

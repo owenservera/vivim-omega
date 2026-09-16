@@ -18,6 +18,7 @@ import { join } from "node:path";
 import { bootWithRecovery, compileComposition, ensureVault } from "@vivim/omega-host";
 import type { BootedHost } from "@vivim/omega-host";
 import type { CompositionSpec, PortResult, StreamChunk } from "@vivim/omega-contracts";
+import { omegaTmp } from "@vivim/omega-platform"; // D-372 Phase 3: scratch through the seam
 
 const OMEGA_ROOT = join(import.meta.dir, "../../..");
 const FIXTURE_TEXT = readFileSync(join(OMEGA_ROOT, "fixtures/browser/session-fixture.json"), "utf-8");
@@ -34,7 +35,7 @@ describe("D-357 — the M0 falsifier on one real boot of compositions/browser.js
   beforeAll(async () => {
     const SPEC = join(OMEGA_ROOT, "compositions/browser.json");
     const spec = JSON.parse(readFileSync(SPEC, "utf-8")) as CompositionSpec;
-    const root = join("/tmp/omega-browser-test", `falsifier-${Date.now()}-${Math.floor(Math.random() * 1e6)}`);
+    const root = omegaTmp("omega-browser-test", `falsifier-${Date.now()}-${Math.floor(Math.random() * 1e6)}`);
     rmSync(root, { recursive: true, force: true });
     const vaultDir = join(root, "vault");
     mkdirSync(vaultDir, { recursive: true });

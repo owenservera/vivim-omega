@@ -6,17 +6,23 @@ import { mkdirSync, rmSync, readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { compileComposition, ensureVault, bootComposition } from "@vivim/omega-host";
 import type { BootedHost } from "@vivim/omega-host";
+import { omegaTmp } from "@vivim/omega-platform"; // D-372 Phase 3: scratch through the seam
 
 const SPEC = join(import.meta.dir, "../../compositions/spine.json");
 const spec = JSON.parse(readFileSync(SPEC, "utf-8"));
-const vaultDir = "/tmp/omega-spine/host";
-const dataDir = "/tmp/omega-spine/vault-data";
+// E-9: unique run root (vault home AND vault dataDir) — the shipped spec's
+// ${TMP}/omega-spine/vault-data would otherwise collide across parallel
+// workers or concurrent gates on one box.
+const runRoot = omegaTmp("omega-spine", `run-${Date.now()}-${process.pid}`);
+const vaultDir = join(runRoot, "host");
+for (const e of spec.entries) {
+  if (e.id === "vivim.vault" && e.config) e.config["dataDir"] = join(runRoot, "vault-data");
+}
 let host: BootedHost;
 
 beforeAll(async () => {
-  rmSync("/tmp/omega-spine", { recursive: true, force: true });
+  rmSync(runRoot, { recursive: true, force: true });
   mkdirSync(vaultDir, { recursive: true });
-  ensureVault(vaultDir);
   const { rootKey } = ensureVault(vaultDir);
   const { recipe, buildDir } = compileComposition(spec, join(SPEC, ".."), vaultDir, rootKey);
   host = await bootComposition(recipe, buildDir, vaultDir);

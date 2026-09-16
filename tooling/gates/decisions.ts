@@ -178,6 +178,24 @@ export async function checkDecisions(
 
 // ---- open-questions board (team surface over PROPOSED records) ----
 
+/** The Decision body, joined across continuation lines: the first `**Decision:**`
+ *  line plus following prose lines (stops at blank / header / table / list /
+ *  code-fence). Single-line decisions (the common case) are unaffected — this
+ *  only repairs multi-line bodies (e.g. D-372) that the board used to truncate. */
+export function decisionBody(text: string): string {
+  const lines = text.split("\n");
+  const at = lines.findIndex((l) => l.trim().startsWith("**Decision:**"));
+  if (at === -1) return "";
+  const first = lines[at].trim().replace(/^\*\*Decision:\*\*/, "").trim();
+  const rest: string[] = [];
+  for (let i = at + 1; i < lines.length; i++) {
+    const t = lines[i].trim();
+    if (t === "" || t.startsWith("#") || t.startsWith("|") || t.startsWith("-") || t.startsWith("```") || t.startsWith(">")) break;
+    rest.push(t);
+  }
+  return [first, ...rest].join(" ").replace(/\s+/g, " ").trim();
+}
+
 export interface OpenQuestion {
   n: number;
   file: string;        // repo-relative record path
@@ -209,7 +227,7 @@ export function listOpenQuestions(root: string): OpenQuestion[] {
     const doc = parseRecord(n, `docs/decisions/${f}`, text);
     if (doc.status !== "PROPOSED") continue;
     const titleLine = text.split("\n").find((l) => l.startsWith("# ")) ?? `# D-${n}`;
-    const recommended = doc.decisionLine.replace(/^\*\*Decision:\*\*/, "").trim() || "(no Decision line — record invalid, see gate)";
+    const recommended = decisionBody(text) || "(no Decision line — record invalid, see gate)";
     const hasTbd = /\bTBD\b/.test(recommended);
     out.push({
       n, file: `docs/decisions/${f}`, title: titleLine.replace(/^#\s*/, ""), recommended, hasTbd,

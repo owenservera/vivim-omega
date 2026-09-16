@@ -112,6 +112,33 @@ export function parseMindConfig(config: Record<string, unknown> | null | undefin
   return { composition, nlclVersion, selfAddresses, entityCap, ops };
 }
 
+/** Config-default advisories (E-5): name every field the producer defaulted,
+ *  so a defaulted (possibly empty) world explains itself. Pure over the RAW
+ *  config — the parsed MindConfig can no longer tell defaulted from explicit.
+ *  Empty = fully specified (callers omit `warnings`, keeping the wire clean). */
+export function mindConfigWarnings(raw: Record<string, unknown> | null | undefined): string[] {
+  const out: string[] = [];
+  const c = raw ?? {};
+  if (c["composition"] === undefined || c["composition"] === null) {
+    out.push(`composition defaulted to "unknown" (provide the composition name)`);
+  }
+  if (c["nlclVersion"] === undefined || c["nlclVersion"] === null) {
+    out.push(`nlclVersion defaulted to "" (provide the language version)`);
+  }
+  const self = c["selfAddresses"];
+  if (self === undefined || self === null || (Array.isArray(self) && self.length === 0)) {
+    out.push(`selfAddresses empty — no self grounding (provide owner addresses)`);
+  }
+  if (c["entityCap"] === undefined || c["entityCap"] === null) {
+    out.push(`entityCap defaulted to ${DEFAULT_ENTITY_CAP}`);
+  }
+  const ops = c["ops"];
+  if (ops === undefined || ops === null || (Array.isArray(ops) && ops.length === 0)) {
+    out.push(`ops catalog empty — the world has no routable ops (provide the recipe ops catalog)`);
+  }
+  return out;
+}
+
 // ---- evidence shapes (what the wiring fetches through the ports) ----
 
 /** The slice of law.registry@1's snapshot the mind consumes (validated by the wiring). */

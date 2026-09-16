@@ -10,6 +10,7 @@ import { compileComposition, ensureVault, bootComposition } from "@vivim/omega-h
 import type { BootedHost } from "@vivim/omega-host";
 import { consentIdFor } from "../src/consent.ts";
 import { isSubset } from "../src/tokens.ts";
+import { omegaTmp } from "@vivim/omega-platform"; // D-372 Phase 3: scratch through the seam
 
 const SPEC = join(import.meta.dir, "../../../compositions/law.json");
 
@@ -35,7 +36,7 @@ describe("GATE-Ω1 — composition [vivim.law, omega.risky, omega.echo] boots an
   let consentId = "";
 
   beforeAll(async () => {
-    vault = join("/tmp/omega-law", `live-${Date.now()}-${process.pid}`);
+    vault = omegaTmp("omega-law", `live-${Date.now()}-${process.pid}`);
     rmSync(vault, { recursive: true, force: true });
     mkdirSync(vault, { recursive: true });
     journalFile = join(vault, "law-journal.jsonl");
@@ -212,7 +213,7 @@ describe("GATE-Ω1 — registry journal replay at boot (state survives reboots)"
   let host2: BootedHost;
 
   beforeAll(async () => {
-    vault = join("/tmp/omega-law", `replay-${Date.now()}-${process.pid}`);
+    vault = omegaTmp("omega-law", `replay-${Date.now()}-${process.pid}`);
     rmSync(vault, { recursive: true, force: true });
     mkdirSync(vault, { recursive: true });
     // seed a journal as a previous run would have left it (line-delimited JSON)
@@ -257,7 +258,7 @@ describe("D-310 — forbidden-action overlay through the real gate", () => {
   let host3: BootedHost;
 
   beforeAll(async () => {
-    vault = join("/tmp/omega-law", `forbidden-${Date.now()}-${process.pid}`);
+    vault = omegaTmp("omega-law", `forbidden-${Date.now()}-${process.pid}`);
     rmSync(vault, { recursive: true, force: true });
     mkdirSync(vault, { recursive: true });
     const { rootKey } = ensureVault(vault);
@@ -315,7 +316,7 @@ describe("D-353 — user:<id> is a first-class principal end-to-end (real law.js
   let host: BootedHost;
 
   beforeAll(async () => {
-    vault = join("/tmp/omega-law", `d336-${Date.now()}-${process.pid}`);
+    vault = omegaTmp("omega-law", `d336-${Date.now()}-${process.pid}`);
     rmSync(vault, { recursive: true, force: true });
     mkdirSync(vault, { recursive: true });
     const { rootKey } = ensureVault(vault);

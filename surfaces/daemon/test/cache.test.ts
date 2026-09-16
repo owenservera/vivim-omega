@@ -9,6 +9,7 @@ import { join } from "node:path";
 import { startDaemon, compileCache, type DaemonHandle } from "../src/daemon.ts";
 import { CompileCache, specCacheKey } from "../src/cache.ts";
 import { callDaemon, readDaemonInfo, type DaemonInfo } from "@vivim/daemon-client";
+import { omegaTmp } from "@vivim/omega-platform"; // D-372 Phase 3: scratch through the seam
 
 const OMEGA_ROOT = join(import.meta.dir, "../../..");
 const ECHO_SPEC = join(OMEGA_ROOT, "surfaces/cli/test/fixtures/echo.json");
@@ -23,7 +24,7 @@ afterAll(async () => {
 }, 120_000);
 
 function tempVault(name: string): string {
-  const v = join("/tmp/omega-cache-test", `${name}-${Date.now()}-${Math.floor(Math.random() * 1e6)}`);
+  const v = omegaTmp("omega-cache-test", `${name}-${Date.now()}-${Math.floor(Math.random() * 1e6)}`);
   rmSync(v, { recursive: true, force: true });
   mkdirSync(v, { recursive: true });
   vaultDirs.push(v);

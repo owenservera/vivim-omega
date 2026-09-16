@@ -3,7 +3,7 @@
 // client REFUSES ops not in the granted set BEFORE sending (fail-fast for review
 // UIs and plugin authors) — the host remains the security boundary (B3).
 import type { PortResult } from "@vivim/omega-contracts";
-import { HOST_OP_TO_CAP } from "@vivim/omega-host";
+import { HOST_OP_TO_CAP } from "@vivim/omega-contracts";
 
 export interface PortCallOptions { deadlineMs?: number }
 

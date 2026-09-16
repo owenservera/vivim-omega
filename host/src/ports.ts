@@ -1,22 +1,16 @@
 // µhost — ports.ts: the Port Router. B3: capability tokens are verified HERE, in the host
 // process, outside every compartment. Risk gating is data-driven (manifest CONTRACT risk
 // declarations) — no policy lives in the host; law.check is a plugin call.
-import type { LawDecision, PortResult, PluginManifest, CompositionEntry, Recipe, StreamChunk } from "@vivim/omega-contracts";
+import type { LawDecision, PortResult, PluginManifest, CompositionEntry, Recipe, StreamChunk, RefusalReport } from "@vivim/omega-contracts";
 import { routableOps, riskyOps, HOST_OPS, HOST_CAPS } from "@vivim/omega-contracts";
 export { HOST_OPS, HOST_CAPS };
+// Single definition (contracts/src/lifecycle.ts): the router owns enforcement, never the mapping.
+import { HOST_OP_TO_CAP } from "@vivim/omega-contracts";
+export { HOST_OP_TO_CAP };
 import type { CompartmentHandle, FromWorker, CallMsg } from "./worker.ts";
 import type { Worker } from "node:worker_threads";
 import { mintToken } from "./canon.ts";
 import { appendFileSync } from "node:fs";
-
-/** host op -> the capability that guards it (single source of truth for token aliasing). */
-export const HOST_OP_TO_CAP: Record<string, string> = {
-  [HOST_OPS.compartmentSpawn]: HOST_CAPS.compartmentAdmin,
-  [HOST_OPS.compartmentTerminate]: HOST_CAPS.compartmentAdmin,
-  [HOST_OPS.compartmentStats]: HOST_CAPS.compartmentAdmin,
-  [HOST_OPS.journalAppend]: HOST_CAPS.journal,
-  [HOST_OPS.tokensRevoke]: HOST_CAPS.tokensRevoke,
-};
 
 export interface TokenRecord { token: string; pluginId: string; cap: string; gen: number }
 
@@ -207,8 +201,8 @@ export class PortRouter {
       const gate = await this.callLaw(principal, op, payload, causationId);
       if (!gate.ok) return gate;
       const decision = gate.value as LawDecision;
-      if (decision.decision === "deny") { this.journal({ principal, op, decision: "deny", reason: decision.reason, causationId }); return { ok: false, error: "REFUSED", detail: `denied by law: ${decision.reason ?? ""}` }; }
-      if (decision.decision === "require-consent") { this.journal({ principal, op, decision: "require-consent", reason: decision.reason, consentId: decision.consentId, causationId }); return { ok: false, error: "REFUSED", detail: `consent required${decision.consentId ? `: ${decision.consentId}` : ""}` }; }
+      if (decision.decision === "deny") { this.journal({ principal, op, decision: "deny", reason: decision.reason, causationId }); return { ok: false, error: "REFUSED", detail: `denied by law: ${decision.reason ?? ""}`, refusal: { rule: "law.check@1", principal, op, reason: decision.reason } satisfies RefusalReport }; }
+      if (decision.decision === "require-consent") { this.journal({ principal, op, decision: "require-consent", reason: decision.reason, consentId: decision.consentId, causationId }); return { ok: false, error: "REFUSED", detail: `consent required${decision.consentId ? `: ${decision.consentId}` : ""}`, refusal: { rule: "law.check@1", principal, op, reason: decision.reason, ...(decision.consentId !== undefined ? { consentId: decision.consentId } : {}) } satisfies RefusalReport }; }
       this.journal({ principal, op, decision: "allow", reason: decision.reason, causationId });
     }
     // D-331: a dormant target spawns on first touch — AFTER the gate, so a

@@ -22,6 +22,7 @@ import { parseManifest, validateManifest } from "@vivim/omega-sdk";
 import {
   buildPortrait, parseMindConfig, type PortraitEvidence,
 } from "../src/derive.ts";
+import { omegaTmp } from "@vivim/omega-platform"; // D-372 Phase 3: scratch through the seam
 
 const OMEGA_ROOT = join(import.meta.dir, "../../.."); // test/ → vivim-mind/ → plugins/ → root
 const hosts: BootedHost[] = [];
@@ -54,7 +55,7 @@ interface Case { host: BootedHost; root: string }
 
 /** Boots a unique temp case with an explicit mind grant (the portrait or snapshot variant). */
 async function bootCase(caseName: string, mindCaps: string[], mindContracts: string[]): Promise<Case> {
-  const root = join("/tmp/omega-portrait-test", `${caseName}-${Date.now()}-${Math.floor(Math.random() * 1e6)}`);
+  const root = omegaTmp("omega-portrait-test", `${caseName}-${Date.now()}-${Math.floor(Math.random() * 1e6)}`);
   rmSync(root, { recursive: true, force: true });
   const vaultDir = join(root, "vault");
   mkdirSync(vaultDir, { recursive: true });

@@ -4,6 +4,7 @@ import { describe, test, expect } from "bun:test";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { checkCompositions } from "../compositions.ts";
+import { omegaTmp } from "@vivim/omega-platform"; // D-372 Phase 3: scratch through the seam
 
 function scaffold(root: string, specs: Record<string, object>, manifests: Record<string, object>): void {
   rmSync(root, { recursive: true, force: true });
@@ -48,7 +49,7 @@ function lawEntry(extra: object = {}): object {
 
 describe("W1 compositions net — D-325 invariant + grant hygiene", () => {
   test("law with vault caps but no vault entry fails naming the invariant", async () => {
-    const root = join("/tmp/omega-w1-test", `novault-${Date.now()}`);
+    const root = omegaTmp("omega-w1-test", `novault-${Date.now()}`);
     scaffold(root, {
       "a.json": {
         name: "a",
@@ -67,7 +68,7 @@ describe("W1 compositions net — D-325 invariant + grant hygiene", () => {
   });
 
   test("granted contract the manifest never declares fails", async () => {
-    const root = join("/tmp/omega-w1-test", `undeclared-${Date.now()}`);
+    const root = omegaTmp("omega-w1-test", `undeclared-${Date.now()}`);
     scaffold(root, {
       "a.json": {
         name: "a",
@@ -81,7 +82,7 @@ describe("W1 compositions net — D-325 invariant + grant hygiene", () => {
   });
 
   test("port cap with no routed implementation in the spec fails", async () => {
-    const root = join("/tmp/omega-w1-test", `noroute-${Date.now()}`);
+    const root = omegaTmp("omega-w1-test", `noroute-${Date.now()}`);
     scaffold(root, {
       "a.json": {
         name: "a",
@@ -97,7 +98,7 @@ describe("W1 compositions net — D-325 invariant + grant hygiene", () => {
   });
 
   test("durable pair (law vault caps + vault present) passes; memory-only law passes", async () => {
-    const root = join("/tmp/omega-w1-test", `clean-${Date.now()}`);
+    const root = omegaTmp("omega-w1-test", `clean-${Date.now()}`);
     const vaultEntry = {
       id: "vivim.vault", source: "../t-vault", bootPhase: 1,
       grant: { capabilities: [], contracts: ["vault.append@1", "vault.query@1", "vault.get@1"] },

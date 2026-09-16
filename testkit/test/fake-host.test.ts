@@ -71,6 +71,11 @@ describe("Ω4 FakeHost — B-gate: risk walk with and without a law", () => {
       expect(r.detail).toContain("consent required");
       expect(r.detail).toContain("EXTERNAL_MUTATION");
       expect(r.detail).toContain(consentIdFor("root", "fx.risky@1")); // the ceremony names its id
+      // E-7: the refusal names its gate (attributable, not just a register)
+      expect(r.refusal?.rule).toBe("default-gate (no law.check@1 routed)");
+      expect(r.refusal?.principal).toBe("root");
+      expect(r.refusal?.op).toBe("fx.risky@1");
+      expect(r.refusal?.consentId).toBe(consentIdFor("root", "fx.risky@1"));
     }
     // journaled as require-consent, with a causation id
     const j = fake.journal;

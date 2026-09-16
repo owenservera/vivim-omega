@@ -14,6 +14,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { parseManifest, validateManifest, ID_PATTERN } from "@vivim/omega-sdk";
 import { scaffoldPlugin, validateScaffold, conformScaffold, checkId, removeScaffold } from "../src/builder.ts";
+import { retryOsLock } from "@vivim/omega-platform"; // soak hardening: same shared retry as the CLI/MCP suites
 
 const ROOT = join(import.meta.dir, "../../.."); // vivim-omega/
 const BUILDER = join(ROOT, "tooling/builder/src/builder.ts");
@@ -22,7 +23,12 @@ afterAll(() => { rmSync(SESSION, { recursive: true, force: true }); });
 
 /** Run the builder CLI; return { exitCode, output }. */
 async function runCli(args: string[]): Promise<{ exitCode: number; output: string }> {
-  const proc = Bun.spawn(["bun", "run", BUILDER, ...args], { cwd: ROOT, stdout: "pipe", stderr: "pipe" });
+  // Bounded spawn retry (same soak hardening as CLI/MCP suites — D-368).
+  const proc = retryOsLock(() => Bun.spawn(["bun", "run", BUILDER, ...args], { cwd: ROOT, stdout: "pipe", stderr: "pipe" }), {
+    tries: 5,
+    baseMs: 250,
+    retryOn: () => true,
+  });
   const [out, err] = await Promise.all([new Response(proc.stdout).text(), new Response(proc.stderr).text()]);
   const exitCode = await proc.exited;
   return { exitCode, output: out + err };

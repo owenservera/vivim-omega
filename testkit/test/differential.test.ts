@@ -16,6 +16,7 @@ import { FakeHost } from "@vivim/omega-testkit";
 import { compileComposition, ensureVault, bootComposition } from "@vivim/omega-host";
 import type { BootedHost } from "@vivim/omega-host";
 import type { PortResult, CompositionSpec } from "@vivim/omega-contracts";
+import { omegaTmp } from "@vivim/omega-platform"; // D-372 Phase 3: scratch through the seam
 
 const REPO = join(import.meta.dir, "../..");
 const COMPOSITIONS_DIR = join(REPO, "compositions");
@@ -87,7 +88,7 @@ beforeAll(async () => {
   fake.grant("omega.notes", ["host.journal.append"]);
 
   // Real host side (compile ceremony + worker compartments, unique temp vault)
-  realVault = join("/tmp/omega-diff-test", `run-${runId}`);
+  realVault = omegaTmp("omega-diff-test", `run-${runId}`);
   rmSync(realVault, { recursive: true, force: true });
   mkdirSync(realVault, { recursive: true });
   const { rootKey } = ensureVault(realVault);
@@ -223,5 +224,25 @@ describe("Ω4 differential — FakeHost vs the real µhost, same op set, same re
     const mod = (await import(join(REPO, "examples/plugin-notes/src/index.ts"))) as { def: PluginDef };
     expect(mod.def).toBe(notesDef);
     expect(typeof mod.def.ops?.["note.write@1"]).toBe("function");
+  });
+
+  test("terminal-state parity (ISS-012 pin): terminated compartments answer DEGRADED on both hosts", async () => {
+    // The state NAMES differ by construction (real host: "stopped" — the worker
+    // is gone; FakeHost: "retired" — in-process equivalent) and must NEVER be
+    // unified silently: status consumers distinguish them. What MUST agree is
+    // the observable register: calls to a terminated compartment answer
+    // DEGRADED on both. This test pins both halves (last in file: echo stays
+    // terminated; nothing below needs it).
+    const { HOST_OPS } = await import("@vivim/omega-contracts");
+    await fake.callAsRoot(HOST_OPS.compartmentTerminate, { pluginId: "omega.echo" });
+    await real.router.callAsRoot(HOST_OPS.compartmentTerminate, { pluginId: "omega.echo" });
+    expect(fake.states["omega.echo"]).toBe("retired");
+    expect((real.router.status().compartments as Record<string, { state: string }>)["omega.echo"].state).toBe("stopped");
+    const after = await Promise.all([
+      fake.callAsRoot("echo.ping@1", {}),
+      real.router.callAsRoot("echo.ping@1", {}),
+    ]);
+    expect(reg(after[0])).toEqual(reg(after[1]));
+    expect(reg(after[0])).toEqual({ ok: false, error: "DEGRADED" });
   });
 });

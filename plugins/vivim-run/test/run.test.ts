@@ -139,6 +139,30 @@ describe("Ω3 pool", () => {
     expect(freshnessFor(100, 150)).toBe("STALE");
   });
 
+  test("single-settle pin (E-4): every admitted submit resolves exactly once, even racing the slow path", async () => {
+    // The index-level watchdog (deadline + slack race) may abandon a submit
+    // whose pool task settles late — the pool promise itself must still settle
+    // exactly once (no double-resolve, no hang), and capacity must free.
+    const caller = fakeCaller({
+      slow: () => sleep(30).then(() => ({ ok: true, value: { ran: true } }) as PortResult),
+    });
+    const pool = new TaskPool({ capacity: 1, caller });
+    let settlements = 0;
+    const results = await Promise.all(
+      Array.from({ length: 4 }, () =>
+        pool.submit({ op: "slow", deadlineMs: 5_000 }).then((r) => {
+          settlements++;
+          return r;
+        }),
+      ),
+    );
+    expect(settlements).toBe(4);
+    expect(results.every((r) => "accepted" in r && r.accepted && r.status === "ok")).toBe(true);
+    expect(pool.stats().completed).toBe(4);
+    expect(pool.stats().running).toBe(0);
+    expect(pool.stats().queued).toBe(0);
+  });
+
   test("timeout mapping: BUDGET result → status 'timeout', freshness STALE; ok fast → CURRENT", async () => {
     const caller = fakeCaller({
       quick: async () => ({ ok: true, value: 42 }) as PortResult,

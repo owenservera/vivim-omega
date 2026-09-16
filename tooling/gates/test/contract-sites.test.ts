@@ -5,6 +5,7 @@ import { describe, test, expect } from "bun:test";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { checkContractCallSites, collectContractExports, findCallSites } from "../contract-sites.ts";
+import { omegaTmp } from "@vivim/omega-platform"; // D-372 Phase 3: scratch through the seam
 
 function scaffold(root: string, contracts: Record<string, string>, extra: Record<string, string>): void {
   rmSync(root, { recursive: true, force: true });
@@ -21,7 +22,7 @@ function scaffold(root: string, contracts: Record<string, string>, extra: Record
 
 describe("D-332 contract call sites — export parsing", () => {
   test("collects interfaces, types, functions, consts, and export{} aliases (not export *)", async () => {
-    const root = join("/tmp/omega-d332-test", `parse-${Date.now()}`);
+    const root = omegaTmp("omega-d332-test", `parse-${Date.now()}`);
     scaffold(root, {
       "a.ts": "export interface Alpha { x: string }\nexport type Beta = string;\nexport function gamma(): void {}\nexport const DELTA = 1;\n",
       "b.ts": "import type { Alpha } from './a.ts';\nexport type { Alpha };\nexport * from './a.ts';\n",
@@ -38,7 +39,7 @@ describe("D-332 contract call sites — export parsing", () => {
 
 describe("D-332 contract call sites — verdicts", () => {
   test("used export passes; barrel-only re-export does not count; unused fails naming D-332", async () => {
-    const root = join("/tmp/omega-d332-test", `verdict-${Date.now()}`);
+    const root = omegaTmp("omega-d332-test", `verdict-${Date.now()}`);
     scaffold(root, {
       "a.ts": "export interface Used { x: string }\nexport interface BarrelOnly { y: string }\nexport interface Ghost { z: string }\n",
       "index.ts": "export * from './a.ts';\n",
@@ -60,7 +61,7 @@ describe("D-332 contract call sites — verdicts", () => {
   });
 
   test("allowlisted reservations pass loudly (detail names them)", async () => {
-    const root = join("/tmp/omega-d332-test", `allow-${Date.now()}`);
+    const root = omegaTmp("omega-d332-test", `allow-${Date.now()}`);
     // LangOpFrame is a grandfathered reservation: zero call sites, still ok.
     scaffold(root, { "a.ts": "export interface LangOpFrame { x: string }\n" }, {});
     const r = await checkContractCallSites(root);
@@ -70,7 +71,7 @@ describe("D-332 contract call sites — verdicts", () => {
   });
 
   test("the checker never observes itself (own allowlist keys are not call sites)", async () => {
-    const root = join("/tmp/omega-d332-test", `self-${Date.now()}`);
+    const root = omegaTmp("omega-d332-test", `self-${Date.now()}`);
     scaffold(root, { "a.ts": "export interface ProvenanceTier { x: string }\n" }, {});
     const r = await checkContractCallSites(root);
     expect(r.ok).toBe(true); // allowlisted, not self-laundered

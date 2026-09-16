@@ -4,6 +4,6 @@
   "private": true,
   "type": "module",
   "exports": { ".": "./src/daemon.ts" },
-  "dependencies": { "@vivim/omega-shim": "workspace:*", "@vivim/omega-contracts": "workspace:*", "@vivim/omega-host": "workspace:*", "@vivim/daemon-client": "workspace:*" }
+  "dependencies": { "@vivim/omega-shim": "workspace:*", "@vivim/omega-contracts": "workspace:*", "@vivim/omega-platform": "workspace:*", "@vivim/omega-host": "workspace:*", "@vivim/daemon-client": "workspace:*" }
 }
 

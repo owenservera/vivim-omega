@@ -2,6 +2,7 @@
 import { mkdirSync, rmSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { compileComposition, ensureVault, bootComposition, bootWithRecovery, HOST_OPS } from "@vivim/omega-host";
+import { omegaTmp } from "@vivim/omega-platform"; // D-372 Phase 3: scratch through the seam
 
 const ROOT = join(import.meta.dir, "../..");
 
@@ -26,8 +27,9 @@ export async function attest(): Promise<AttestResult> {
   const deadline = await host.router.callAsRoot("echo.ping@1", { delayMs: 400 }, 60);
   await host.shutdown();
 
-  // recovery drill: mid-swap tmp + replay content mutation (drill vault has its OWN root key)
-  const drillVault = join("/tmp/omega-attest");
+  // recovery drill: mid-swap tmp + replay content mutation (drill vault has its OWN root key).
+  // E-9: unique drill dir — a fixed name would collide across concurrent gates on one box.
+  const drillVault = omegaTmp("omega-attest", `drill-${Date.now()}-${process.pid}`);
   rmSync(drillVault, { recursive: true, force: true });
   mkdirSync(drillVault, { recursive: true });
   const drillRoot = ensureVault(drillVault).rootKey;
@@ -39,10 +41,16 @@ export async function attest(): Promise<AttestResult> {
   await r1.host?.shutdown();
   const srcFile = join(c1.buildDir, c1.recipe.composition[1].source, "src/index.ts");
   const original = readFileSync(srcFile, "utf-8");
+  // try/finally: a crashed drill must never leave the build dir mutated —
+  // a leftover "// mutated" would fail every later verify on this vault.
   writeFileSync(srcFile, original + "\n// mutated");
-  const r2 = await bootWithRecovery(drillVault);
-  await r2.host?.shutdown();
-  writeFileSync(srcFile, original);
+  let r2: Awaited<ReturnType<typeof bootWithRecovery>>;
+  try {
+    r2 = await bootWithRecovery(drillVault);
+    await r2.host?.shutdown();
+  } finally {
+    writeFileSync(srcFile, original);
+  }
 
   const checks = [
     echo.ok, bump.ok, value.ok, stats.ok,

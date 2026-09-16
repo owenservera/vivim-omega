@@ -24,30 +24,13 @@
 //  - `degrade()` is the crash/health observation surface (v1: a crashed
 //    compartment never comes back — the only honest path to state "degraded").
 import type { PluginDef, PluginContext } from "@vivim/omega-shim";
-import type { PluginManifest, PortResult, LawDecision, LifecycleState, RiskClass, CompositionEntry, ConsentGrant, StreamChunk, StreamEmit } from "@vivim/omega-contracts";
+import type { PluginManifest, PortResult, LawDecision, LifecycleState, RiskClass, CompositionEntry, ConsentGrant, StreamChunk, StreamEmit, RefusalReport } from "@vivim/omega-contracts";
 import { routableOps, riskyOps, HOST_OPS, HOST_CAPS, STREAM_SEQ_START } from "@vivim/omega-contracts";
-import { HOST_OP_TO_CAP, mintToken } from "@vivim/omega-host";
-
-// ---- consent ids (derived exactly like vivim.law's ConsentTable) -----------------
-
-/** FNV-derived 64-bit-ish stable hash — mirrors vivim.law consent.ts (pure, import-free). */
-function stableHash(s: string): string {
-  let h1 = 0x811c9dc5;
-  let h2 = 0x01000193;
-  for (let i = 0; i < s.length; i++) {
-    const c = s.charCodeAt(i);
-    h1 = Math.imul(h1 ^ c, 0x01000193) >>> 0;
-    h2 = Math.imul(h2 ^ (i + c + 1), 0x85ebca6b) >>> 0;
-  }
-  return h1.toString(16).padStart(8, "0") + h2.toString(16).padStart(8, "0");
-}
-
-/** Stable consent id for a (principal, op) pair — same derivation as vivim.law, so a refusal here names the same id the real law would. */
-export function consentIdFor(principal: string, op: string): string {
-  return `consent_${stableHash(`${principal}\u0000${op}`)}`;
-}
-
-export const CONSENT_ID_RE = /^consent_[0-9a-f]{16}$/;
+// Single definition (contracts/src/consent.ts): the fake owns default-gate state, never derivation.
+import { CONSENT_ID_RE, consentIdFor } from "@vivim/omega-contracts";
+import { HOST_OP_TO_CAP } from "@vivim/omega-contracts";
+import { mintToken } from "@vivim/omega-host";
+export { CONSENT_ID_RE, consentIdFor };
 
 /** Consent grant narrowing (mirrors the law's GrantOptions: unset = widest). */
 export interface FakeConsentOptions { principal?: string; op?: string }
@@ -327,11 +310,11 @@ export class FakeHost {
       const decision = gate.value as LawDecision;
       if (decision.decision === "deny") {
         this.journalEntries.push({ ts: Date.now(), principal, op, decision: "deny", reason: decision.reason, causationId });
-        return { ok: false, error: "REFUSED", detail: `denied by law: ${decision.reason ?? ""}` };
+        return { ok: false, error: "REFUSED", detail: `denied by law: ${decision.reason ?? ""}`, refusal: { rule: "law.check@1", principal, op, reason: decision.reason } satisfies RefusalReport };
       }
       if (decision.decision === "require-consent") {
         this.journalEntries.push({ ts: Date.now(), principal, op, decision: "require-consent", reason: decision.reason, consentId: decision.consentId, causationId });
-        return { ok: false, error: "REFUSED", detail: `consent required${decision.consentId ? `: ${decision.consentId}` : ""}` };
+        return { ok: false, error: "REFUSED", detail: `consent required${decision.consentId ? `: ${decision.consentId}` : ""}`, refusal: { rule: "law.check@1", principal, op, reason: decision.reason, ...(decision.consentId !== undefined ? { consentId: decision.consentId } : {}) } satisfies RefusalReport };
       }
       this.journalEntries.push({
         ts: Date.now(), principal, op, decision: "allow", reason: decision.reason, causationId,
@@ -378,7 +361,7 @@ export class FakeHost {
         return { ok: true, value: { decision: "allow", reason: `consent ${consentId} granted`, consentId } satisfies LawDecision };
       }
       this.journalEntries.push({ ts: Date.now(), principal, op, decision: "require-consent", reason: `${op} declares EXTERNAL_MUTATION; no law.check@1 routed (fail-closed)`, consentId, causationId });
-      return { ok: false, error: "REFUSED", detail: `consent required: ${consentId} (${op} declares EXTERNAL_MUTATION and no law.check@1 is routed)` };
+      return { ok: false, error: "REFUSED", detail: `consent required: ${consentId} (${op} declares EXTERNAL_MUTATION and no law.check@1 is routed)`, refusal: { rule: "default-gate (no law.check@1 routed)", principal, op, reason: `${op} declares EXTERNAL_MUTATION`, consentId } satisfies RefusalReport };
     }
     // MUTATION (and READ-by-declaration oddities): allow — the CALLER journals the
     // gate decision (one entry per gated call, never two)

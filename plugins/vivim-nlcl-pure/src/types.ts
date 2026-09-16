@@ -51,7 +51,11 @@ export interface WorldModel {
    capabilityGaps?: GapRecord[];     // what the user asked for that no plugin does yet
    attachments?: AttachmentView[];   // attached documents/files in focus
    focus?: FocusView;                // the current session focus
-   pendingIntents?: PendingIntent[]; // draft IRs awaiting explicit confirmation
+    pendingIntents?: PendingIntent[]; // draft IRs awaiting explicit confirmation
+    warnings?: string[]; // config-default advisories from the producer (E-5):
+    // absent = fully specified. A defaulted composition/empty ops catalog
+    // yields an empty-but-valid world — falsifiable yet silent. Warnings name
+    // every defaulted field so an empty world is debuggable, never mysterious.
 }
 
 // ---- interpretation result ----

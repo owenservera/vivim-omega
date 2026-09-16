@@ -30,6 +30,7 @@ import {
   actionSummary, asRule, asTeaching, nextFreeRuleId, ruleSlug, ruleSummary,
   validateRuleInput, validateTeachInput,
 } from "../src/rules.ts";
+import { omegaTmp } from "@vivim/omega-platform"; // D-372 Phase 3: scratch through the seam
 
 const OMEGA_ROOT = join(import.meta.dir, "../../.."); // test/ → vivim-director/ → plugins/ → root
 const hosts: BootedHost[] = [];
@@ -67,7 +68,7 @@ interface Case { host: BootedHost; root: string; vaultDir: string; dataDir: stri
 
 /** Boots a unique temp case through the full ceremony (compile → verify → pin → spawn). */
 async function bootCase(caseName: string): Promise<Case> {
-  const root = join("/tmp/omega-director-test", `${caseName}-${Date.now()}-${Math.floor(Math.random() * 1e6)}`);
+  const root = omegaTmp("omega-director-test", `${caseName}-${Date.now()}-${Math.floor(Math.random() * 1e6)}`);
   rmSync(root, { recursive: true, force: true });
   const vaultDir = join(root, "vault");
   mkdirSync(vaultDir, { recursive: true });
@@ -501,7 +502,7 @@ describe("GATE-Ω12 — rules/teach as data, tick fires under principal vivim.di
   test("10 · the LIVE loop: intervalMs 100 fires the pass on schedule (no manual tick, no consent → ledgered refusal)", async () => {
     // a separate case with the live loop ON (100ms) — the tick pass runs on the
     // interval with the in-flight guard; nobody calls director.tick@1 here.
-    const root = join("/tmp/omega-director-test", `director-live-${Date.now()}-${Math.floor(Math.random() * 1e6)}`);
+    const root = omegaTmp("omega-director-test", `director-live-${Date.now()}-${Math.floor(Math.random() * 1e6)}`);
     rmSync(root, { recursive: true, force: true });
     const vaultDir = join(root, "vault");
     mkdirSync(vaultDir, { recursive: true });

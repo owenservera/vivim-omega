@@ -32,6 +32,7 @@ import { fail, ok } from "@vivim/omega-contracts";
 // intact evidence."
 import {
   AUTOMATION_NS, buildPortrait, buildWorldModel, EMAIL_NS, MESSAGE_META_TYPE, NLCL_NS, parseMindConfig,
+  mindConfigWarnings,
   QUERY_BOUND, type EvidenceRow, type MindConfig, type PortraitEvidence, type PortraitView,
   type RegistryFullView, type RegistrySnapshotView, type VaultVerifyView,
 } from "./derive.ts";
@@ -113,11 +114,15 @@ async function buildSnapshot(ctx: PluginContext, config: MindConfig, opts: { inc
     .map((r) => ({ id: r.id, data: r.data }));
   const ruleRows = (await fetchNamespaceRows(ctx, AUTOMATION_NS)).map((r) => ({ id: r.id, data: r.data }));
   const lexiconRows = (await fetchNamespaceRows(ctx, NLCL_NS)).map((r) => ({ id: r.id, data: r.data }));
-  return buildWorldModel(
+  const world = buildWorldModel(
     { registry, messageRows, ruleRows, lexiconRows },
     config,
     { includeBodies: opts.includeBodies, t: opts.t },
   );
+  // E-5: an empty-but-valid world names its defaulted fields (absent = fully specified).
+  const warnings = mindConfigWarnings(ctx.config);
+  if (warnings.length > 0) world.warnings = warnings;
+  return world;
 }
 
 /** Governed-evolution activity for control.describe: rows in ns "control"

@@ -12,6 +12,7 @@ import type { CompositionSpec, PortResult, Outcome } from "@vivim/omega-contract
 import { parseManifest, validateManifest } from "@vivim/omega-sdk";
 import { isSubset } from "../src/tokens.ts";
 import { decideRollback, portCapToScope, resolveSpawnAuthority } from "../src/agent.ts";
+import { omegaTmp } from "@vivim/omega-platform"; // D-372 Phase 3: scratch through the seam
 
 const OMEGA_ROOT = join(import.meta.dir, "../../.."); // test/ → vivim-agent/ → plugins/ → root
 const hosts: BootedHost[] = [];
@@ -36,7 +37,7 @@ function makeAgentSpec(name: string, dataDir: string): CompositionSpec {
 interface Case { host: BootedHost; root: string; vaultDir: string; dataDir: string }
 
 async function bootCase(caseName: string): Promise<Case> {
-  const root = join("/tmp/omega-agent-test", `${caseName}-${Date.now()}-${Math.floor(Math.random() * 1e6)}`);
+  const root = omegaTmp("omega-agent-test", `${caseName}-${Date.now()}-${Math.floor(Math.random() * 1e6)}`);
   rmSync(root, { recursive: true, force: true });
   const vaultDir = join(root, "vault");
   mkdirSync(vaultDir, { recursive: true });

@@ -21,8 +21,10 @@ import { contactFromAddress } from "@vivim/omega-nlcl-pure";
 import type { EntityView, WorldModel } from "@vivim/omega-nlcl-pure";
 import {
   buildWorldModel, DEFAULT_ENTITY_CAP, deriveContactEntities, opsForWorld, parseMindConfig,
+  mindConfigWarnings,
   projectLexiconEvidence, projectMessageEvidence, projectRuleEvidence, type OpRow,
 } from "../src/derive.ts";
+import { omegaTmp } from "@vivim/omega-platform"; // D-372 Phase 3: scratch through the seam
 
 const OMEGA_ROOT = join(import.meta.dir, "../../.."); // test/ → vivim-mind/ → plugins/ → root
 const hosts: BootedHost[] = [];
@@ -78,7 +80,7 @@ interface Case { host: BootedHost; root: string; vaultDir: string }
 
 /** Boots a unique temp case: own vault dir + build + composition (the house pattern). */
 async function bootMind(caseName: string, specFactory: (dataDir: string, journalPath: string) => CompositionSpec): Promise<Case> {
-  const root = join("/tmp/omega-mind-test", `${caseName}-${Date.now()}-${Math.floor(Math.random() * 1e6)}`);
+  const root = omegaTmp("omega-mind-test", `${caseName}-${Date.now()}-${Math.floor(Math.random() * 1e6)}`);
   rmSync(root, { recursive: true, force: true });
   const vaultDir = join(root, "vault");
   mkdirSync(vaultDir, { recursive: true });
@@ -150,6 +152,15 @@ describe("Ω10 unit · parseMindConfig (composition passthrough — data, never 
     expect(() => parseMindConfig({ selfAddresses: "demo@x.local" })).toThrow(/selfAddresses/);
     expect(() => parseMindConfig({ ops: "nope" })).toThrow(/ops/);
     expect(() => parseMindConfig({ ops: [{ op: "", risk: "READ", provider: "p", title: "t" }] })).toThrow(/row\.op/);
+  });
+
+  test("mindConfigWarnings (E-5): empty raw config warns per defaulted field; full config is silent", () => {
+    const empty = mindConfigWarnings(undefined);
+    expect(empty.length).toBe(5);
+    expect(empty.join("\n")).toMatch(/composition/);
+    expect(empty.join("\n")).toMatch(/ops catalog empty/);
+    expect(mindConfigWarnings(MIND_CONFIG)).toEqual([]);
+    expect(mindConfigWarnings({ ...MIND_CONFIG, ops: [] }).join("\n")).toMatch(/ops catalog empty/);
   });
 });
 

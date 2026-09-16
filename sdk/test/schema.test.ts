@@ -112,6 +112,16 @@ describe("Ω4 sdk schema — wire shapes round-trip", () => {
     expect(PortResultSchema.safeParse({ ok: true, value: 1, freshness: "EXPIRED" }).success).toBe(false);
   });
 
+  test("PortResultSchema: refusal report rides the error register (E-7, additive)", () => {
+    const withRefusal = {
+      ok: false, error: "REFUSED", detail: "consent required: consent_abc",
+      refusal: { rule: "law.check@1", principal: "root", op: "risky.op@1", consentId: "consent_abc" },
+    };
+    expect(PortResultSchema.safeParse(withRefusal).success).toBe(true);
+    expect(PortResultSchema.safeParse({ ok: false, error: "REFUSED" }).success).toBe(true); // refusal optional
+    expect(PortResultSchema.safeParse({ ok: false, error: "REFUSED", refusal: { principal: "root" } }).success).toBe(false); // rule required
+  });
+
   test("PortMessageSchema + LawDecisionSchema + ConsentGrantSchema + CompositionSpecSchema", () => {
     expect(PortMessageSchema.safeParse({ causationId: "c_1", capabilityToken: "tok_x", op: "echo.ping@1", payload: { a: 1 }, deadlineMs: 100 }).success).toBe(true);
     expect(PortMessageSchema.safeParse({ causationId: "", capabilityToken: "t", op: "o", payload: null, deadlineMs: 1 }).success).toBe(false);

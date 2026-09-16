@@ -10,7 +10,7 @@
 import { closeSync, existsSync, fsyncSync, mkdirSync, openSync, readFileSync, renameSync, writeFileSync, readdirSync, copyFileSync } from "node:fs";
 import { join } from "node:path";
 import { canonicalJson, cidOf } from "./canon.ts";
-import { sleepSync } from "@vivim/omega-shim"; // D-361: the runtime-neutral sleep
+import { retryOsLock } from "@vivim/omega-platform"; // E-1: one backoff discipline for the rename boundary
 
 const CID_RE = /^[0-9a-f]{64}$/;
 
@@ -42,20 +42,9 @@ export function casPut(dataDir: string, data: unknown): string {
   try { fsyncSync(fd); } finally { closeSync(fd); }
   // The rename is the atomic durability boundary — never bypassed, but retried:
   // transient OS locks (AV/indexer, SMB/NFS contention, lazy handle release on
-  // Windows) surface as EPERM/EBUSY/EACCES. Bounded retry with backoff, same
+  // Windows) surface as EPERM/EBUSY/EACCES. Shared seam helper (E-1), same
   // discipline as host atomicWrite (canon.ts); anything else throws immediately.
-  // (No spin-wait: sleepSync yields the thread; the boundary stays atomic.)
-  let last: unknown = null;
-  for (let i = 0; i < 10; i++) {
-    try { renameSync(tmp, final); break; }
-    catch (e) {
-      const code = (e as { code?: string }).code;
-      if (code !== "EPERM" && code !== "EBUSY" && code !== "EACCES") throw e;
-      last = e;
-      sleepSync(10 * (i + 1));
-    }
-    if (i === 9) throw last;
-  }
+  retryOsLock(() => renameSync(tmp, final));
   dirFsync(shard);
   return cid;
 }

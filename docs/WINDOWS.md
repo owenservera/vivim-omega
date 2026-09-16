@@ -43,9 +43,11 @@ budget. On a loaded box use the serial fallback above.
 
 ## Windows behaviors you should know (all verified)
 
-- **Temp paths.** Tests and composition defaults use `/tmp/omega-*`, which
-  resolves drive-relative (`C:\tmp\omega-*`) and works — no change needed.
-  Manual boots can override any vault dir: `bun run host/src/main.ts compose
+- **Temp paths.** Composition defaults spell portable `${TMP}/…` (resolved per
+  machine by the platform seam, D-372); tests and tooling scratch via
+  `omegaTmp(…)` (same root: `%TEMP%` on Windows, `/tmp` on POSIX).
+  Grandfathered `/tmp/…` spellings still resolve identically — old vaults and
+  docs never break. Manual boots can override any vault dir: `bun run host/src/main.ts compose
   --vault dev-vault --composition compositions/demo.json`.
 - **Key file permissions.** `ensureVault` writes the root-of-trust with mode
   `0o600`; the follow-up `chmodSync` is best-effort on Windows (ACLs, not mode

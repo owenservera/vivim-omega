@@ -4,6 +4,7 @@ import { mkdirSync, rmSync, readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { compileComposition, ensureVault, bootComposition, HOST_OPS } from "@vivim/omega-host";
 import type { BootedHost } from "@vivim/omega-host";
+import { omegaTmp } from "@vivim/omega-platform"; // D-372 Phase 3: scratch through the seam
 
 const SPEC = join(import.meta.dir, "../../compositions/demo.json");
 const spec = JSON.parse(readFileSync(SPEC, "utf-8"));
@@ -11,7 +12,8 @@ let vault: string;
 let host: BootedHost;
 
 beforeAll(async () => {
-  vault = join("/tmp/omega-test/runtime");
+  // E-9: run-unique dir — fixed names collide across concurrent gates on one box.
+  vault = omegaTmp("omega-test", `runtime-${Date.now()}-${process.pid}`);
   rmSync(vault, { recursive: true, force: true });
   mkdirSync(vault, { recursive: true });
   const { rootKey } = ensureVault(vault);

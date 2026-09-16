@@ -1,0 +1,20 @@
+# Known Limits — acknowledged residuals with detectors and revisit triggers
+
+One row per limit the tree knowingly carries. Each row: the limit, why it stands, how to detect it biting, and the trigger that reopens it. A limit leaves this page only by being fixed (with its falsifier) or superseded (with a D-record pointer). New acknowledged limits land here in the same commit that introduces them.
+
+| # | Limit | Why it stands | Detector | Revisit trigger |
+|---|---|---|---|---|
+| L-1 | Heap caps unenforced on Bun (`resourceLimits` no-op; D-321 re-verified) | No runtime API exposes per-compartment RSS host-side | Watchdog eviction walls per wave (2.9s wedge / 3.7s bomber baseline, BENCHMARKS.md) + sibling-impact metric | Process-per-compartment evaluation lands, or a wave's sibling-impact number regresses |
+| L-2 | Watchdog heap signal is self-reported (spoofable; D-366 note) | Only unresponsiveness is non-spoofable by construction | Adversarial 13/14 stay green; memory evictions journaled as advisory | Host-side measurement API appears, or M10 rules a stronger posture |
+| L-3 | Daemon/compile-cache staleness is mtime+size (same-mtime same-size swap reads stale) | Content rehash on every restat would delete the cache's value | Boot verify refuses (fail-closed direction — stale reads surface as refusal, never silent serve) | Verify-on-boot ever passes on stale content (then this row becomes a bug) |
+| L-4 | Chat history scan is total-ns (per-conversation cap enforced post-filter) | No per-conversation index exists yet | Append latency vs ns size in BENCHMARKS.md | D-335 retention revisit (message latency or compaction pressure) |
+| L-5 | Windows MCP `uv_spawn EUNKNOWN` under soak (>200s worker spawns) | Handle exhaustion, reproduces on clean tree (environment, not regression) | MCP lane isolated 11/11 vs soak flakes; Linux CI arbitrates merges | Sustained green soak observations → promote lane to required |
+| L-6 | Bun stack-overflow crash under multi-GB worker soak (observed 198s/5.5GB, 15 dangling workers) | Orphan-polluted box; clean-slate + serial lanes avoid it | Serial gate RSS wall in run logs | Repro on a clean slate → file as a Bun upstream report + gate guard |
+| L-7 | Law forbidden overlay has a crash window (in-memory set → vault append) | Rollback covers failure; crash between is unobservable-safe (reload heals) | Boot reload count vs set rate in registry output | A second writer to ns `law` appears (then the window needs a transaction) |
+| L-8 | Director manual ticks queue behind a hung pass up to 30s (then refuse) | Vault calls have no deadline at the tick layer | Tick refusal rate in tick reports | Vault port calls gain deadlines (then lower the bound) |
+| L-9 | `console.json` relative dataDir resolves against cwd | Operator-override semantics (verbatim passthrough) | Boot log prints resolved vault path | A cwd-dependent boot failure in the wild → pin to absolute or repo-rooted |
+| L-10 | Fixed-name tmp roots in a few harnesses (documented per file) | Serial gate never collides; uniquified where parallel (MCP/web/pilot/spine/attest) | Collision-flavored flake on a shared box | Any flake traced to a fixed root → uniquify that root |
+| L-11 | Single-principal scope (`user:<id>`; no sharing model) | Intentional Phase-1 boundary (A8 amended) | Second-principal input fails closed (no path exists to succeed) | First sharing-adjacent feature → GAP-4 ruling first |
+| L-12 | No calibration corpus (GAP-1 ★) | Blocked behind PRINCIPLES+M10 per map order | Promotion thresholds are unmeasured constants (visible in policy files) | Phase D chain lands |
+| L-13 | No end-to-end SLOs (GAP-2) | Objectives follow measurement culture, not precede it | BENCHMARKS.md has walls, no envelopes | Phase F-3 publishes objectives |
+| L-14 | Pool hook is module-global (last starter wins in shared processes) | Pools are fungible generic isolates; scoping to boot context is API churn without a failure | Cross-test interference would surface as pool-hit flakes (none observed) | A flake traced to hook coupling, or the daemon-per-vault model changes |

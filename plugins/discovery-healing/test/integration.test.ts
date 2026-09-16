@@ -24,6 +24,7 @@ import { join } from "node:path";
 import { bootWithRecovery, compileComposition, ensureVault, loadPinnedRecipe, pinRecipe } from "@vivim/omega-host";
 import type { BootedHost } from "@vivim/omega-host";
 import type { CompositionSpec } from "@vivim/omega-contracts";
+import { omegaTmp } from "@vivim/omega-platform"; // D-372 Phase 3: scratch through the seam
 
 const OMEGA_ROOT = join(import.meta.dir, "../../..");          // vivim-omega/
 const SPEC = join(OMEGA_ROOT, "compositions", "healing.json");  // committed source spec
@@ -41,7 +42,7 @@ async function retire(host: BootedHost): Promise<void> {
 
 /** Fresh case root under /tmp (unique per run — no cross-run state). */
 function caseRoot(name: string): string {
-  const root = join("/tmp/omega-healing-test", `${name}-${RUN_ID}`);
+  const root = omegaTmp("omega-healing-test", `${name}-${RUN_ID}`);
   rmSync(root, { recursive: true, force: true });
   mkdirSync(join(root, "vault"), { recursive: true });
   return root;

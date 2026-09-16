@@ -8,6 +8,7 @@ import { join } from "node:path";
 import { bootWithRecovery, compileComposition, ensureVault } from "@vivim/omega-host";
 import type { BootedHost } from "@vivim/omega-host";
 import type { CompositionSpec, Outcome, PortResult } from "@vivim/omega-contracts";
+import { omegaTmp } from "@vivim/omega-platform"; // D-372 Phase 3: scratch through the seam
 
 const OMEGA_ROOT = join(import.meta.dir, "../../..");
 const hosts: BootedHost[] = [];
@@ -16,7 +17,7 @@ afterAll(async () => { await Promise.all(hosts.map((h) => h.shutdown().catch(() 
 describe("D-324 — buildDecisionRef through a real boot", () => {
   let host: BootedHost;
   beforeAll(async () => {
-    const root = join("/tmp/omega-decref-test", `d324-${Date.now()}-${Math.floor(Math.random() * 1e6)}`);
+    const root = omegaTmp("omega-decref-test", `d324-${Date.now()}-${Math.floor(Math.random() * 1e6)}`);
     rmSync(root, { recursive: true, force: true });
     const vaultDir = join(root, "vault");
     mkdirSync(vaultDir, { recursive: true });

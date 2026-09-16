@@ -103,6 +103,11 @@ function threadIdFor(subject: string, to: string): string {
   return `thread_${createHash("sha256").update(`${subject}\u0000${to}`).digest("hex").slice(0, 12)}`;
 }
 
+/** Fence coverage snapshot from the last onInit (E-6): which pilot principals
+ *  registered their day-one forbidden entries. Bar 1 cites these counts so a
+ *  half-registered fence is machine-readable in the refusal, not just in logs. */
+export const fenceSnapshot: { registered: string[]; failed: string[] } = { registered: [], failed: [] };
+
 export const def = definePlugin({
   onInit: async (ctx: PluginContext) => {
     const cfg = resolveConfig(ctx);
@@ -111,11 +116,15 @@ export const def = definePlugin({
     // law.forbidden.set@1 — the law-reviewed authority D-338 ratified. Sends
     // fail closed while the registration has not succeeded (bar 1).
     let registered = 0;
+    fenceSnapshot.registered.length = 0;
+    fenceSnapshot.failed.length = 0;
     for (const principal of cfg.fencePrincipals) {
       try {
         await portCall<VaultAppendResult>(ctx, "law.forbidden.set@1", { principal, ops: cfg.fenceOps });
         registered += 1;
+        fenceSnapshot.registered.push(principal);
       } catch (e) {
+        fenceSnapshot.failed.push(principal);
         ctx.log(`provider-browser: fence registration for ${principal} FAILED (${String(e)}) — sends stay fail-closed for that principal's checks`);
       }
     }
@@ -212,9 +221,10 @@ export const def = definePlugin({
       // ── Bar 1 — the day-one fence holds ────────────────────────────────
       const fenceHolds = (ctx as PluginContext & { __browserFenceHolds?: boolean }).__browserFenceHolds === true;
       if (!fenceHolds) {
-        throw new Error(`${op}: browser fence incomplete — day-one forbidden entries are not registered; sends fail closed (D-338/D-357 bar 1)`);
+        throw new Error(
+          `${op}: browser fence incomplete (registered ${fenceSnapshot.registered.length}, failed [${fenceSnapshot.failed.join(", ")}]) — day-one forbidden entries are not registered; sends fail closed (D-338/D-357 bar 1)`,
+        );
       }
-
       const input = validateSendPayload(op, payload);
       if (cfg.fencedRecipients.some((r) => input.to === r || input.to.endsWith(`@${r}`))) {
         throw new Error(`${op}: recipient ${input.to} is fenced by the composition's day-one entries — refusing`);

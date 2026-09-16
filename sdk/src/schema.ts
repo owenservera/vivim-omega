@@ -152,6 +152,15 @@ export const PortMessageSchema = z.strictObject({
   deadlineMs: z.number(),
 });
 
+export const RefusalReportSchema = z.looseObject({
+  rule: z.string().min(1),
+  principal: z.string().optional(),
+  op: z.string().optional(),
+  reason: z.string().optional(),
+  consentId: z.string().optional(),
+  bar: z.string().optional(),
+});
+
 export const PortResultSchema = z.discriminatedUnion("ok", [
   z.strictObject({
     ok: z.literal(true),
@@ -163,6 +172,7 @@ export const PortResultSchema = z.discriminatedUnion("ok", [
     ok: z.literal(false),
     error: z.enum(PORT_ERROR_CODES),
     detail: z.string().optional(),
+    refusal: RefusalReportSchema.optional(),
   }),
 ]);
 

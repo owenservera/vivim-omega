@@ -10,6 +10,7 @@ import type { BootedHost } from "@vivim/omega-host";
 import type { CompositionSpec, PortResult } from "@vivim/omega-contracts";
 import { parseManifest, validateManifest } from "@vivim/omega-sdk";
 import { asRealization, deriveRegistry } from "../src/registry.ts";
+import { omegaTmp } from "@vivim/omega-platform"; // D-372 Phase 3: scratch through the seam
 
 const OMEGA_ROOT = join(import.meta.dir, "../../..");
 const hosts: BootedHost[] = [];
@@ -101,7 +102,7 @@ describe("D-319 — realization loop end-to-end (map → verify → registry rea
     // shipped discovery-mind.json (now carrying vivim.providers) with a unique vault dataDir
     const SPEC = join(OMEGA_ROOT, "compositions/discovery-mind.json");
     const spec = JSON.parse(readFileSync(SPEC, "utf-8")) as CompositionSpec;
-    const root = join("/tmp/omega-providers-test", `loop-${Date.now()}-${Math.floor(Math.random() * 1e6)}`);
+    const root = omegaTmp("omega-providers-test", `loop-${Date.now()}-${Math.floor(Math.random() * 1e6)}`);
     rmSync(root, { recursive: true, force: true });
     const vaultDir = join(root, "vault");
     mkdirSync(vaultDir, { recursive: true });

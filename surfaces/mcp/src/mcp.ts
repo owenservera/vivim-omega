@@ -168,9 +168,10 @@ function toolResultText(deps: McpServerDeps, op: string, r: PortResult): string 
     const grantHint = grantTool
       ? `tools/call law_consent_grant_1 with {"consentId":"${id}"} (this server holds the booted composition, so the grant is live here)`
       : `grant consent ${id} through this composition's law plugin`;
+    const ruleLine = !r.ok && r.refusal?.rule ? `\nrule: ${r.refusal.rule}` : "";
     return (
       `CONSENT REQUIRED — the law gate refused ${op}.\n` +
-      `consentId: ${id}\n\n` +
+      `consentId: ${id}${ruleLine}\n\n` +
       `Grant it: ${grantHint}\n\n` +
       `PortResult:\n${JSON.stringify(r, null, 2)}`
     );

@@ -13,10 +13,12 @@ import { dbPath, openVault, queryObjects, readObject, searchObjects } from "../s
 import { roundtrip } from "../src/roundtrip.ts";
 import { verify } from "../src/verify.ts";
 import { resolveDataDir } from "../src/validate.ts";
+import { omegaTmp } from "@vivim/omega-platform"; // D-372 Phase 3: scratch through the seam
 
 let seq = 0;
 function tmp(name: string): string {
-  const dir = join("/tmp/omega-vault-test/unit", name);
+  // E-9: run-unique dir — fixed names collide across concurrent gates on one box.
+  const dir = omegaTmp("omega-vault-test/unit", `${name}-${Date.now()}-${process.pid}`);
   rmSync(dir, { recursive: true, force: true });
   mkdirSync(dir, { recursive: true });
   return dir;

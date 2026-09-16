@@ -26,6 +26,16 @@ async function sh(cmd: string[]): Promise<{ code: number; out: string }> {
 
 const gate: Record<string, unknown> = { startedAt: new Date().toISOString(), checks: {} as Record<string, unknown> };
 const checks = gate.checks as Record<string, any>;
+
+// E-8: --explain is the gate's UI (what each stage scans, its allowlist, its
+// rule). Handled before any check runs; never writes status.
+if (process.argv.includes("--explain")) {
+  const { explainStage } = await import("./explain.ts");
+  const at = process.argv.indexOf("--explain");
+  const which = process.argv[at + 1]?.startsWith("--") ? undefined : process.argv[at + 1];
+  console.log(explainStage(which));
+  process.exit(0);
+}
 let failed = 0;
 const fail = (name: string, detail: string) => { checks[name] = { ok: false, detail }; failed++; console.error(`✗ ${name}: ${detail}`); };
 const pass = (name: string, detail: unknown) => { checks[name] = { ok: true, detail }; console.log(`✓ ${name}`); };
@@ -176,6 +186,18 @@ try {
   else fail("os-surface", `OS knowledge outside the platform seam — ${osHits.length} hits: ${osHits.slice(0, 10).join(" | ")}`);
 } catch (e) { fail("os-surface", String(e)); }
 
+// 5c · import-surface (B-2): the layering contract — compartments never
+// import the host, surfaces never import plugin source relatively, contracts
+// stays workspace-clean, shim/host see only their declared layers. Same
+// fail-closed pattern as D-361/D-372: the layering is declared in code, the
+// inventory is enforced mechanically.
+try {
+  const { checkImportSurface } = await import("./import-surface.ts");
+  const s = await checkImportSurface(ROOT);
+  if (s.ok) pass("import-surface", s.detail);
+  else fail("import-surface", s.issues.join("; "));
+} catch (e) { fail("import-surface", String(e)); }
+
 // 6 · tests (gate evidence)
 // Concurrency is capped by box size (D-317): past core count, worker-heavy test
 // files thrash instead of parallelizing — measured 64s green at 4-wide vs
@@ -185,7 +207,8 @@ try {
 // honors OMEGA_TEST_CONCURRENCY (soak fallback: 1 on handle-starved boxes;
 // MCP stdio uv_spawn EUNKNOWN exhaustion observed on Windows soak runs).
 // The cap value is recorded in status.json so any run is interpretable.
-// D-368 --quick: host-loc + decisions + compositions + bun-surface only (no tests/attest/status write) for inner loop.
+// D-368 --quick: host-loc + decisions + compositions + bun-surface +
+// os-surface + import-surface only (no tests/attest/status write) for inner loop.
 const QUICK = process.argv.includes("--quick");
 const testMaxConc = Number(process.env.OMEGA_TEST_CONCURRENCY ?? Math.max(4, Math.min(20, cpus().length)));
 const TEST_TIMEOUT_MS = "60000";

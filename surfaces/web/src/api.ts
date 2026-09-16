@@ -9,7 +9,7 @@ import type { BootedHost } from "@vivim/omega-host";
 import type { PortResult } from "@vivim/omega-contracts";
 import { interpret } from "@vivim/omega-nlcl-pure";
 import type { Interpretation, IR, WorldModel } from "@vivim/omega-nlcl-pure";
-import { consentIdFor } from "../../../plugins/vivim-law/src/consent.ts"; // stable (principal, op) derivation — the law's own function
+import { consentIdFor } from "@vivim/omega-contracts"; // stable (principal, op) derivation — the single contracts definition
 
 export interface ExecuteOutcome {
   interpretation: Interpretation;

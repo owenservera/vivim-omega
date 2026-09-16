@@ -1,7 +1,7 @@
 // tooling/portrait/portrait.ts — the Ω self-portrait emitter (D-350).
 //
 // Boots the REAL console composition against a throwaway vault at
-// /tmp/omega-portrait, runs the honest 12-step scenario (including the full
+// ${TMP}/omega-portrait, runs the honest 12-step scenario (including the full
 // consent ceremony: the rule fires → the law demands consent → the user grants
 // → the same rule fires clean), then captures:
 //
@@ -28,10 +28,12 @@ import type { PluginManifest, PortResult } from "@vivim/omega-contracts";
 import { routableOps } from "@vivim/omega-contracts";
 import { boardFreshness, checkDecisions, parseIndexRows } from "../gates/decisions.ts";
 import { readPosture } from "./posture.ts";
+import { omegaTmp } from "@vivim/omega-platform"; // D-372 Phase 3: scratch through the seam
 
 const ROOT = join(import.meta.dir, "../..");
 const SPEC_PATH = join(ROOT, "compositions/console.json");
-const VAULT_DIR = "/tmp/omega-portrait";
+// E-9: run-unique dir — fixed names collide across concurrent runs on one box.
+const VAULT_DIR = omegaTmp("omega-portrait", `run-${Date.now()}-${process.pid}`);
 
 // ---- CLI: --out <path> (default build/self-portrait.json) ----
 

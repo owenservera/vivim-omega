@@ -3,6 +3,7 @@
 import { createHash, generateKeyPairSync, createPrivateKey, createPublicKey, sign as edSign, verify as edVerify, randomBytes } from "node:crypto";
 import { readdirSync, readFileSync, statSync, writeFileSync, renameSync } from "node:fs";
 import { join, relative, sep } from "node:path";
+import { retryOsLock } from "@vivim/omega-platform"; // E-1: one backoff discipline for the rename boundary
 
 export function canonicalJson(value: unknown): string {
   if (value === null || typeof value === "number" || typeof value === "boolean" || typeof value === "string") {
@@ -77,25 +78,15 @@ export function mintToken(prefix = "tok"): string {
   return `${prefix}_${randomBytes(24).toString("base64url")}`;
 }
 
-const sleepSync = (ms: number): void => { Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms); }; // D-361: runtime-neutral sync sleep (the runtime's sleepSync is not on Node)
 export function atomicWrite(path: string, data: string): void {
   // write-tmp → rename: the rename is the atomic durability boundary (B4).
   // writeFileSync (not a streaming writer) so no handle lingers for the rename.
+  // Windows: transient locks (AV/indexer, lazy handle release) can EPERM/EBUSY
+  // the rename. Bounded retry with backoff via the shared seam helper — the
+  // boundary is unchanged, rename stays atomic.
   const tmp = `${path}.tmp`;
   writeFileSync(tmp, data);
-  // Windows: transient locks (AV/indexer, lazy handle release) can EPERM/EBUSY
-  // the rename. Retry briefly — the boundary is unchanged, rename stays atomic.
-  let last: unknown = null;
-  for (let i = 0; i < 10; i++) {
-    try { renameSync(tmp, path); return; }
-    catch (e) {
-      const code = (e as { code?: string }).code;
-      if (code !== "EPERM" && code !== "EBUSY" && code !== "EACCES") throw e;
-      last = e;
-      sleepSync(10 * (i + 1));
-    }
-  }
-  throw last;
+  retryOsLock(() => renameSync(tmp, path));
 }
 
 export { writeFileSync };

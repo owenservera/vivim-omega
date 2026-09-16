@@ -16,7 +16,20 @@ export interface PortMessage {
 
 export type PortResult =
   | { ok: true; value: unknown; freshness?: Freshness; evidence?: { rev: string } }
-  | { ok: false; error: PortErrorCode; detail?: string };
+  | { ok: false; error: PortErrorCode; detail?: string; refusal?: RefusalReport };
+
+/** Attributable refusal (E-7 / SC-V07): refusals name the gate that refused,
+ *  not just the register. Additive and optional — old consumers read
+ *  error/detail exactly as before; new surfaces render rule/bar/consentId
+ *  into confirm cards and audit rows. */
+export interface RefusalReport {
+  rule: string; // the gate: "law.check@1" | "default-gate (no law.check@1 routed)" | ordered-bar name
+  principal?: string;
+  op?: string;
+  reason?: string;
+  consentId?: string;
+  bar?: string; // ordered-bar citation where applicable (e.g. "D-338/D-357 bar 1")
+}
 
 /** Decision shape returned by the `law.check@1` contract (the Gate step of the unified loop). */
 export interface LawDecision {

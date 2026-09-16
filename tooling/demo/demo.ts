@@ -4,16 +4,19 @@
 import { mkdirSync, rmSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { compileComposition, ensureVault, bootComposition } from "@vivim/omega-host";
+import { omegaTmp } from "@vivim/omega-platform"; // D-372 Phase 3: scratch through the seam
 
 const ROOT = join(import.meta.dir, "../..");
 const SPEC = join(ROOT, "compositions/spine.json");
 const spec = JSON.parse(readFileSync(SPEC, "utf-8"));
 
 const vault = join(ROOT, "dev-vault");
-const dataDir = "/tmp/omega-demo/vault-data";
-rmSync("/tmp/omega-demo", { recursive: true, force: true });
+// E-9: unique demo scratch — a fixed name would collide across concurrent runs on one box.
+const demoRoot = omegaTmp("omega-demo", `run-${Date.now()}-${process.pid}`);
+const dataDir = join(demoRoot, "vault-data");
+rmSync(demoRoot, { recursive: true, force: true });
 mkdirSync(vault, { recursive: true });
-mkdirSync("/tmp/omega-demo", { recursive: true });
+mkdirSync(demoRoot, { recursive: true });
 const { rootKey } = ensureVault(vault);
 const demoSpec = {
   ...spec,

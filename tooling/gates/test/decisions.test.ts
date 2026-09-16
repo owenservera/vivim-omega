@@ -3,7 +3,7 @@
 import { describe, test, expect } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { checkDecisions, parseIndexRows, parseRecord, validateRecord, listOpenQuestions, renderOpenQuestionsBoard, boardFreshness } from "../decisions.ts";
+import { checkDecisions, parseIndexRows, parseRecord, validateRecord, listOpenQuestions, renderOpenQuestionsBoard, boardFreshness, decisionBody } from "../decisions.ts";
 
 const GOOD = `# D-999 — Example
 
@@ -71,6 +71,16 @@ describe("decisions checker — record shape", () => {
     expect(validateRecord(ratSha, (s) => s === "abc1234")).toEqual([]);
     const sup = parseRecord(999, "f", GOOD.replace("PROPOSED", "SUPERSEDED"));
     expect(validateRecord(sup, shaExists).join(";")).toMatch(/Superseded-By/);
+  });
+
+  test("decisionBody joins multi-line Decision prose; stops at blank/header/table", () => {
+    expect(decisionBody(GOOD)).toBe("(a) Left — cheaper and reversible.");
+    const multi = GOOD.replace(
+      "**Decision:** (a) Left — cheaper and reversible.",
+      "**Decision:** (a) Left — cheaper\nand reversible across\nthree lines.",
+    );
+    expect(decisionBody(multi)).toBe("(a) Left — cheaper and reversible across three lines.");
+    expect(decisionBody("no decision here")).toBe("");
   });
 });
 

@@ -10,6 +10,7 @@ import {
   callDaemon, checkSecret, readDaemonInfo, sameSnapshot,
   snapshotSources, stopDaemon, type DaemonInfo,
 } from "@vivim/daemon-client";
+import { omegaTmp } from "@vivim/omega-platform"; // D-372 Phase 3: scratch through the seam
 
 const OMEGA_ROOT = join(import.meta.dir, "../../..");
 const ECHO_SPEC = join(OMEGA_ROOT, "surfaces/cli/test/fixtures/echo.json");
@@ -26,7 +27,7 @@ afterAll(async () => {
 
 const vaultDirs: string[] = [];
 function tempVault(name: string): string {
-  const v = join("/tmp/omega-daemon-test", `${name}-${Date.now()}-${Math.floor(Math.random() * 1e6)}`);
+  const v = omegaTmp("omega-daemon-test", `${name}-${Date.now()}-${Math.floor(Math.random() * 1e6)}`);
   rmSync(v, { recursive: true, force: true });
   mkdirSync(v, { recursive: true });
   vaultDirs.push(v);
@@ -140,7 +141,7 @@ describe("daemon — use() staleness (recipe identity, restat drift, spec switch
   });
 
   test("snapshot purity: same tree twice is identical; touched file differs", async () => {
-    const dir = join("/tmp/omega-daemon-test", `snap-${Date.now()}`);
+    const dir = omegaTmp("omega-daemon-test", `snap-${Date.now()}`);
     mkdirSync(dir, { recursive: true });
     try {
       writeFileSync(join(dir, "a.ts"), "const a = 1;\n");

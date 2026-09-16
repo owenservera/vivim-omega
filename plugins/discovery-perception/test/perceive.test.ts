@@ -16,6 +16,7 @@ import { bootComposition, compileComposition, ensureVault } from "@vivim/omega-h
 import type { BootedHost } from "@vivim/omega-host";
 import type { PortResult } from "@vivim/omega-contracts";
 import { buildGraph, canonicalJson, classifyKind, labelFor, walkDom, type ApplicationGraph, type DomNode, type GraphNode } from "../src/model.ts";
+import { omegaTmp } from "@vivim/omega-platform"; // D-372 Phase 3: scratch through the seam
 
 // ---- unit: classification --------------------------------------------------------
 
@@ -143,7 +144,8 @@ const OMEGA_ROOT = join(import.meta.dir, "../../.."); // test/ → discovery-per
 const SPEC = join(OMEGA_ROOT, "compositions/discovery.json");
 const spec = JSON.parse(readFileSync(SPEC, "utf-8"));
 const FIXTURES = join(OMEGA_ROOT, "fixtures");
-const CASE_ROOT = "/tmp/omega-discovery-perception";
+// E-9: run-unique dir — fixed names collide across concurrent gates on one box.
+const CASE_ROOT = omegaTmp("omega-discovery-perception", `run-${Date.now()}-${process.pid}`);
 const VAULT_DIR = join(CASE_ROOT, "host");
 
 const hosts: BootedHost[] = [];
@@ -183,8 +185,13 @@ let host: BootedHost;
 beforeAll(async () => {
   rmSync(CASE_ROOT, { recursive: true, force: true });
   mkdirSync(VAULT_DIR, { recursive: true });
+  // House pattern (email/pilot integration): the shipped spec's ${TMP} dataDir
+  // is SHARED across runs on one box (rev would accumulate, breaking the
+  // "fresh vault rev 1" assertions) — boot a copy pointed inside this run's root.
+  const caseSpec = JSON.parse(JSON.stringify(spec));
+  caseSpec.entries.find((e: { id: string }) => e.id === "vivim.vault").config.dataDir = join(CASE_ROOT, "vault-data");
   const { rootKey } = ensureVault(VAULT_DIR);
-  const { recipe, buildDir } = compileComposition(spec, join(SPEC, ".."), VAULT_DIR, rootKey);
+  const { recipe, buildDir } = compileComposition(caseSpec, join(SPEC, ".."), VAULT_DIR, rootKey);
   host = await bootComposition(recipe, buildDir, VAULT_DIR);
   hosts.push(host);
 });
@@ -277,7 +284,7 @@ describe("GATE-Ω7 perception — boot compositions/discovery.json (law + vault 
     const runA = await root<VaultGet>(host, "vault.get@1", { ns: "discovery", id: "graph:webmail-inbox" });
 
     // second boot: spec copy of the shipped composition with a unique fresh dataDir
-    const root2 = join("/tmp/omega-discovery-perception-det", `run-${Date.now()}-${Math.floor(Math.random() * 1e6)}`);
+    const root2 = omegaTmp("omega-discovery-perception-det", `run-${Date.now()}-${Math.floor(Math.random() * 1e6)}`);
     rmSync(root2, { recursive: true, force: true });
     const vaultDir2 = join(root2, "host");
     mkdirSync(vaultDir2, { recursive: true });

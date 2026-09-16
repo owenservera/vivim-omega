@@ -13,10 +13,12 @@ import { compileComposition, ensureVault, bootComposition } from "@vivim/omega-h
 import type { BootedHost } from "@vivim/omega-host";
 import type { StreamChunk } from "@vivim/omega-contracts";
 import { streamRootCall } from "../src/stream.ts";
+import { omegaTmp } from "@vivim/omega-platform"; // D-372 Phase 3: scratch through the seam
 
 const ROOT = join(import.meta.dir, "../..");
 const SPEC = join(ROOT, "compositions/demo.json");
-const VAULT = join("/tmp/omega-sdk-stream-falsifier");
+// E-9: run-unique dir — fixed names collide across concurrent gates on one box.
+const VAULT = omegaTmp("omega-sdk-stream-falsifier", `run-${Date.now()}-${process.pid}`);
 
 let host: BootedHost;
 

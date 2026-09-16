@@ -5,7 +5,7 @@
   "type": "module",
   "dependencies": {
     "@vivim/omega-host": "workspace:*",
-    "@vivim/omega-contracts": "workspace:*",
+    "@vivim/omega-contracts": "workspace:*", "@vivim/omega-platform": "workspace:*",
     "@vivim/omega-shim": "workspace:*",
     "@vivim/omega-sdk": "workspace:*",
     "@vivim/omega-testkit": "workspace:*",

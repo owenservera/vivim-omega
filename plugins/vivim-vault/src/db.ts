@@ -183,7 +183,9 @@ function dbRows(rows: unknown): { id: string; rev: number; cid: string }[] {
   return (rows as { id: string; rev: number; cid: string }[]).map((r) => ({ id: r.id, rev: r.rev, cid: r.cid }));
 }
 
-/** FTS5 MATCH over indexed bodies within a ns, rank-ordered, capped at 200. */
+/** FTS5 MATCH over indexed bodies within a ns, rank-ordered, capped at 200.
+ *  The query is phrase-quoted (arbitrary text can never break MATCH syntax):
+ *  multi-word queries match the PHRASE, not an AND — documented, not accidental. */
 export function searchObjects(v: VaultDB, ns: string, q: string): { id: string; rev: number; cid: string | null; rank: number }[] {
   const phrase = `"${q.replace(/"/g, '""')}"`; // phrase-quote: arbitrary text can never break MATCH syntax
   const rows = v.db.query(`

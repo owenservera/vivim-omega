@@ -65,3 +65,43 @@ export function ownerOnly(path: string): void {
     /* best-effort — the writeFileSync mode (where supported) already applied */
   }
 }
+
+/** Runtime-neutral sync sleep (Atomics.wait — on every runtime, D-361). */
+function osSleep(ms: number): void {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+}
+
+export interface OsLockRetryOptions {
+  tries?: number; // total attempts including the first (default 10)
+  baseMs?: number; // linear backoff unit: sleep baseMs*(i+1) after attempt i (default 10)
+  retryOn?: (e: unknown) => boolean; // default: transient OS locks only (EPERM/EBUSY/EACCES)
+}
+
+/**
+ * One backoff discipline for transient OS locks (E-1): the atomic-rename
+ * boundary in host canon.ts, the CAS blob install, and the MCP-test spawn
+ * retry all shared one hand-rolled loop each — same wisdom, three copies.
+ * Bounded, linear backoff, fail-closed: anything the predicate rejects throws
+ * immediately; exhaustion rethrows the last error. No spin-wait (the sleep
+ * yields the thread; the durability boundary stays atomic).
+ */
+export function retryOsLock<T>(fn: () => T, opts: OsLockRetryOptions = {}): T {
+  const tries = opts.tries ?? 10;
+  const baseMs = opts.baseMs ?? 10;
+  const retryOn = opts.retryOn ??
+    ((e: unknown): boolean => {
+      const code = (e as { code?: string }).code;
+      return code === "EPERM" || code === "EBUSY" || code === "EACCES";
+    });
+  let last: unknown = null;
+  for (let i = 0; i < tries; i++) {
+    try {
+      return fn();
+    } catch (e) {
+      if (!retryOn(e)) throw e;
+      last = e;
+      osSleep(baseMs * (i + 1));
+    }
+  }
+  throw last;
+}

@@ -2,7 +2,7 @@
 //
 // Unit: the event-trace parser + causal-edge derivation + drift comparison
 // (src/trace.ts — pure, no ports). Integration: the SAME compositions/discovery.json
-// pattern with its own temp dirs (/tmp/omega-discovery-observation/…) — perceive
+// pattern with its own temp dirs (${TMP}/omega-discovery-observation/… — via omegaTmp) — perceive
 // then observe the webmail fixture through the real µhost → a click→network→
 // dom-update chain with byte-span evidence that resolves via vault.get@1 →
 // DRIFT: a mutated fixture variant (one event timestamp) observed against the
@@ -14,6 +14,7 @@ import { bootComposition, compileComposition, ensureVault } from "@vivim/omega-h
 import type { BootedHost } from "@vivim/omega-host";
 import type { CompositionSpec, PortResult } from "@vivim/omega-contracts";
 import { compareEdges, deriveEdges, graphResolver, parseTrace, type CausalEdge, type DriftRecord } from "../src/trace.ts";
+import { omegaTmp } from "@vivim/omega-platform"; // D-372 Phase 3: scratch through the seam
 
 // ---- unit: trace parsing + edge derivation -----------------------------------------
 
@@ -202,7 +203,7 @@ function makeDiscoverySpec(name: string, dataDir: string, fixturesDir: string): 
 }
 
 async function bootCase(caseName: string, opts: { dataDir?: string; fixturesDir?: string } = {}): Promise<Case> {
-  const root = join("/tmp/omega-discovery-observation", `${caseName}-${Date.now()}-${Math.floor(Math.random() * 1e6)}`);
+  const root = omegaTmp("omega-discovery-observation", `${caseName}-${Date.now()}-${Math.floor(Math.random() * 1e6)}`);
   rmSync(root, { recursive: true, force: true });
   const vaultDir = join(root, "host");
   mkdirSync(vaultDir, { recursive: true });

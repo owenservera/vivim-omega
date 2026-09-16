@@ -10,6 +10,7 @@ import { join } from "node:path";
 import { compileComposition, ensureVault, bootComposition } from "@vivim/omega-host";
 import type { BootedHost } from "@vivim/omega-host";
 import type { CompositionSpec, PortResult } from "@vivim/omega-contracts";
+import { omegaTmp } from "@vivim/omega-platform"; // D-372 Phase 3: scratch through the seam
 
 const OMEGA_ROOT = join(import.meta.dir, "../..");
 const hosts: BootedHost[] = [];
@@ -34,7 +35,7 @@ const SPEC: CompositionSpec = {
 };
 
 async function bootLazy(caseName: string): Promise<BootedHost> {
-  const root = join("/tmp/omega-lazy-test", `${caseName}-${Date.now()}-${Math.floor(Math.random() * 1e6)}`);
+  const root = omegaTmp("omega-lazy-test", `${caseName}-${Date.now()}-${Math.floor(Math.random() * 1e6)}`);
   rmSync(root, { recursive: true, force: true });
   const vaultDir = join(root, "vault");
   mkdirSync(vaultDir, { recursive: true });

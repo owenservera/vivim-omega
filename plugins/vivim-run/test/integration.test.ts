@@ -8,6 +8,7 @@ import { join } from "node:path";
 import { compileComposition, ensureVault, bootComposition } from "@vivim/omega-host";
 import type { BootedHost } from "@vivim/omega-host";
 import type { PortResult } from "@vivim/omega-contracts";
+import { omegaTmp } from "@vivim/omega-platform"; // D-372 Phase 3: scratch through the seam
 
 const SPEC = join(import.meta.dir, "../../../compositions/run.json");
 const spec = JSON.parse(readFileSync(SPEC, "utf-8"));
@@ -44,7 +45,8 @@ function classify(results: PortResult[]): { ok: number; timeouts: number; errors
 // ---------------------------------------------------------------------------
 describe("GATE-Ω3 · vivim.run spine (tasks · budgets · saturation)", () => {
   let host: BootedHost;
-  beforeAll(async () => { host = await bootVault("/tmp/omega-run-test/main"); }, 30_000);
+  // E-9: run-unique dir — fixed names collide across concurrent gates on one box.
+  beforeAll(async () => { host = await bootVault(omegaTmp("omega-run-test", `main-${Date.now()}-${process.pid}`)); }, 30_000);
   afterAll(async () => { await host.shutdown(); }, 30_000);
 
   test("normal task through run.submit@1 → ok · CURRENT · result.ok", async () => {
@@ -116,7 +118,7 @@ describe("GATE-Ω3 · vivim.run spine (tasks · budgets · saturation)", () => {
 // ---------------------------------------------------------------------------
 describe("GATE-Ω3 · crash-loop quarantine (omega.crashy)", () => {
   let host: BootedHost;
-  beforeAll(async () => { host = await bootVault("/tmp/omega-run-test/crash"); }, 30_000);
+  beforeAll(async () => { host = await bootVault(omegaTmp("omega-run-test", `crash-${Date.now()}-${process.pid}`)); }, 30_000);
   afterAll(async () => { await host.shutdown(); }, 30_000);
 
   test("crashy is alive before the crash (ping round-trip)", async () => {
@@ -176,7 +178,7 @@ describe("GATE-Ω3 · crash-loop quarantine (omega.crashy)", () => {
 // ---------------------------------------------------------------------------
 describe("GATE-Ω3 · O(1) authorization under load", () => {
   let host: BootedHost;
-  beforeAll(async () => { host = await bootVault("/tmp/omega-run-test/load"); }, 30_000);
+  beforeAll(async () => { host = await bootVault(omegaTmp("omega-run-test", `load-${Date.now()}-${process.pid}`)); }, 30_000);
   afterAll(async () => { await host.shutdown(); }, 30_000);
 
   test("law.registry@1 p99 stays under 5ms while ~50 tasks flow through run", async () => {

@@ -11,6 +11,7 @@ import { join } from "node:path";
 import { bootWithRecovery, compileComposition, ensureVault } from "@vivim/omega-host";
 import type { BootedHost } from "@vivim/omega-host";
 import type { CompositionSpec, Outcome, PortResult } from "@vivim/omega-contracts";
+import { omegaTmp } from "@vivim/omega-platform"; // D-372 Phase 3: scratch through the seam
 
 const OMEGA_ROOT = join(import.meta.dir, "../../..");
 const hosts: BootedHost[] = [];
@@ -41,7 +42,7 @@ const MIND_CONFIG = {
 describe("D-328a — describe → snapshot → bootstrap (real boot, zero prior knowledge)", () => {
   let host: BootedHost;
   beforeAll(async () => {
-    const root = join("/tmp/omega-control-test", `v24-${Date.now()}-${Math.floor(Math.random() * 1e6)}`);
+    const root = omegaTmp("omega-control-test", `v24-${Date.now()}-${Math.floor(Math.random() * 1e6)}`);
     rmSync(root, { recursive: true, force: true });
     const vaultDir = join(root, "vault");
     mkdirSync(vaultDir, { recursive: true });
@@ -157,7 +158,7 @@ describe("D-328a — describe → snapshot → bootstrap (real boot, zero prior 
 describe("D-328b — delegate + governed evolution (real boot)", () => {
   let host: BootedHost;
   beforeAll(async () => {
-    const root = join("/tmp/omega-control-test", `v24b-${Date.now()}-${Math.floor(Math.random() * 1e6)}`);
+    const root = omegaTmp("omega-control-test", `v24b-${Date.now()}-${Math.floor(Math.random() * 1e6)}`);
     rmSync(root, { recursive: true, force: true });
     const vaultDir = join(root, "vault");
     mkdirSync(vaultDir, { recursive: true });

@@ -13,13 +13,14 @@
 import { describe, test, expect, afterAll } from "bun:test";
 import { mkdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
+import { omegaTmp, retryOsLock } from "@vivim/omega-platform"; // D-372 Phase 3: scratch through the seam
 
 const MCP = join(import.meta.dir, "../src/mcp.ts");
 const ECHO_SPEC = join(import.meta.dir, "fixtures/echo.json");
 const RISK_SPEC = join(import.meta.dir, "fixtures/risk.json");
 
 function tempVault(name: string): string {
-  const v = join("/tmp/omega-mcp-test", `${name}-${Date.now()}-${Math.floor(Math.random() * 1e6)}`);
+  const v = omegaTmp("omega-mcp-test", `${name}-${Date.now()}-${Math.floor(Math.random() * 1e6)}`);
   rmSync(v, { recursive: true, force: true });
   mkdirSync(v, { recursive: true });
   return v;
@@ -32,6 +33,25 @@ function tempVault(name: string): string {
  */
 const SPAWN_BUDGET_MS = 30_000;
 
+/**
+ * Bounded spawn retry (D-368 soak hardening): after hundreds of worker/process
+ * spawns in a long suite run, Windows can refuse a spawn (`uv_spawn EUNKNOWN`,
+ * handle exhaustion — observed after ~200s soak runs, also on the clean tree).
+ * Same precedent as `atomicWrite`'s EPERM retry: back off synchronously and try
+ * again; a genuinely broken command still throws after the budget. Test-only.
+ */
+function spawnServerWithRetry(argv: string[], attempts = 5): ReturnType<typeof Bun.spawn> {
+  // Same precedent as `atomicWrite`'s EPERM retry, same shared helper (E-1):
+  // back off synchronously and try again; a genuinely broken command still
+  // throws after the budget (retryOn always-true: ANY spawn throw retries).
+  // Test-only.
+  return retryOsLock(() => Bun.spawn(argv, { stdin: "pipe", stdout: "pipe", stderr: "pipe" }), {
+    tries: attempts,
+    baseMs: 250,
+    retryOn: () => true,
+  });
+}
+
 /** A scripted MCP client over the child process's stdio (line-delimited JSON-RPC). */
 class McpClient {
   private buf = "";
@@ -41,9 +61,7 @@ class McpClient {
   readonly proc: ReturnType<typeof Bun.spawn>;
 
   constructor(spec: string, vault: string) {
-    this.proc = Bun.spawn(["bun", "run", MCP, "--vault", vault, "--composition", spec], {
-      stdin: "pipe", stdout: "pipe", stderr: "pipe",
-    });
+    this.proc = spawnServerWithRetry(["bun", "run", MCP, "--vault", vault, "--composition", spec]);
     void this.pump();
   }
 

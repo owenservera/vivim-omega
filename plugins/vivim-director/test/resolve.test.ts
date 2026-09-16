@@ -13,6 +13,7 @@ import type { CompositionSpec, Outcome, PortResult } from "@vivim/omega-contract
 import {
   asResolveDecision, classifyPure, parseClassifyInput, parseReportInput, scorecardPure,
 } from "../src/resolve.ts";
+import { omegaTmp } from "@vivim/omega-platform"; // D-372 Phase 3: scratch through the seam
 
 const OMEGA_ROOT = join(import.meta.dir, "../../..");
 const hosts: BootedHost[] = [];
@@ -126,7 +127,7 @@ describe("D-323 + D-324 — classify→report→scorecard through a real boot", 
   let host: BootedHost;
 
   beforeAll(async () => {
-    const root = join("/tmp/omega-resolve-test", `v23-${Date.now()}-${Math.floor(Math.random() * 1e6)}`);
+    const root = omegaTmp("omega-resolve-test", `v23-${Date.now()}-${Math.floor(Math.random() * 1e6)}`);
     rmSync(root, { recursive: true, force: true });
     const vaultDir = join(root, "vault");
     mkdirSync(vaultDir, { recursive: true });

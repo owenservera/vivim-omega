@@ -64,3 +64,9 @@ Regenerated every ~30 ratified decisions (or one per wave-set, whichever comes f
 - **Composition freeze (D-370):** 16 specs, no new spec without deleting/generating one (social discipline until the D-316 net mechanizes it).
 - Consolidation pass: every ~30 ratified decisions, refresh this page. The full log is never
   pruned or rewritten (append-only, supersede never edit).
+
+## Acknowledged limits
+
+Every residual the tree knowingly carries lives on one page with its detector
+and revisit trigger: `docs/KNOWN-LIMITS.md`. A limit leaves that page only by
+being fixed (with its falsifier) or superseded (with a D-record pointer).

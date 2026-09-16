@@ -31,6 +31,7 @@ import {
   webmailGraphFixture, fixtureWebmailGraph, buildProbes, initialWebmailState, applyAction,
   type EvidenceRef, type WebmailState,
 } from "./utils.ts";
+import { omegaTmp } from "@vivim/omega-platform"; // D-372 Phase 3: scratch through the seam
 
 const OMEGA_ROOT = join(import.meta.dir, "../../.."); // test/ → discovery-inference/ → plugins/ → root
 const hosts: BootedHost[] = [];
@@ -63,7 +64,7 @@ function makeMindSpec(name: string, dataDir: string, opts: { blueprintPath?: str
 }
 
 async function bootMind(caseName: string, spec: CompositionSpec): Promise<Case> {
-  const root = join("/tmp/omega-discovery-mind-test", `${caseName}-${Date.now()}-${Math.floor(Math.random() * 1e6)}`);
+  const root = omegaTmp("omega-discovery-mind-test", `${caseName}-${Date.now()}-${Math.floor(Math.random() * 1e6)}`);
   rmSync(root, { recursive: true, force: true });
   const vaultDir = join(root, "vault");
   mkdirSync(vaultDir, { recursive: true });
@@ -119,7 +120,7 @@ describe("GATE-Ω8 — the discovery-mind pipeline (compositions/discovery-mind.
   const captureEvidenceFor = (nodeId: string): EvidenceRef => ({ ns: DISCOVERY_NS, id: `capture:${nodeId}`, rev: 1 });
 
   beforeAll(async () => {
-    c = await bootMind("gate", makeMindSpec("discovery-mind-gate", join("/tmp/omega-discovery-mind-test", `data-${Date.now()}`), { blueprintPath: join(OMEGA_ROOT, "packs/domain-email/plugin.json") }));
+    c = await bootMind("gate", makeMindSpec("discovery-mind-gate", omegaTmp("omega-discovery-mind-test", `data-${Date.now()}`), { blueprintPath: join(OMEGA_ROOT, "packs/domain-email/plugin.json") }));
   });
 
   test("law eager, discovery pipeline dormant at boot (D-331); routes intact", () => {
@@ -306,7 +307,7 @@ describe("GATE-Ω8 — the discovery-mind pipeline (compositions/discovery-mind.
   test("the SHIPPED compositions/discovery-mind.json boots; mapping falls back to the config blueprint path", async () => {
     const SPEC = join(OMEGA_ROOT, "compositions/discovery-mind.json");
     const spec = JSON.parse(readFileSync(SPEC, "utf-8")) as CompositionSpec;
-    const root = join("/tmp/omega-discovery-mind-test", `shipped-${Date.now()}-${Math.floor(Math.random() * 1e6)}`);
+    const root = omegaTmp("omega-discovery-mind-test", `shipped-${Date.now()}-${Math.floor(Math.random() * 1e6)}`);
     rmSync(root, { recursive: true, force: true });
     const vaultDir = join(root, "vault");
     mkdirSync(vaultDir, { recursive: true });

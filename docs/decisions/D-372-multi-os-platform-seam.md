@@ -18,7 +18,7 @@ enforce it in the gate.
 
 ## Options
 
-| Criterion | (a) Seam package + os-surface stage + ${TMP} spelling (this row) | (b) Inline tmpdir rewrites with no seam and no stage | (c) Per-OS branches or specs | (d) Docs only, no enforcement |
+| Criterion | (a) Seam package + os-surface stage + ${TMP} spelling + hardened-informational lanes (this row) | (b) Inline tmpdir rewrites with no seam and no stage | (c) Per-OS branches or specs | (d) Docs only, no enforcement |
 |---|---|---|---|---|
 | Single codebase forever | Yes | Mostly (knowledge scatters again) | No (lineage forks) | Yes until drift |
 | New OS cost | One CI lane, zero code | Audit + rewrite each time | Full port each time | Audit each time |
@@ -28,14 +28,15 @@ enforce it in the gate.
 
 ## Decision
 
-**Decision:** (a) Seam package + os-surface stage + ${TMP} spelling — new
-`@vivim/omega-platform` workspace package holding the only OS-aware code,
-a fail-closed `os-surface` gate stage allowlisting it, `${TMP}` as the
-portable dataDir spelling in compositions with grandfathered `/tmp`
-mapping, tests migrating to the seam helper lane by lane, Windows CI lane
-to required and macOS informational. Full concept, API sketch, phase table,
-and acceptance list live in docs/MULTI-OS-DESIGN.md, which is the build
-instruction for the follow-up phases.
+**Decision:** (a) Seam package + os-surface stage + ${TMP} spelling +
+hardened-informational lanes — new `@vivim/omega-platform` workspace package
+holding the only OS-aware code, a fail-closed `os-surface` gate stage
+allowlisting it, `${TMP}` as the portable dataDir spelling in compositions
+with grandfathered `/tmp` mapping, tests migrating to the seam helper lane by
+lane, Windows lane hardened (serial full gate, stays informational until the
+soak flake retires by observation) plus macOS informational. Full concept, API
+sketch, phase table, and acceptance list live in docs/MULTI-OS-DESIGN.md,
+which is the build instruction for the follow-up phases.
 
 ## Consequences
 
@@ -56,3 +57,9 @@ instruction for the follow-up phases.
   `compositions/chat.json` boot on Windows resolving its vault under the real
   `%TEMP%` (observed `...\Temp\omega-chat\vault-data\canonical.sqlite`, no
   `C:\tmp` leak). D-372 stays PROPOSED until Phases 3–5 meet the acceptance list.
+- Phase 3 implemented on this branch: 42 test/tooling files migrated to
+  `omegaTmp()` scratch + 25 `package.json` platform dep edges + `bun.lock`;
+  `omega:quick` green (structural six, host 1014/1100); MCP spawn-retry
+  hardening + Windows-serial/macOS-informational CI lanes. D-372 stays
+  PROPOSED pending the acceptance list (same-commit green matrix + refreshed
+  status.json carrying `os-surface`).

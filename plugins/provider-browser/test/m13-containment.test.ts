@@ -22,6 +22,7 @@ import { bootWithRecovery, compileComposition, ensureVault } from "@vivim/omega-
 import type { BootedHost } from "@vivim/omega-host";
 import type { CompositionSpec, PortResult, StreamChunk } from "@vivim/omega-contracts";
 import { streamRootCall } from "@vivim/omega-sdk";
+import { omegaTmp } from "@vivim/omega-platform"; // D-372 Phase 3: scratch through the seam
 
 const OMEGA_ROOT = join(import.meta.dir, "../../..");
 
@@ -34,7 +35,7 @@ describe("D-354 containment — stalling transforms resolve BUDGET, throwing tra
   beforeAll(async () => {
     const SPEC = join(OMEGA_ROOT, "compositions/demo.json");
     const spec = JSON.parse(readFileSync(SPEC, "utf-8")) as CompositionSpec;
-    const root = join("/tmp/omega-m13-test", `containment-${Date.now()}-${Math.floor(Math.random() * 1e6)}`);
+    const root = omegaTmp("omega-m13-test", `containment-${Date.now()}-${Math.floor(Math.random() * 1e6)}`);
     rmSync(root, { recursive: true, force: true });
     const vaultDir = join(root, "vault");
     mkdirSync(vaultDir, { recursive: true });

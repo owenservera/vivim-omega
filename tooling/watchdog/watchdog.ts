@@ -78,6 +78,7 @@ export function startWatchdog(router: PortRouter, opts: WatchdogOptions = {}): W
   const evictions: Eviction[] = [];
   const tracks = new Map<string, Track>();
   const listening = new Set<string>();
+  const listeners = new Map<string, (m: { type?: string; heapUsed?: number; rss?: number; cpuUs?: number }) => void>();
   let stopped = false;
 
   const onMessage = (id: string) => (m: { type?: string; heapUsed?: number; rss?: number; cpuUs?: number }) => {
@@ -100,7 +101,12 @@ export function startWatchdog(router: PortRouter, opts: WatchdogOptions = {}): W
       if (c.state !== "active" || evictions.some((e) => e.id === id)) continue;
       const w = router.compartmentWorker(id);
       if (!w) continue;
-      if (!listening.has(id)) { listening.add(id); w.on("message", onMessage(id)); }
+      if (!listening.has(id)) {
+        listening.add(id);
+        const listener = onMessage(id);
+        listeners.set(id, listener);
+        w.on("message", listener);
+      }
       const t = tracks.get(id) ?? { pending: false, missStreak: 0, overStreak: 0, samples: [] };
       tracks.set(id, t);
       if (t.pending) t.missStreak++; // last sample never answered
@@ -112,6 +118,16 @@ export function startWatchdog(router: PortRouter, opts: WatchdogOptions = {}): W
         evictions.push({ id, reason: verdict.reason, at: Date.now() });
         try { router.journal({ principal: "watchdog", op: "host.compartment.terminate", decision: "allow", reason: verdict.reason, scope: id, fast: verdict.fast }); } catch { /* journal best-effort */ }
         await router.callAsRoot(HOST_OPS.compartmentTerminate, { pluginId: id, ...(verdict.fast ? { fast: true } : {}) }).catch(() => {});
+        // E-2: drop the dead worker's listener + track — a long-lived daemon
+        // would otherwise accumulate one entry per evicted compartment forever.
+        // Best-effort (a dead worker's `off` must never break the eviction path).
+        try {
+          const listener = listeners.get(id);
+          if (listener) w.off("message", listener);
+        } catch { /* already dead */ }
+        listeners.delete(id);
+        listening.delete(id);
+        tracks.delete(id);
         opts.onEvict?.(id, verdict.reason);
       } else if (opts.requireBudget || opts.onDefaultBudget) {
         const st2 = budgetStatus(id, budgets, defaultMemMB);

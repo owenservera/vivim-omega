@@ -8,7 +8,8 @@ import { join, dirname } from "node:path";
 import { io, type Socket } from "socket.io-client";
 import { startConsoleService, type RunningService } from "../src/server.ts";
 import type { Interpretation, WorldModel } from "@vivim/omega-nlcl-pure";
-import { consentIdFor } from "../../../plugins/vivim-law/src/consent.ts"; // stable (principal, op) derivation — the real one law uses
+import { consentIdFor } from "@vivim/omega-contracts"; // stable (principal, op) derivation — the single contracts definition
+import { omegaTmp } from "@vivim/omega-platform"; // D-372 Phase 3: scratch through the seam
 
 const ROOT = join(import.meta.dir, "../../..");
 const COMPOSITION = join(ROOT, "compositions/console.json");
@@ -29,7 +30,7 @@ let base: string;
 const vaultDirs: string[] = [];
 
 function uniqueVault(): string {
-  const d = `/tmp/omega-web-test/${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
+  const d = omegaTmp("omega-web-test", `${Date.now()}-${Math.floor(Math.random() * 1e6)}`);
   mkdirSync(d, { recursive: true });
   vaultDirs.push(d);
   return d;
@@ -42,6 +43,9 @@ beforeAll(async () => {
   const spec = JSON.parse(await Bun.file(COMPOSITION).text()) as { entries: Array<{ id: string; source: string; config?: Record<string, unknown> }> };
   for (const e of spec.entries) {
     e.source = join(dirname(COMPOSITION), e.source); // absolutize: the copy lives in a temp dir
+    // Absolute (not ${TMP}) on purpose: this is a GENERATED spec copy whose
+    // vault home is already unique per run — absolute is the operator-override
+    // spelling (verbatim passthrough), and it keeps the copy hermetic.
     if (e.id === "vivim.vault" && e.config) e.config["dataDir"] = `${vaultDir}/vault-data`;
   }
   const specPath = `${vaultDir}/console-test.json`;

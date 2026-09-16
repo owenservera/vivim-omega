@@ -9,6 +9,7 @@ import { bootWithRecovery } from "@vivim/omega-host";
 import { generateRootKey } from "@vivim/omega-host";
 import { startWatchdog } from "../../tooling/watchdog/watchdog.ts";
 import type { Recipe } from "@vivim/omega-contracts";
+import { omegaTmp } from "@vivim/omega-platform"; // D-372 Phase 3: scratch through the seam
 
 const SPEC = join(import.meta.dir, "../../compositions/demo.json");
 const spec = JSON.parse(readFileSync(SPEC, "utf-8"));
@@ -19,7 +20,8 @@ let recipe: Recipe;
 let buildDir: string;
 
 function freshVault(name: string): string {
-  const dir = join("/tmp/omega-test", name);
+  // E-9: run-unique dir — fixed names collide across concurrent gates on one box.
+  const dir = omegaTmp("omega-test", `${name}-${Date.now()}-${process.pid}`);
   rmSync(dir, { recursive: true, force: true });
   mkdirSync(dir, { recursive: true });
   return dir;

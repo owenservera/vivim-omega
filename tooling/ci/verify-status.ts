@@ -34,6 +34,9 @@ if (headResolved.status !== 0 || headCheck.status !== 0) {
 
 // Run the gate fresh. The gate REWRITES build/status.json — snapshot the committed copy first.
 // D-369: fail fast on gate failure before the structural diff (clearer signal on red gate).
+// Windows soak boxes: run with OMEGA_TEST_CONCURRENCY=1 in the environment
+// (handle-starved parallel runs flake where the serial gate passes — D-368);
+// the verifier inherits the ambient concurrency, it does not set it.
 const gate = spawnSync("bun", ["run", "omega:gate"], { cwd: ROOT });
 if (gate.status !== 0) fail(`fresh gate exited ${gate.status} — see its output above`);
 const fresh = JSON.parse(readFileSync(committedPath, "utf-8"));

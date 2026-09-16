@@ -72,9 +72,25 @@ let tickCfg: TickConfig = { selfAddresses: [...DEFAULT_SELF_ADDRESSES] };
 let inFlight: Promise<TickReport> | null = null;
 let timer: ReturnType<typeof setInterval> | null = null;
 
+/** Bound: a manual tick waits at most this long for a prior pass (E-3). */
+const TICK_WAIT_MAX_MS = 30_000;
+
+/** Wait for any in-flight pass; throws (→ DEGRADED, caller retries) past the
+ *  bound instead of queueing manual ticks behind a hung pass forever. The live
+ *  interval never waits (a slow pass skips beats); only on-demand callers land here. */
+async function waitForPriorPass(): Promise<void> {
+  const start = Date.now();
+  while (inFlight !== null) {
+    if (Date.now() - start > TICK_WAIT_MAX_MS) {
+      throw new Error(`director.tick: prior pass still in flight after ${TICK_WAIT_MAX_MS}ms — refusing fail-closed (retry the tick)`);
+    }
+    await inFlight.catch(() => {});
+  }
+}
+
 /** Serialized tick: awaits any in-flight pass, then runs one of its own. */
 async function tickSerialized(ctx: PluginContext): Promise<TickReport> {
-  while (inFlight !== null) await inFlight.catch(() => {});
+  await waitForPriorPass();
   const run: Promise<TickReport> = runTick(ctx, tickCfg, tickState).finally(() => {
     if (inFlight === run) inFlight = null;
   });

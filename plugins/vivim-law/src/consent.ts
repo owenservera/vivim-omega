@@ -4,25 +4,9 @@
 // refusal can name the exact consent the user must grant. Each grant carries a
 // generation counter: revocation bumps it, so grants are scoped AND revocable.
 import type { ConsentGrant } from "@vivim/omega-contracts";
-
-/** FNV-derived 64-bit-ish stable hash (pure, import-free — no node:crypto in the compartment). */
-function stableHash(s: string): string {
-  let h1 = 0x811c9dc5;
-  let h2 = 0x01000193;
-  for (let i = 0; i < s.length; i++) {
-    const c = s.charCodeAt(i);
-    h1 = Math.imul(h1 ^ c, 0x01000193) >>> 0;
-    h2 = Math.imul(h2 ^ (i + c + 1), 0x85ebca6b) >>> 0;
-  }
-  return h1.toString(16).padStart(8, "0") + h2.toString(16).padStart(8, "0");
-}
-
-export const CONSENT_ID_RE = /^consent_[0-9a-f]{16}$/;
-
-/** Stable consent id for a (principal, op) pair — deterministic across boots. */
-export function consentIdFor(principal: string, op: string): string {
-  return `consent_${stableHash(`${principal}\u0000${op}`)}`;
-}
+// Single definition (contracts/src/consent.ts): the table owns state, never derivation.
+import { CONSENT_ID_RE, consentIdFor } from "@vivim/omega-contracts";
+export { CONSENT_ID_RE, consentIdFor };
 
 /** A grant record: the wire ConsentGrant plus law-internal revocation state. */
 export interface ConsentRecord extends ConsentGrant {

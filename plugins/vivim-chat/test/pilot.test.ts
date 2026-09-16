@@ -15,6 +15,7 @@ import { bootWithRecovery, compileComposition, ensureVault } from "@vivim/omega-
 import type { BootedHost } from "@vivim/omega-host";
 import type { CompositionSpec, PortResult, StreamChunk } from "@vivim/omega-contracts";
 import { capabilityNamesFromRouted } from "@vivim/omega-contracts";
+import { omegaTmp } from "@vivim/omega-platform"; // D-372 Phase 3: scratch through the seam
 
 const OMEGA_ROOT = join(import.meta.dir, "../../..");
 
@@ -29,7 +30,7 @@ describe("D-358/D-359 — the chat pilot falsifier on one real boot of compositi
     const SPEC = join(OMEGA_ROOT, "compositions/chat.json");
     const spec = JSON.parse(readFileSync(SPEC, "utf-8")) as CompositionSpec;
     shippedSpec = JSON.parse(JSON.stringify(spec)) as CompositionSpec;
-    const root = join("/tmp/omega-chat-test", `pilot-${Date.now()}-${Math.floor(Math.random() * 1e6)}`);
+    const root = omegaTmp("omega-chat-test", `pilot-${Date.now()}-${Math.floor(Math.random() * 1e6)}`);
     rmSync(root, { recursive: true, force: true });
     const vaultDir = join(root, "vault");
     mkdirSync(vaultDir, { recursive: true });
@@ -258,6 +259,22 @@ describe("D-358/D-359 — the chat pilot falsifier on one real boot of compositi
     expect(hB.total).toBe(1);
     const hLimited = await root<{ messages: unknown[] }>("chat.history@1", { conversationId: convId, limit: 1 });
     expect(hLimited.messages).toHaveLength(1); // the FIRST seq — bounded reads, honest totals
+  });
+
+  test("concurrent appends serialize: N parallel appends mint distinct contiguous seqs (C-1)", async () => {
+    const c = await root<{ conversationId: string }>("chat.open@1", { principal: "user:race" });
+    const N = 8;
+    const results = await Promise.all(
+      Array.from({ length: N }, (_, i) =>
+        root<{ messageId: string; seq: number }>("chat.append@1", {
+          conversationId: c.conversationId, role: "user", content: `race ${i}`,
+        }),
+      ),
+    );
+    const seqs = results.map((r) => r.seq).sort((a, b) => a - b);
+    expect(seqs).toEqual(Array.from({ length: N }, (_, i) => i + 1));
+    const h = await root<{ messages: Array<{ seq: number }>; total: number }>("chat.history@1", { conversationId: c.conversationId });
+    expect(h.total).toBe(N);
   });
 
   test("the refusal table: attributable conversation misses, malformed payloads, malformed capability sets", async () => {

@@ -14,6 +14,7 @@ import type { PluginContext } from "@vivim/omega-shim";
 import type { PortResult } from "@vivim/omega-contracts";
 import { compileComposition, ensureVault, bootComposition, contentHashDir } from "../../../host/src/index.ts";
 import type { BootedHost } from "../../../host/src/index.ts";
+import { omegaTmp } from "@vivim/omega-platform"; // D-372 Phase 3: scratch through the seam
 
 // ---- unit harness: call the def directly with a fake ctx --------------------------
 
@@ -146,7 +147,7 @@ let vault: string;
 let host: BootedHost;
 
 beforeAll(async () => {
-  vault = join("/tmp/omega-llm-test", `run-${Date.now()}-${Math.floor(Math.random() * 1e6)}`);
+  vault = omegaTmp("omega-llm-test", `run-${Date.now()}-${Math.floor(Math.random() * 1e6)}`);
   rmSync(vault, { recursive: true, force: true });
   mkdirSync(vault, { recursive: true });
   const { rootKey } = ensureVault(vault);

@@ -12,6 +12,7 @@ import { join } from "node:path";
 import { compileComposition, ensureVault, bootComposition } from "@vivim/omega-host";
 import type { BootedHost } from "@vivim/omega-host";
 import type { CompositionSpec, PortResult, Outcome } from "@vivim/omega-contracts";
+import { omegaTmp } from "@vivim/omega-platform"; // D-372 Phase 3: scratch through the seam
 
 const OMEGA_ROOT = join(import.meta.dir, "../../..");
 
@@ -56,7 +57,7 @@ async function shutdown(host: BootedHost): Promise<void> {
 
 describe("D-325 — restart preserves the forbidden overlay (real boot, same dataDir)", () => {
   test("set → vault record → reboot → reload → law.check still denies", async () => {
-    const root = join("/tmp/omega-law-d325", `restart-${Date.now()}-${process.pid}`);
+    const root = omegaTmp("omega-law-d325", `restart-${Date.now()}-${process.pid}`);
     rmSync(root, { recursive: true, force: true });
     const vaultDir = join(root, "vault");
     const dataDir = join(root, "vault-data");
@@ -122,7 +123,7 @@ describe("D-325 — restart preserves the forbidden overlay (real boot, same dat
 
 describe("D-325 — committed agent.json: spawn persists the overlay, restart keeps it", () => {
   test("propose → promote → spawn → vault record → reboot → reload → still denies", async () => {
-    const root = join("/tmp/omega-law-d325", `agentjson-${Date.now()}-${process.pid}`);
+    const root = omegaTmp("omega-law-d325", `agentjson-${Date.now()}-${process.pid}`);
     rmSync(root, { recursive: true, force: true });
     const vaultDir = join(root, "vault");
     const dataDir = join(root, "vault-data");
@@ -189,7 +190,7 @@ describe("D-325 — committed agent.json: spawn persists the overlay, restart ke
 
 describe("D-325 — boot-ordering: vault absent fails closed and loudly", () => {
   test("law grants vault caps but boots no vault → set aborts DEGRADED naming vivim.vault; reload refuses; no hang", async () => {
-    const root = join("/tmp/omega-law-d325", `novault-${Date.now()}-${process.pid}`);
+    const root = omegaTmp("omega-law-d325", `novault-${Date.now()}-${process.pid}`);
     rmSync(root, { recursive: true, force: true });
     const vaultDir = join(root, "vault");
     mkdirSync(vaultDir, { recursive: true });
@@ -228,7 +229,7 @@ describe("D-325 — boot-ordering: vault absent fails closed and loudly", () => 
   }, 60_000);
 
   test("law+vault present, empty overlay → reload 0, registry count 0 (the `0 forbidden entries` state)", async () => {
-    const root = join("/tmp/omega-law-d325", `empty-${Date.now()}-${process.pid}`);
+    const root = omegaTmp("omega-law-d325", `empty-${Date.now()}-${process.pid}`);
     rmSync(root, { recursive: true, force: true });
     const vaultDir = join(root, "vault");
     const dataDir = join(root, "vault-data");

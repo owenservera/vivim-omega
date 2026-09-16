@@ -5,7 +5,7 @@
   "type": "module",
   "dependencies": {
     "@vivim/omega-host": "workspace:*",
-    "@vivim/omega-contracts": "workspace:*",
+    "@vivim/omega-contracts": "workspace:*", "@vivim/omega-platform": "workspace:*",
     "@vivim/omega-nlcl-pure": "workspace:*",
     "socket.io": "^4.8.3"
   },

@@ -12,6 +12,7 @@ import type { CompositionSpec } from "@vivim/omega-contracts";
 import { cidOf } from "../src/canon.ts";
 import { dbPath, openVault, readObject, searchObjects } from "../src/db.ts";
 import { verify } from "../src/verify.ts";
+import { omegaTmp } from "@vivim/omega-platform"; // D-372 Phase 3: scratch through the seam
 
 const OMEGA_ROOT = join(import.meta.dir, "../../.."); // vivim-omega/ (test/ → vivim-vault/ → plugins/ → root)
 const hosts: BootedHost[] = [];
@@ -53,7 +54,8 @@ function makeSpec(name: string, dataDir: string): CompositionSpec {
 interface Case { host: BootedHost; root: string; vaultDir: string; dataDir: string }
 
 async function bootCase(caseName: string, opts: { dataDir?: string; spec?: CompositionSpec; specDir?: string } = {}): Promise<Case> {
-  const root = join("/tmp/omega-vault-test", caseName);
+  // E-9: run-unique dir — fixed names collide across concurrent gates on one box.
+  const root = omegaTmp("omega-vault-test", `${caseName}-${Date.now()}-${process.pid}`);
   rmSync(root, { recursive: true, force: true });
   const vaultDir = join(root, "vault");
   mkdirSync(vaultDir, { recursive: true });
@@ -272,7 +274,8 @@ describe("Ω2 integration — compaction provenance + live reads never blocked",
 
 describe("Ω2 integration — roundtrip swap harness through the router", () => {
   test("vault.roundtrip@1 → ok, equal head hash; target opens as a fresh db and verifies", async () => {
-    const target = "/tmp/omega-vault-test/roundtrip-target";
+    // E-9: run-unique dir — fixed names collide across concurrent gates on one box.
+    const target = omegaTmp("omega-vault-test", `roundtrip-target-${Date.now()}-${process.pid}`);
     rmSync(target, { recursive: true, force: true });
     const { host } = await bootCase("roundtrip");
     await host.router.callAsRoot("vault.append@1", { ns: "a", id: "one", data: { w: "hello world" } });
@@ -306,7 +309,8 @@ describe("Ω2 integration — roundtrip swap harness through the router", () => 
 
 describe("Ω2 integration — data sovereignty (plugin replaced/restarted, data persists)", () => {
   test("boot with dataDir A → append → shutdown → boot AGAIN with same dataDir → data still there", async () => {
-    const root = "/tmp/omega-vault-test/sovereignty";
+    // E-9: run-unique dir — fixed names collide across concurrent gates on one box.
+    const root = omegaTmp("omega-vault-test", `sovereignty-${Date.now()}-${process.pid}`);
     rmSync(root, { recursive: true, force: true });
     const vaultDir = join(root, "vault");
     mkdirSync(vaultDir, { recursive: true });
@@ -349,8 +353,8 @@ describe("Ω2 integration — the committed compositions/vault.json spec boots",
     expect(spec.entries[1].bootPhase).toBe(1);
     expect((spec.entries[1].grant.contracts as string[]).sort()).toEqual([...VAULT_CONTRACTS].sort());
 
-    const dataDir = "/tmp/omega-vault-test/spec-pattern/data";
-    rmSync("/tmp/omega-vault-test/spec-pattern", { recursive: true, force: true });
+    // E-9: run-unique dir — fixed names collide across concurrent gates on one box.
+    const dataDir = omegaTmp("omega-vault-test", `spec-pattern-data-${Date.now()}-${process.pid}`);
     spec.entries[1].config = { dataDir };
 
     const { host } = await bootCase("spec-pattern", { spec, specDir: join(OMEGA_ROOT, "compositions") });

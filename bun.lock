@@ -41,6 +41,7 @@
       "version": "0.1.0",
       "dependencies": {
         "@vivim/omega-contracts": "workspace:*",
+        "@vivim/omega-platform": "workspace:*",
         "@vivim/omega-shim": "workspace:*",
       },
     },
@@ -79,6 +80,7 @@
       "dependencies": {
         "@vivim/omega-contracts": "workspace:*",
         "@vivim/omega-host": "workspace:*",
+        "@vivim/omega-platform": "workspace:*",
         "@vivim/omega-shim": "workspace:*",
       },
       "devDependencies": {
@@ -92,6 +94,7 @@
       "dependencies": {
         "@vivim/omega-contracts": "workspace:*",
         "@vivim/omega-host": "workspace:*",
+        "@vivim/omega-platform": "workspace:*",
         "@vivim/omega-shim": "workspace:*",
       },
     },
@@ -110,6 +113,7 @@
       "dependencies": {
         "@vivim/omega-contracts": "workspace:*",
         "@vivim/omega-host": "workspace:*",
+        "@vivim/omega-platform": "workspace:*",
         "@vivim/omega-shim": "workspace:*",
       },
     },
@@ -119,6 +123,7 @@
       "dependencies": {
         "@vivim/omega-contracts": "workspace:*",
         "@vivim/omega-host": "workspace:*",
+        "@vivim/omega-platform": "workspace:*",
         "@vivim/omega-shim": "workspace:*",
       },
     },
@@ -144,6 +149,7 @@
       "version": "0.1.0",
       "dependencies": {
         "@vivim/omega-contracts": "workspace:*",
+        "@vivim/omega-platform": "workspace:*",
         "@vivim/omega-shim": "workspace:*",
       },
       "devDependencies": {
@@ -157,6 +163,7 @@
       "dependencies": {
         "@vivim/omega-contracts": "workspace:*",
         "@vivim/omega-host": "workspace:*",
+        "@vivim/omega-platform": "workspace:*",
         "@vivim/omega-shim": "workspace:*",
       },
     },
@@ -166,6 +173,7 @@
       "dependencies": {
         "@vivim/omega-contracts": "workspace:*",
         "@vivim/omega-host": "workspace:*",
+        "@vivim/omega-platform": "workspace:*",
         "@vivim/omega-shim": "workspace:*",
       },
     },
@@ -174,6 +182,7 @@
       "version": "0.1.0",
       "dependencies": {
         "@vivim/omega-contracts": "workspace:*",
+        "@vivim/omega-platform": "workspace:*",
         "@vivim/omega-shim": "workspace:*",
       },
       "devDependencies": {
@@ -187,6 +196,7 @@
       "version": "0.1.0",
       "dependencies": {
         "@vivim/omega-contracts": "workspace:*",
+        "@vivim/omega-platform": "workspace:*",
         "@vivim/omega-shim": "workspace:*",
       },
       "devDependencies": {
@@ -199,6 +209,7 @@
       "version": "0.1.0",
       "dependencies": {
         "@vivim/omega-contracts": "workspace:*",
+        "@vivim/omega-platform": "workspace:*",
         "@vivim/omega-shim": "workspace:*",
       },
       "devDependencies": {
@@ -213,6 +224,7 @@
         "@vivim/omega-contracts": "workspace:*",
         "@vivim/omega-host": "workspace:*",
         "@vivim/omega-nlcl-pure": "workspace:*",
+        "@vivim/omega-platform": "workspace:*",
         "@vivim/omega-sdk": "workspace:*",
         "@vivim/omega-shim": "workspace:*",
       },
@@ -223,6 +235,7 @@
       "dependencies": {
         "@vivim/omega-contracts": "workspace:*",
         "@vivim/omega-host": "workspace:*",
+        "@vivim/omega-platform": "workspace:*",
         "@vivim/omega-shim": "workspace:*",
       },
     },
@@ -233,6 +246,7 @@
         "@vivim/omega-contracts": "workspace:*",
         "@vivim/omega-host": "workspace:*",
         "@vivim/omega-nlcl-pure": "workspace:*",
+        "@vivim/omega-platform": "workspace:*",
         "@vivim/omega-sdk": "workspace:*",
         "@vivim/omega-shim": "workspace:*",
       },
@@ -258,6 +272,7 @@
       "dependencies": {
         "@vivim/omega-contracts": "workspace:*",
         "@vivim/omega-host": "workspace:*",
+        "@vivim/omega-platform": "workspace:*",
         "@vivim/omega-shim": "workspace:*",
       },
       "devDependencies": {
@@ -271,6 +286,7 @@
       "dependencies": {
         "@vivim/omega-contracts": "workspace:*",
         "@vivim/omega-host": "workspace:*",
+        "@vivim/omega-platform": "workspace:*",
         "@vivim/omega-shim": "workspace:*",
       },
     },
@@ -290,6 +306,7 @@
       "dependencies": {
         "@vivim/omega-contracts": "workspace:*",
         "@vivim/omega-host": "workspace:*",
+        "@vivim/omega-platform": "workspace:*",
         "zod": "^4.6.2",
       },
     },
@@ -307,6 +324,7 @@
         "@vivim/daemon-client": "workspace:*",
         "@vivim/omega-contracts": "workspace:*",
         "@vivim/omega-host": "workspace:*",
+        "@vivim/omega-platform": "workspace:*",
         "@vivim/omega-shim": "workspace:*",
       },
     },
@@ -317,6 +335,7 @@
         "@vivim/daemon-client": "workspace:*",
         "@vivim/omega-contracts": "workspace:*",
         "@vivim/omega-host": "workspace:*",
+        "@vivim/omega-platform": "workspace:*",
         "@vivim/omega-shim": "workspace:*",
       },
     },
@@ -330,6 +349,7 @@
       "dependencies": {
         "@vivim/omega-contracts": "workspace:*",
         "@vivim/omega-host": "workspace:*",
+        "@vivim/omega-platform": "workspace:*",
         "@vivim/omega-shim": "workspace:*",
       },
     },
@@ -340,6 +360,7 @@
         "@vivim/omega-contracts": "workspace:*",
         "@vivim/omega-host": "workspace:*",
         "@vivim/omega-nlcl-pure": "workspace:*",
+        "@vivim/omega-platform": "workspace:*",
         "socket.io": "^4.8.3",
       },
       "devDependencies": {
@@ -352,6 +373,7 @@
       "dependencies": {
         "@vivim/omega-contracts": "workspace:*",
         "@vivim/omega-host": "workspace:*",
+        "@vivim/omega-platform": "workspace:*",
         "@vivim/omega-sdk": "workspace:*",
         "@vivim/omega-shim": "workspace:*",
         "zod": "^4.6.2",
@@ -364,6 +386,7 @@
         "@vivim/daemon-client": "workspace:*",
         "@vivim/omega-contracts": "workspace:*",
         "@vivim/omega-host": "workspace:*",
+        "@vivim/omega-platform": "workspace:*",
         "@vivim/omega-sdk": "workspace:*",
         "@vivim/omega-shim": "workspace:*",
         "@vivim/omega-testkit": "workspace:*",

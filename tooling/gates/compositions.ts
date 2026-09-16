@@ -22,7 +22,7 @@
 import { readdirSync, readFileSync, existsSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { routableOps, HOST_OPS, type PluginManifest } from "@vivim/omega-contracts";
-import { HOST_OP_TO_CAP } from "@vivim/omega-host";
+import { HOST_OP_TO_CAP } from "@vivim/omega-contracts";
 
 interface SpecEntry {
   id: string;

@@ -14,6 +14,7 @@ import type { CompositionSpec, PortResult, Outcome } from "@vivim/omega-contract
 import {
   decideExecAdmission, execCallScope, execQuarantinedMidFlight, parseExecInput,
 } from "../src/agent.ts";
+import { omegaTmp } from "@vivim/omega-platform"; // D-372 Phase 3: scratch through the seam
 
 const OMEGA_ROOT = join(import.meta.dir, "../../..");
 const hosts: BootedHost[] = [];
@@ -67,7 +68,7 @@ describe("D-327 — PROMOTED record → gated call → ledger entry (real boot)"
   let host: BootedHost;
 
   beforeAll(async () => {
-    const root = join("/tmp/omega-exec-test", `b1a-${Date.now()}-${Math.floor(Math.random() * 1e6)}`);
+    const root = omegaTmp("omega-exec-test", `b1a-${Date.now()}-${Math.floor(Math.random() * 1e6)}`);
     rmSync(root, { recursive: true, force: true });
     const vaultDir = join(root, "vault");
     mkdirSync(vaultDir, { recursive: true });
