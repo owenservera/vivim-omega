@@ -1,7 +1,7 @@
 // tooling/watchdog — unit tests: the pure policy classifier (D-360).
 // The boot-based falsifiers live in host/test/adversarial.test.ts (cases 13/14).
 import { describe, test, expect } from "bun:test";
-import { classify } from "../watchdog.ts";
+import { classify, budgetStatus } from "../watchdog.ts";
 
 const OPTS = { missLimit: 3, overLimit: 2 };
 
@@ -35,5 +35,17 @@ describe("watchdog classify (D-360 policy)", () => {
   test("no declared memMB → no memory verdict (unresponsiveness still applies)", () => {
     expect(classify({}, 0, 5, 96 * 1024 * 1024, OPTS).verdict).toBe("ok");
     expect(classify({}, 3, 5, 96 * 1024 * 1024, OPTS).verdict).toBe("evict");
+  });
+
+  test("D-366: unresponsive evicts fast, memory evicts graceful", () => {
+    expect(classify({ memMB: 64 }, 3, 0, undefined, OPTS).fast).toBe(true);
+    expect(classify({ memMB: 32 }, 0, 2, 96 * 1024 * 1024, OPTS).fast).toBe(false);
+    expect(classify({ memMB: 64 }, 0, 0, 1024, OPTS).fast).toBe(false);
+  });
+
+  test("D-366: budgetStatus distinguishes declared vs default", () => {
+    const budgets = new Map([["a", { memMB: 32 }]]);
+    expect(budgetStatus("a", budgets, 256)).toEqual({ memMB: 32, declared: true });
+    expect(budgetStatus("b", budgets, 256)).toEqual({ memMB: 256, declared: false });
   });
 });

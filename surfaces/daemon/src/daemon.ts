@@ -237,7 +237,7 @@ export async function startDaemon(opts: {
       })();
     });
     sock.on("close", () => { buffers.delete(sock); });
-    sock.on("error", (e) => { console.error(`[daemon] socket error: ${String(e)}`); });
+    sock.on("error", (e) => { buffers.delete(sock); console.error(`[daemon] socket error: ${String(e)}`); }); // D-369: drop buffer on error too (no leak on long-lived daemon)
   });
   const boundPort = await new Promise<number>((res, rej) => {
     listener!.once("listening", () => { const a = listener!.address(); res(typeof a === "object" && a ? a.port : 0); });

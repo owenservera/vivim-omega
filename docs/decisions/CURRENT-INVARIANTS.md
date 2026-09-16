@@ -1,7 +1,7 @@
 # Current Invariants — the one-page law snapshot
 
-**D-364 consolidation pass #1.** Generated as-of the remediation wave (D-360…D-364), branch
-`omega`. The full decision log (`docs/BUILD-DECISIONS.md`, 360+ rows) remains the audit trail;
+**D-364 consolidation pass #1 + D-365/367/370 owner amendments.** Generated as-of the remediation wave (D-360…D-364) plus the owner wave PROPOSED (D-365…D-370), branch
+`owner-wave-001`. The full decision log (`docs/BUILD-DECISIONS.md`) remains the audit trail;
 this page is what a fresh reader (human or agent) reads INSTEAD of it to state present-day law.
 Regenerated every ~30 ratified decisions (or one per wave-set, whichever comes first).
 
@@ -13,7 +13,7 @@ Regenerated every ~30 ratified decisions (or one per wave-set, whichever comes f
 | **B2** | One `worker_threads` compartment per plugin — separate V8 isolates, shared-nothing. Every message crosses the Port Protocol. Isolation is against **coupling, not exhaustion** (D-321: `resourceLimits` are NOT enforced on Bun — re-verified on Linux, 130MB in a 32MB cap). The D-360 watchdog bounds *detection* time of a consuming compartment (adversarial 13/14); exhaustion within a sample window remains open until a process-per-compartment tier exists (flagged, not built — D-360). | host/src/worker.ts header, gate `bun-surface` (runtime-neutral prod tree), adversarial 13/14 |
 | **B3** | Capability tokens are verified host-side, outside every compartment. Token records are order-independent (alias keys and guarding caps resolve to the same effective cap). Revocation is a generation bump (attributable REVOKED register). | host/src/ports.ts `checkToken`, token-law tests |
 | **B4** | Any verification failure refuses the composition; boot falls back to the pinned recipe; the rename is the atomic durability boundary (stale tmp cleaned, mid-swap crash drills green). | recovery.ts, adversarial 8/9/12, B4 drill |
-| **B5** | The µhost is boring and may not grow: `host/src` ≤ 1,000 LOC, hard gate. Creep moves into plugins or out-of-tree tooling (the watchdog and the pool both live outside, injected). | gate `host-loc` (999/1000 at this snapshot) |
+| **B5** | The µhost is boring and may not grow: `host/src` ≤ 1,100 LOC, hard gate, FROZEN D-365 (sole owner — no new host surface without removing old surface in the same commit). Creep moves into plugins or out-of-tree tooling (the watchdog and the pool both live outside, injected). | gate `host-loc` (999/1100 at this snapshot) |
 
 ## The architecture laws (Ω)
 
@@ -36,14 +36,13 @@ Regenerated every ~30 ratified decisions (or one per wave-set, whichever comes f
   `bun-surface` stage enforces the inventory mechanically; the node `--test` canon canary proves
   the core logic stays runtime-neutral (CI, D-362).
 
-## Watchdog policy (D-360)
+## Watchdog policy (D-360, hardened D-366 PROPOSED)
 
 - Lives in `tooling/watchdog` (out-of-tree, D-329 placement law), attaches to a booted router,
   probes raw workers on an interval. Termination goes through the sanctioned host op
-  `host.compartment.terminate@1` as root; evictions journal (principal `watchdog`).
-- Two-signal enforcement per compartment: **unresponsive** (N consecutive unanswered probes)
-  and **memory** (N consecutive answered samples over the manifest's declared `runtime.budget.memMB`).
-- Thresholds are manifest data, not code. Honest bounds: detection is interval×N bounded;
+  `host.compartment.terminate@1` as root (`{fast}` flag: unresponsive→fast hard-kill 500ms cap via `terminateFast`; memory→graceful); evictions journal (principal `watchdog`).
+- Two-signal enforcement per compartment: **unresponsive** (N consecutive unanswered probes — NON-SPOOFABLE, a wedged loop cannot answer) and **memory** (N consecutive answered samples over the manifest's declared `runtime.budget.memMB` — COOPERATIVE-ADVISORY, self-reported heap can be lied about; see D-366 spoof note).
+- Thresholds are manifest data, not code. Missing budgets fall back to `defaultMemMB` with journal audit (`requireBudget`/`onDefaultBudget`) — declare budgets fail-closed. Honest bounds: detection is interval×N bounded;
   this is containment, not a security boundary.
 
 ## Boot readiness (D-363)
@@ -52,7 +51,7 @@ Regenerated every ~30 ratified decisions (or one per wave-set, whichever comes f
   the event path (immediate if already active; rejects on degraded/timeout). Boot polls nothing.
   Demo boot: 27ms (polling) → 10ms (event-driven).
 
-## Process law (D-364)
+## Process law (D-364, simplified D-367 PROPOSED)
 
 - Every decision ≥ D-313 has a record (six sections, options matrix, Decision line, evidence);
   statuses agree between index and record; RATIFIED requires a resolvable commit SHA.
@@ -61,5 +60,7 @@ Regenerated every ~30 ratified decisions (or one per wave-set, whichever comes f
 - **Cooling-off for B1–B4 evidence-class decisions**: the falsifier (named test/probe) must be
   IN the record before RATIFIED, and a second gate run must follow ratification (same-day
   ratification stays legal for directive-class rows — solo-owner speed, honestly labeled).
+- **Directive fast-path (D-367):** directive rows ratify same-day on gate green by default; evidence B1–B4 keeps full cooling-off.
+- **Composition freeze (D-370):** 16 specs, no new spec without deleting/generating one (social discipline until the D-316 net mechanizes it).
 - Consolidation pass: every ~30 ratified decisions, refresh this page. The full log is never
   pruned or rewritten (append-only, supersede never edit).

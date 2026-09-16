@@ -63,6 +63,8 @@ export interface CompartmentHandle {
   onMessage(cb: (msg: FromWorker) => void): void;
   onCrash(cb: (err: string) => void): void;
   terminate(): Promise<void>;
+  /** D-366 fast kill: hard-terminate without the 2500ms graceful wait (unresponsive compartments never answer shutdown). */
+  terminateFast(): Promise<void>;
 }
 
 export function wrapWorker(pluginId: string, worker: Worker): CompartmentHandle {
@@ -99,6 +101,17 @@ export function wrapWorker(pluginId: string, worker: Worker): CompartmentHandle 
         }, 2500);
         worker.once("exit", () => settle());
         try { worker.postMessage({ type: "shutdown" } satisfies ToWorker); } catch { /* already dead */ }
+      });
+    },
+    terminateFast: async () => {
+      handle.state = "stopped";
+      await new Promise<void>((res) => {
+        let settled = false;
+        const settle = () => { if (!settled) { settled = true; clearTimeout(t); res(); } };
+        const t = setTimeout(settle, 500); // hard-kill cap — no graceful wait (D-366 unresponsive path)
+        worker.once("exit", () => settle());
+        try { const r = worker.terminate?.(); if (r && typeof (r as Promise<void>).then === "function") (r as Promise<void>).then(settle, settle); else settle(); }
+        catch { settle(); }
       });
     },
   };

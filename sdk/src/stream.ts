@@ -29,6 +29,8 @@ export interface StreamCallOptions {
   deadlineMs?: number;
   /** Synchronous tap for UI consumers; receives every chunk the generator will. */
   onChunk?: (c: StreamChunk) => void;
+  /** D-369: fail-closed bound on buffered chunks (producer flood guard). */
+  maxBufferedChunks?: number;
 }
 
 export interface StreamCall {
@@ -42,10 +44,16 @@ export interface StreamCall {
 
 export function streamRootCall(router: StreamRouter, op: string, payload: unknown, opts: StreamCallOptions = {}): StreamCall {
   const queue: StreamChunk[] = [];
+  const maxBuffered = opts.maxBufferedChunks ?? 1000;
   let settled: PortResult | null = null;
   let wakeup: (() => void) | null = null;
   const wake = () => { const w = wakeup; wakeup = null; w?.(); };
-  const push = (c: StreamChunk) => { opts.onChunk?.(c); queue.push(c); wake(); };
+  const push = (c: StreamChunk) => {
+    opts.onChunk?.(c);
+    queue.push(c);
+    if (queue.length > maxBuffered) throw new Error(`stream buffer overflow (${queue.length} > ${maxBuffered}) — producer flood, fail-closed`);
+    wake();
+  };
 
   const routed = router.callAsRootStream(op, payload, push, opts.deadlineMs);
   const streamId = routed.then((r) => r.streamId);

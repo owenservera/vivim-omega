@@ -65,9 +65,10 @@ export const CHAT_HISTORY_DEFAULT_LIMIT = 50;
 
 const ROLES: ReadonlySet<string> = new Set(["user", "assistant", "system"]);
 
-/** Id grammar: prefix + '_' + 8..40 lowercase hex/word chars, no separators
+/** Id grammar: prefix + '_' + 1..64 lowercase word chars, no separators
  *  beyond the prefix's own — mirrors the vault's id discipline (no NUL, no
- *  '|', no ':'). Pure and TOTAL: valid input round-trips, invalid throws. */
+ *  '|', no ':'). Pure and TOTAL: valid input round-trips, invalid throws.
+ *  D-369: comment corrected to match the enforced {1,64} (was stale 8..40). */
 function checkId(op: string, prefix: string, v: unknown): string {
   if (typeof v !== "string" || v.length === 0) {
     throw new Error(`${op}: id must be a non-empty string`);

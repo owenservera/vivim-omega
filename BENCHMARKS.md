@@ -47,3 +47,9 @@
   is downgraded accordingly ("coupling, not exhaustion").
 - node --test canary (D-362): canon round-trip suite 5/5 under Node 24 — the
   production tree's core logic is runtime-neutral outside the one sqlite adapter.
+
+## Owner wave 001 PROPOSED (D-365…D-370, branch owner-wave-001)
+
+- Host: 999 LOC now gated against 1100 (frozen — no new surface without removal).
+- Watchdog D-366: unresponsive→fast kill path added (`terminateFast` 500ms cap vs 2500ms graceful); memory→graceful unchanged. Fresh walls to be measured on the ratification run.
+- Quick lane: `bun run omega:quick` (structural stages only) for inner loop; merge gate unchanged (733/733 baseline carried).

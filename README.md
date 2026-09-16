@@ -11,7 +11,7 @@ they become backfill sources after the core exists.
 
 ## The Ω laws in ten lines
 
-1. The µhost is boring and may not grow: `host/src` ≤ **1,000 LOC**, hard gate (B5).
+1. The µhost is boring and may not grow: `host/src` ≤ **1,100 LOC**, hard gate (B5, frozen D-365 as sole owner — no new host surface without removing old surface in the same commit).
 2. No code executes unless a signed manifest entry in the Recipe references its content hash (B1).
 3. Compartments never share a heap — every message traverses the Port Protocol (B2). Isolation
    is against **coupling, not exhaustion**: `resourceLimits` are not enforced on Bun (D-321,

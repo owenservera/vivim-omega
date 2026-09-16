@@ -17,6 +17,10 @@
   ],
   "scripts": {
     "omega:test": "bun test",
+    "omega:test:host": "bun test host tooling/gates",
+    "omega:test:plugins": "bun test plugins packs",
+    "omega:test:surfaces": "bun test surfaces sdk testkit",
+    "omega:quick": "bun run tooling/gates/gate.ts --quick",
     "omega:gate": "bun run tooling/gates/gate.ts",
     "omega:decisions": "bun run tooling/gates/decisions.ts",
     "omega:questions": "bun run tooling/gates/decisions.ts --write",

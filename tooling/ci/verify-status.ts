@@ -33,7 +33,9 @@ if (headResolved.status !== 0 || headCheck.status !== 0) {
 }
 
 // Run the gate fresh. The gate REWRITES build/status.json — snapshot the committed copy first.
+// D-369: fail fast on gate failure before the structural diff (clearer signal on red gate).
 const gate = spawnSync("bun", ["run", "omega:gate"], { cwd: ROOT });
+if (gate.status !== 0) fail(`fresh gate exited ${gate.status} — see its output above`);
 const fresh = JSON.parse(readFileSync(committedPath, "utf-8"));
 
 const structural = (s: Record<string, any>): Record<string, unknown> => ({
@@ -54,5 +56,4 @@ if (a !== b) {
   console.error("--- fresh:   ", b);
   process.exit(1);
 }
-if (gate.status !== 0) fail(`fresh gate exited ${gate.status} — see its output above`);
-console.log(`✓ verify-status: committed status.json reproduces (stamped @ ${committed.head}, carrying HEAD ${fresh.head}; tests ${fresh.tests?.pass}/${(fresh.tests?.pass ?? 0) + (fresh.tests?.fail ?? 0)}, host ${structural(fresh).hostLoc}/1000)`);
+console.log(`✓ verify-status: committed status.json reproduces (stamped @ ${committed.head}, carrying HEAD ${fresh.head}; tests ${fresh.tests?.pass}/${(fresh.tests?.pass ?? 0) + (fresh.tests?.fail ?? 0)}, host ${structural(fresh).hostLoc}/1100)`);

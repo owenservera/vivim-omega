@@ -34,10 +34,10 @@ const pass = (name: string, detail: unknown) => { checks[name] = { ok: true, det
 // (never for making a red check go away).
 const skip = (name: string, detail: unknown) => { checks[name] = { ok: true, skipped: true, detail }; console.log(`○ ${name}: skipped`); };
 
-// 1 · host-loc (B5 — the boredom budget is law)
+// 1 · host-loc (B5 — the boredom budget is law; D-365: 1100 + freeze as sole owner)
 const hostLoc = countLoc(join(ROOT, "host/src"));
-if (hostLoc <= 1000) pass("host-loc", { loc: hostLoc, budget: 1000 });
-else fail("host-loc", `µhost is ${hostLoc} LOC (budget 1000) — move the creep into a plugin`);
+if (hostLoc <= 1100) pass("host-loc", { loc: hostLoc, budget: 1100 });
+else fail("host-loc", `µhost is ${hostLoc} LOC (budget 1100, frozen D-365) — move the creep into a plugin`);
 
 // 2 · fresh-tree: legacy repos untouched + no legacy imports anywhere in the fresh tree
 // Clean-clone/CI honesty (D-320): with NO sibling repos present there is nothing to
@@ -140,10 +140,21 @@ try {
 // Concurrency is capped by box size (D-317): past core count, worker-heavy test
 // files thrash instead of parallelizing — measured 64s green at 4-wide vs
 // 300s+ flaking at default-20 on a loaded 4-core box. Same tests, same
-// assertions, same per-test budgets (--timeout stays default; tests own theirs).
+// assertions. D-368: per-test budget raised to 60s (Windows git-spawn slowness
+// tripped the 5s default in the decisions self-host test) and concurrency
+// honors OMEGA_TEST_CONCURRENCY (soak fallback: 1 on handle-starved boxes;
+// MCP stdio uv_spawn EUNKNOWN exhaustion observed on Windows soak runs).
 // The cap value is recorded in status.json so any run is interpretable.
-const testMaxConc = Math.max(4, Math.min(20, cpus().length));
-const tests = await sh(["bun", "test", "--max-concurrency", String(testMaxConc)]);
+// D-368 --quick: host-loc + decisions + compositions + bun-surface only (no tests/attest/status write) for inner loop.
+const QUICK = process.argv.includes("--quick");
+const testMaxConc = Number(process.env.OMEGA_TEST_CONCURRENCY ?? Math.max(4, Math.min(20, cpus().length)));
+const TEST_TIMEOUT_MS = "60000";
+if (QUICK) {
+  const summary = { ok: failed === 0, failed, hostLoc, quick: true, at: gate.startedAt };
+  console.log(JSON.stringify(summary, null, 2));
+  process.exit(failed === 0 ? 0 : 1);
+}
+const tests = await sh(["bun", "test", "--max-concurrency", String(testMaxConc), "--timeout", TEST_TIMEOUT_MS]);
 const passMatch = tests.out.match(/^\s*(\d+) pass/m);
 const failMatch = tests.out.match(/^\s*(\d+) fail/m);
 const testPass = parseInt(passMatch?.[1] ?? "0");

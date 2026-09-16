@@ -268,11 +268,12 @@ export class PortRouter {
         return { ok: true, value: stats };
       }
       case HOST_OPS.compartmentTerminate: {
-        const { pluginId } = payload as { pluginId: string };
+        const { pluginId, fast } = payload as { pluginId: string; fast?: boolean };
         const h = this.compartments.get(pluginId);
         if (!h) return { ok: false, error: "SCOPE", detail: `unknown compartment ${pluginId}` };
-        this.failInflight(pluginId, `terminated by ${callerId}`);
-        await h.terminate();
+        this.failInflight(pluginId, `terminated by ${callerId}${fast ? " (fast)" : ""}`);
+        if (fast) await h.terminateFast();
+        else await h.terminate();
         return { ok: true, value: { terminated: pluginId } };
       }
       case HOST_OPS.compartmentSpawn: {

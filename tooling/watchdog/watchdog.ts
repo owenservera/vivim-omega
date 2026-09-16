@@ -18,10 +18,17 @@
 // are policy data, not plumbing. A compartment the manifest leaves undeclared
 // gets defaultMemMB.
 //
-// Honest bounds (D-321 unchanged): detection is bounded by interval × N; a
+// Honest bounds (D-321 unchanged, D-366 hardened): detection is bounded by interval × N; a
 // compartment may still allocate several hundred MB or pin one core WITHIN a
 // detection window, and termination frees what the OS can free (worker death).
 // This layer is containment, not a security boundary — see D-360.
+// D-366 SPOOF NOTE: heapUsed is SELF-REPORTED via the compartment's own probeStat.
+// A malicious compartment can lie about heap (report low while growing). Only the
+// UNRESPONSIVE signal (wedged loop cannot answer at all) is non-spoofable. Treat
+// memory eviction as cooperative advisory, unresponsive eviction as reliable.
+// D-366 KILL PATHS: unresponsive → fast kill (no 2500ms graceful wait, shutdown
+// message would never be processed); memory → graceful terminate (responsive,
+// may still flush). Both go through the sanctioned host op with {fast} flag.
 import type { PortRouter } from "@vivim/omega-host";
 import { HOST_OPS } from "@vivim/omega-contracts";
 
@@ -32,22 +39,32 @@ export interface WatchdogOptions {
   overLimit?: number;         // consecutive over-budget heap samples → evict (default 2)
   defaultMemMB?: number;      // budget when the manifest declares none (default 256)
   budgets?: Map<string, WatchdogBudget>; // per-compartment policy (from manifests)
+  requireBudget?: boolean;    // D-366: when true, compartments with no declared budget journal a warning (fail-closed intent — prefer declared budgets)
   onEvict?: (id: string, reason: string) => void;
+  onDefaultBudget?: (id: string, defaultMemMB: number) => void; // D-366: observed when a compartment falls back to default (auditable)
 }
 export interface Eviction { id: string; reason: string; at: number }
 export interface Watchdog { stop(): void; evictions(): Eviction[] }
 export interface Sample { answered: boolean; heapUsed?: number; rss?: number; cpuUs?: number }
 
 /** Pure policy: do the current streaks warrant eviction? Unit-tested directly;
- *  the boot-based falsifiers (adversarial 13/14) cover the wiring. */
-export function classify(budget: WatchdogBudget, missStreak: number, overStreak: number, lastHeapUsed: number | undefined, opts: { missLimit: number; overLimit: number }): { verdict: "ok" | "evict"; reason: string } {
+ *  the boot-based falsifiers (adversarial 13/14) cover the wiring.
+ *  D-366: verdict reason names the kill path (fast for unresponsive, graceful for memory). */
+export function classify(budget: WatchdogBudget, missStreak: number, overStreak: number, lastHeapUsed: number | undefined, opts: { missLimit: number; overLimit: number }): { verdict: "ok" | "evict"; reason: string; fast: boolean } {
   if (missStreak >= opts.missLimit) {
-    return { verdict: "evict", reason: `watchdog: unresponsive — ${missStreak} consecutive probes unanswered (limit ${opts.missLimit})` };
+    return { verdict: "evict", fast: true, reason: `watchdog: unresponsive — ${missStreak} consecutive probes unanswered (limit ${opts.missLimit}) [fast kill]` };
   }
   if (budget.memMB !== undefined && overStreak >= opts.overLimit) {
-    return { verdict: "evict", reason: `watchdog: heap over budget — ${((lastHeapUsed ?? 0) / 1048576).toFixed(0)}MB > ${budget.memMB}MB for ${overStreak} consecutive samples` };
+    return { verdict: "evict", fast: false, reason: `watchdog: heap over budget — ${((lastHeapUsed ?? 0) / 1048576).toFixed(0)}MB > ${budget.memMB}MB for ${overStreak} consecutive samples [graceful]` };
   }
-  return { verdict: "ok", reason: "" };
+  return { verdict: "ok", fast: false, reason: "" };
+}
+
+/** D-366: declared-vs-default budget status (auditable — prefer declared). */
+export function budgetStatus(id: string, budgets: Map<string, WatchdogBudget>, defaultMemMB: number): { memMB: number; declared: boolean } {
+  const b = budgets.get(id);
+  if (b?.memMB !== undefined) return { memMB: b.memMB, declared: true };
+  return { memMB: defaultMemMB, declared: false };
 }
 
 interface Track { pending: boolean; missStreak: number; overStreak: number; samples: Sample[] }
@@ -93,9 +110,17 @@ export function startWatchdog(router: PortRouter, opts: WatchdogOptions = {}): W
       const verdict = classify(budget, t.missStreak, t.overStreak, t.samples.at(-1)?.heapUsed, { missLimit, overLimit });
       if (verdict.verdict === "evict") {
         evictions.push({ id, reason: verdict.reason, at: Date.now() });
-        try { router.journal({ principal: "watchdog", op: "host.compartment.terminate", decision: "allow", reason: verdict.reason, scope: id }); } catch { /* journal best-effort */ }
-        await router.callAsRoot(HOST_OPS.compartmentTerminate, { pluginId: id }).catch(() => {});
+        try { router.journal({ principal: "watchdog", op: "host.compartment.terminate", decision: "allow", reason: verdict.reason, scope: id, fast: verdict.fast }); } catch { /* journal best-effort */ }
+        await router.callAsRoot(HOST_OPS.compartmentTerminate, { pluginId: id, ...(verdict.fast ? { fast: true } : {}) }).catch(() => {});
         opts.onEvict?.(id, verdict.reason);
+      } else if (opts.requireBudget || opts.onDefaultBudget) {
+        const st2 = budgetStatus(id, budgets, defaultMemMB);
+        if (!st2.declared) {
+          opts.onDefaultBudget?.(id, st2.memMB);
+          if (opts.requireBudget) {
+            try { router.journal({ principal: "watchdog", op: "watchdog.budget-default", decision: "allow", reason: `compartment ${id} has no declared runtime.budget.memMB — using default ${st2.memMB}MB (declare it fail-closed)`, scope: id }); } catch { /* best-effort */ }
+          }
+        }
       }
     }
   };
