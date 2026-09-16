@@ -1,7 +1,8 @@
 // µhost — boot.ts: verify everything (B1/B4), then spawn compartments in bootPhase order
 // (phase 0 = vivim.law, enforced at verify time), mint tokens, wire the router.
 import type { PluginManifest, Recipe } from "@vivim/omega-contracts";
-import { mkdirSync, existsSync, writeFileSync, chmodSync } from "node:fs";
+import { mkdirSync, existsSync, writeFileSync } from "node:fs";
+import { ownerOnly } from "@vivim/omega-platform"; // D-372: the seam owns permissions (never throws, Windows-safe)
 import { join, resolve } from "node:path";
 import { generateRootKey, loadRootKeyPem } from "./canon.ts";
 import { verifyRecipeSignature, verifyCompositionInvariants, verifyEntryWithRoot } from "./recipe.ts";
@@ -23,7 +24,7 @@ export function ensureVault(vaultDir: string): { rootKey: ReturnType<typeof load
     const key = generateRootKey();
     mkdirSync(join(vaultDir, "keys"), { recursive: true });
     writeFileSync(keyFile, JSON.stringify({ keyId: key.keyId, publicKey: key.publicKey, privateKeyPem: key.privateKeyPem }, null, 2), { mode: 0o600 });
-    try { chmodSync(keyFile, 0o600); } catch { /* D-371 Windows: chmod is best-effort (ACLs, not mode bits) — the writeFileSync mode above already applied where supported */ }
+    ownerOnly(keyFile); // D-372 seam (best-effort on Windows ACLs — the writeFileSync mode above already applied where supported)
   }
   if (!existsSync(join(vaultDir, "format.json"))) writeFileSync(join(vaultDir, "format.json"), JSON.stringify({ vaultFormat: 1 }, null, 2));
   return { rootKey: loadRootKeyPem(keyFile) };

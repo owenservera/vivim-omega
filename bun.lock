@@ -57,6 +57,7 @@
       "version": "0.1.0",
       "dependencies": {
         "@vivim/omega-contracts": "workspace:*",
+        "@vivim/omega-platform": "workspace:*",
       },
     },
     "packs/domain-email": {
@@ -67,6 +68,10 @@
         "@vivim/omega-host": "workspace:*",
         "@vivim/omega-shim": "workspace:*",
       },
+    },
+    "platform": {
+      "name": "@vivim/omega-platform",
+      "version": "0.1.0",
     },
     "plugins/discovery-healing": {
       "name": "@vivim/plugin-discovery-healing",
@@ -275,6 +280,7 @@
       "dependencies": {
         "@vivim/omega-contracts": "workspace:*",
         "@vivim/omega-host": "workspace:*",
+        "@vivim/omega-platform": "workspace:*",
         "@vivim/omega-shim": "workspace:*",
       },
     },
@@ -381,6 +387,8 @@
     "@vivim/omega-host": ["@vivim/omega-host@workspace:host"],
 
     "@vivim/omega-nlcl-pure": ["@vivim/omega-nlcl-pure@workspace:plugins/vivim-nlcl-pure"],
+
+    "@vivim/omega-platform": ["@vivim/omega-platform@workspace:platform"],
 
     "@vivim/omega-sdk": ["@vivim/omega-sdk@workspace:sdk"],
 

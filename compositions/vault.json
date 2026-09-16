@@ -26,7 +26,7 @@
           "vault.roundtrip@1"
         ]
       },
-      "config": { "dataDir": "/tmp/omega-vault/data" }
+      "config": { "dataDir": "${TMP}/omega-vault/data" }
     }
   ]
 }

@@ -105,17 +105,25 @@ try {
   else fail("compositions", c.issues.join("; "));
 } catch (e) { fail("compositions", String(e)); }
 
+// Production source dirs (host + every plugin/surface + shared libs) — shared by
+// the bun-surface (D-361) and os-surface (D-372) inventory stages.
+const PROD_DIRS_BASE = ["host/src", "shim/src", "contracts/src", "platform/src", "sdk/src", "testkit/src", "surfaces/cli/src", "surfaces/mcp/src", "surfaces/web/src", "surfaces/daemon/src", "surfaces/daemon-client/src"];
+function prodDirs(): string[] {
+  const dirs = [...PROD_DIRS_BASE];
+  for (const e of readdirSync(join(ROOT, "plugins"), { withFileTypes: true })) {
+    if (e.isDirectory()) dirs.push(`plugins/${e.name}/src`);
+  }
+  return dirs;
+}
+
 // 5 · bun-surface (D-361): the production tree stays runtime-neutral — zero `Bun.*`
 // calls and zero `bun` imports except the ONE declared adapter (the vault's sqlite
 // module). Dev tooling (this gate runs `bun test`) and tests are out of scope by policy.
 try {
-  const PROD_DIRS = ["host/src", "shim/src", "contracts/src", "sdk/src", "testkit/src", "surfaces/cli/src", "surfaces/mcp/src", "surfaces/web/src", "surfaces/daemon/src", "surfaces/daemon-client/src"];
+  const PROD_DIRS = prodDirs();
   const ADAPTERS: Record<string, string> = {
     "plugins/vivim-vault/src/db.ts": "D-361: the only bun:sqlite import (a Node build swaps this one module)",
   };
-  for (const e of readdirSync(join(ROOT, "plugins"), { withFileTypes: true })) {
-    if (e.isDirectory()) PROD_DIRS.push(`plugins/${e.name}/src`);
-  }
   const BUN_RE = /Bun\.|from\s+["']bun|import\s*\(\s*["']bun|require\(\s*["']bun/;
   const hits: string[] = [];
   for (const dir of PROD_DIRS) {
@@ -135,6 +143,38 @@ try {
   if (hits.length === 0) pass("bun-surface", { adapters: Object.keys(ADAPTERS), scan: PROD_DIRS.length + " prod dirs (incl. every plugins/*/src)" });
   else fail("bun-surface", `Bun-specific code outside the declared adapters — ${hits.length} hits: ${hits.slice(0, 10).join(" | ")}`);
 } catch (e) { fail("bun-surface", String(e)); }
+
+// 5b · os-surface (D-372): no file outside platform/src may know the OS —
+// no /tmp/ literals (use ${TMP} or omegaTmp()), no process.platform branches,
+// no raw permission calls (use ownerOnly()). Same fail-closed pattern as D-361:
+// the seam is declared in code, the inventory is enforced mechanically, and
+// supporting a new OS means adding a CI lane, never editing product code.
+try {
+  const OS_RES: Array<{ re: RegExp; what: string }> = [
+    { re: /\/tmp\//, what: "/tmp/ literal (use ${TMP} in specs or omegaTmp() in code)" },
+    { re: /process\.platform/, what: "process.platform branch (belongs in platform/src)" },
+    { re: /chmodSync|[^a-zA-Z.]chmod\(/, what: "raw permission call (use ownerOnly())" },
+  ];
+  const osHits: string[] = [];
+  for (const dir of prodDirs()) {
+    const abs = join(ROOT, dir);
+    if (!existsSync(abs)) continue;
+    for (const f of readdirSync(abs)) {
+      if (!f.endsWith(".ts")) continue;
+      const rel = `${dir}/${f}`;
+      const text = readFileSync(abs + "/" + f, "utf-8");
+      for (const [i, line] of text.split("\n").entries()) {
+        for (const { re, what } of OS_RES) {
+          if (re.test(line) && !(rel === "platform/src/platform.ts" && /D-372/.test(line))) {
+            osHits.push(`${rel}:${i + 1}: ${what}: ${line.trim().slice(0, 100)}`);
+          }
+        }
+      }
+    }
+  }
+  if (osHits.length === 0) pass("os-surface", { seam: ["platform/src/platform.ts"], scan: prodDirs().length + " prod dirs (incl. every plugins/*/src)" });
+  else fail("os-surface", `OS knowledge outside the platform seam — ${osHits.length} hits: ${osHits.slice(0, 10).join(" | ")}`);
+} catch (e) { fail("os-surface", String(e)); }
 
 // 6 · tests (gate evidence)
 // Concurrency is capped by box size (D-317): past core count, worker-heavy test

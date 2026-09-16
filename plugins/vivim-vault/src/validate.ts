@@ -3,17 +3,18 @@
 // (the shim converts handler throws into DEGRADED returns at the port boundary).
 // Kept in its own module (imported by index.ts AND by unit tests) so index.ts can
 // stay import-safe outside a worker (it calls startPlugin at top level).
+import { resolveDataDir as expandDataDir } from "@vivim/omega-platform"; // D-372: consumption-side expansion — recipes stay portable across machines
 
 export const DEFAULT_DATA_DIR = "./dev-vault/vault-data";
 
-/** dataDir resolution: composition config passthrough (never authority), default per the vault-format contract. */
+/** dataDir resolution: composition config passthrough (never authority), default per the vault-format contract. Portable and grandfathered spellings resolve on the consuming machine via the platform seam, so one signed recipe boots on every OS. */
 export function resolveDataDir(config: Record<string, unknown> | undefined | null): string {
   const raw = config?.dataDir;
   if (raw === undefined || raw === null) return DEFAULT_DATA_DIR;
   if (typeof raw !== "string" || raw.length === 0) {
     throw new Error(`vivim.vault: config.dataDir must be a non-empty string (got ${String(raw)})`);
   }
-  return raw;
+  return expandDataDir(raw);
 }
 
 const NAME_FORBIDDEN = /[\u0000|]/; // "|" separates Merkle fields; NUL breaks SQLite text

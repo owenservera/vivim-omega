@@ -59,9 +59,28 @@ describe("Ω2 config resolution (data sovereignty)", () => {
   test("resolveDataDir defaults to ./dev-vault/vault-data and passes through explicit dirs", () => {
     expect(resolveDataDir(undefined)).toBe("./dev-vault/vault-data");
     expect(resolveDataDir({})).toBe("./dev-vault/vault-data");
-    expect(resolveDataDir({ dataDir: "/tmp/x" })).toBe("/tmp/x");
     expect(() => resolveDataDir({ dataDir: "" })).toThrow(/non-empty/);
     expect(() => resolveDataDir({ dataDir: 42 })).toThrow(/non-empty/);
+  });
+
+  test("D-372: portable + grandfathered spellings resolve on the consuming machine (one recipe, every OS)", async () => {
+    const { tmpdir } = await import("node:os");
+    const { join } = await import("node:path");
+    expect(resolveDataDir({ dataDir: "${TMP}/omega-x/vault-data" })).toBe(join(tmpdir(), "omega-x", "vault-data"));
+    expect(resolveDataDir({ dataDir: "/tmp/omega-x/vault-data" })).toBe(join(tmpdir(), "omega-x", "vault-data"));
+    expect(resolveDataDir({ dataDir: "./dev-vault/vault-data" })).toBe("./dev-vault/vault-data");
+  });
+
+  test("D-372: resolved ${TMP} dir opens a real vault (consumer path end to end)", async () => {
+    const { tmpdir } = await import("node:os");
+    const { join } = await import("node:path");
+    const dir = resolveDataDir({ dataDir: "${TMP}/omega-vault-test/d372-consumer" });
+    expect(dir.startsWith(tmpdir())).toBe(true);
+    rmSync(dir, { recursive: true, force: true });
+    const v = openVault(dir);
+    expect(existsSync(join(dir, "canonical.sqlite"))).toBe(true);
+    v.close();
+    rmSync(dir, { recursive: true, force: true });
   });
 });
 

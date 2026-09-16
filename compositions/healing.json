@@ -39,7 +39,7 @@
           "vault.roundtrip@1"
         ]
       },
-      "config": { "dataDir": "/tmp/omega-healing/vault-data" }
+      "config": { "dataDir": "${TMP}/omega-healing/vault-data" }
     },
     {
       "id": "discovery.healing",

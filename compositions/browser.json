@@ -19,7 +19,7 @@
         "capabilities": [],
         "contracts": ["vault.append@1", "vault.get@1", "vault.query@1", "vault.search@1", "vault.verify@1", "vault.compact@1", "vault.roundtrip@1"]
       },
-      "config": { "dataDir": "/tmp/omega-browser/vault-data" }
+      "config": { "dataDir": "${TMP}/omega-browser/vault-data" }
     },
     {
       "id": "pack.domain-email",
