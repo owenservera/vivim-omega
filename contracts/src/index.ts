@@ -15,4 +15,5 @@ export * from "./chat.ts"; // D-358 (M2) — the chat pilot's record vocabulary 
 export * from "./surface.ts"; // D-359 (M4) — the shared surface derivation (A2: one source, N consumers)
 export * from "./consent.ts"; // stable consent-id derivation (law, testkit, surfaces — one definition)
 export * from "./storage.ts"; // D-373 (W0-10)
-export * from "./intent.ts"; // D-389 Phase 1 — durable Intent object — DB-agnostic storage vocabulary (drivers are dumb byte stores)
+export * from "./intent.ts"; // D-389 Phase 1
+export * from "./intent-plan.ts"; // D-389 Phase 2 — durable Intent object — DB-agnostic storage vocabulary (drivers are dumb byte stores)

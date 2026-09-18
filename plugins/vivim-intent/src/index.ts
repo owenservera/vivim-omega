@@ -98,7 +98,25 @@ startPlugin(definePlugin({
       if (intentObj.state !== "submitted" && intentObj.state !== "resolving") {
         return { status: "FAILED", value: { error: `intent.resolve: state ${intentObj.state}` } };
       }
-      // Delegate to director (§3.4): call resolve.classify@1 for the archetype
+      // Phase 2 (§3.6): check for a registered plan template; if present,
+      // resolve produces an ordered array with dependsOn edges.
+      // If absent (Phase 1 default), single-step as above.
+      const planRow = await vaultGet(ctx, NS_PLAN, `plan:${intentObj.type}@latest`);
+      if (planRow && planRow.data) {
+        const plan = planRow.data as any;
+        const planSteps = (plan.steps ?? []) as Array<{ stepId: string; stepType: string; dependsOn: string[] }>;
+        const expandedSteps: IntentStep[] = planSteps.map((pt: any, idx: number) => ({
+          stepId: pt.stepId ?? `step-${idx}`,
+          capability: `${pt.stepType}@1`,
+          branch: "realization" as any,
+          kind: "DETERMINISTIC" as any,
+          dependsOn: pt.dependsOn ?? [],
+          status: "pending" as any,
+          resolveDecisionId: `D-389-plan-${intentObj.type}`,
+        }));
+        return { status: "OK", value: { intentId: intentIdStr, state: "planned", steps: expandedSteps, planRef: { planType: intentObj.type, planVersion: plan.planVersion ?? "v1" } } };
+      }
+      // Phase 1 fallback (no plan): single step.
       const classifyPayload = { type: intentObj.type };
       try {
         const verdict = await portCall(ctx, "resolve.classify@1", classifyPayload);
