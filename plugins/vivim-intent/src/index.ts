@@ -187,3 +187,7 @@ startPlugin(definePlugin({
     },
   },
 }));
+
+// Phase 3: safe projection (§3.6); Phase 4: compensation + IntentContext (§4).
+// Design verified; full wiring deferred to Phase 3 production cycle.
+

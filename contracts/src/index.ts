@@ -16,4 +16,6 @@ export * from "./surface.ts"; // D-359 (M4) — the shared surface derivation (A
 export * from "./consent.ts"; // stable consent-id derivation (law, testkit, surfaces — one definition)
 export * from "./storage.ts"; // D-373 (W0-10)
 export * from "./intent.ts"; // D-389 Phase 1
-export * from "./intent-plan.ts"; // D-389 Phase 2 — durable Intent object — DB-agnostic storage vocabulary (drivers are dumb byte stores)
+export * from "./intent-plan.ts"; // D-389 Phase 2
+export * from "./intent-phase3.ts"; // D-389 Phase 3 — output references + safe projection
+export * from "./intent-phase4.ts"; // D-389 Phase 4 — compensation + IntentContext — durable Intent object — DB-agnostic storage vocabulary (drivers are dumb byte stores)
