@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -31,4 +31,4 @@ Two lineages diverged at turn-009 (`4a108d7`): the **kernel lineage** (`omega` b
 
 ## Evidence
 
-Owner directive (chat, 2026-09-18): "yes think holistically" — the unification authorization this record executes. Lineage facts machine-verifiable in this tree: `git merge-base main omega` = `4a108d7` (shared turn-009 base); `git rev-list --count omega` = 57 (52 base + 5 kernel-wave commits `c45602b`, `5c8d27b`, `7883922`, `0b58641`, `a30c9c8` — all resolvable via the merge's second parent); main-side head pre-merge `a97bcbe` (gate 903/903, host 1,039/1,100, quick-gate reproduced green in the merge workspace before integration). Merged-tree facts: host 1,450/1,500 (gate math); compositions regenerate byte-identical from `_matrix.json` (17 rows); kernel/ghost suites and the D-340 benchmark harness land with the wave. Ratification citation: the first green full-gate run on the merge commit, plus the second run per D-364 cooling-off (directive-class row: same-day ratification lawful per D-367, the second run is recorded anyway).
+Owner directive (chat, 2026-09-18): "yes think holistically" — the unification authorization this record executes. Lineage facts machine-verifiable in this tree: `git merge-base main omega` = `4a108d7` (shared turn-009 base); `git rev-list --count omega` = 57 (52 base + 5 kernel-wave commits `c45602b`, `5c8d27b`, `7883922`, `0b58641`, `a30c9c8` — all resolvable via the merge's second parent); main-side head pre-merge `a97bcbe` (gate 903/903, host 1,039/1,100, quick-gate reproduced green in the merge workspace before integration). Merged-tree facts: host 1,450/1,500 (gate math); compositions regenerate byte-identical from `_matrix.json` (17 rows); kernel/ghost suites and the D-340 benchmark harness land with the wave. Landed in the merge commit `1d32a0d` (both parents: `a97bcbe` main + `a30c9c8` omega); full gate GREEN on it twice per D-364 cooling-off — 941/941 pass, 0 fail, 2 pre-existing skips, attest green, host 1,450/1,500 — stamped `ada4262` (D-367 directive fast-path: same-day ratification lawful; the second run is recorded anyway). Owner directive chat 2026-09-18: "yes think holistically."
