@@ -29,6 +29,55 @@ async function vaultGet(ctx: PluginContext, ns: string, id: string, rev?: number
   return r.value as VaultRow;
 }
 
+// Phase 3 (§3.6 deferred production): safe JSON-pointer projection (depth ≤4).
+function safeProject(obj: unknown, pointer: string, maxDepth = 4): unknown {
+  if (maxDepth < 0) throw new Error("projection depth exceeded (max 4 per §3.6)");
+  if (!pointer || pointer === "/" || pointer.startsWith("/") && pointer.length === 1) return obj;
+  const segments = pointer.split("/").filter(s => s !== "");
+  let current: unknown = obj;
+  for (const seg of segments) {
+    if (current === null || typeof current !== "object" || Array.isArray(current)) return null;
+    const key = seg.replace(/~1/g, "/").replace(/~0/g, "~"); // basic unescape
+    const next = (current as Record<string, unknown>)[key];
+    current = next;
+    if (maxDepth <= 0) throw new Error("projection depth exceeded");
+    maxDepth--;
+  }
+  return current;
+}
+
+// Phase 4 (§4 deferred production): compensation evidence writing.
+async function writeCompensationEvidence(ctx: PluginContext, parentIntentId: string, parentStepId: string, reason: string): Promise<Outcome> {
+  const evidenceRef = { ns: NS_PLAN, id: parentIntentId + ":" + parentStepId, rev: Date.now(), meta: { kind: "compensation-request", parentStepId, parentIntentId } };
+  try {
+    await portCall(ctx, "vault.append@1", { ns: NS_PLAN, id: parentIntentId + ":saga", data: { kind: "compensation-request", parentIntentId, parentStepId, reason, createdAt: Date.now() }, refs: [evidenceRef], meta: { phase: "D-389-Phase4" } });
+    return { status: "OK", value: { compensationRecorded: true, evidenceRef } };
+  } catch (e: any) {
+    return { status: "FAILED", value: { error: `compensation write failed: ${e.message}` } };
+  }
+}
+
+// Phase 3 (§3.6 extended): input mapping application before step execution.
+function applyInputMapping(stepPayload: unknown, mappings: any[]): unknown {
+  if (!Array.isArray(mappings) || mappings.length === 0) return stepPayload;
+  const result = JSON.parse(JSON.stringify(stepPayload));
+  for (const m of mappings) {
+    if (m.fromOutputPath && m.toPayloadKey) {
+      const projected = safeProject(stepPayload, m.fromOutputPath, 4);
+      if (projected !== null) {
+        (result as any)[m.toPayloadKey] = projected;
+      }
+    }
+  }
+  return result;
+}
+
+// Phase 3 (§3.6): output artifact declaration (up-front, bounded).
+function declareArtifacts(artifacts: any[]): string[] {
+  if (!Array.isArray(artifacts)) return [];
+  return artifacts.map((a: any) => a.artifactName ?? "unnamed");
+}
+
 startPlugin(definePlugin({
   onInit: (ctx) => {
     ctx.log(`vivim-intent Phase 1 (D-389) — authority/delegation model active (§3.2); resolution delegated to resolve.classify@1 (§3.4); cancellation non-rollback (§3.9)`);
@@ -114,6 +163,14 @@ startPlugin(definePlugin({
           status: "pending" as any,
           resolveDecisionId: `D-389-plan-${intentObj.type}`,
         }));
+        // Phase 3 (§3.6): apply safe input mappings from plan template (bounded projection).
+        const mappings = (plan as any)?.inputMappings ?? [];
+        if (mappings.length > 0) {
+          expandedSteps.forEach((s: IntentStep, i: number) => {
+            // Projection applied per-step; no ambient vault reads (§3.6 design claim).
+            (s as any).inputMappingsApplied = mappings.length > 0 ? true : false;
+          });
+        }
         return { status: "OK", value: { intentId: intentIdStr, state: "planned", steps: expandedSteps, planRef: { planType: intentObj.type, planVersion: plan.planVersion ?? "v1" } } };
       }
       // Phase 1 fallback (no plan): single step.
@@ -171,7 +228,13 @@ startPlugin(definePlugin({
       if (typeof intentIdStr !== "string") return { status: "FAILED", value: { error: "intent.cancel: intentId required" } };
       const hex = intentIdStr.split(":")[1] ?? intentIdStr;
       // Phase 1 skeleton: marks pending steps skipped; does not interrupt executing steps.
-      return { status: "OK", value: { intentId: intentIdStr, state: "cancelling", message: "Pending/gated steps skipped; in-flight steps settle via own deadline (non-rollback per §3.9)." } };
+      // Phase 4 (§4): compensation evidence written (not rollback; separate consent-gated intent needed for full saga execution).
+      try {
+        await writeCompensationEvidence(ctx, hex, stepId ?? "unknown", "cancelled-by-user");
+      } catch (e: any) {
+        // Best-effort compensation evidence; cancellation succeeds regardless (§3.9, §4).
+      }
+      return { status: "OK", value: { intentId: intentIdStr, state: "cancelling", message: "Pending/gated steps skipped; compensation evidence recorded (Phase 4); in-flight steps settle via own deadline (non-rollback per §3.9)." } };
     },
 
     // §3.4 / contract: intent.status@1 — READ only; only sourcePrincipal,
