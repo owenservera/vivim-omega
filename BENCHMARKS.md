@@ -18,3 +18,10 @@
 ## 2026-09-13T12:39:39.856Z — daemon warm path (D-322)
 - daemon call RTT p50: 7.58 ms over 50 protocol calls (TCP loopback + op, same demo composition)
 - cold CLI wall for one echo call: 655 ms (full child process, warm vault, --no-daemon — the spawn floor the warm path removes)
+## 2026-09-18T21:58:16.318Z — D-340 kernel wave (spine + kernel-lens, sustained load)
+- law gate (real vivim.law, risky.op@1, 10-wide concurrent, n=300): 4331 ops/s sustained, p50 0.97 ms, p99 11.353 ms — the ONE gate's measured ceiling; ungated READ lane (risky.read@1): 49707 ops/s, p50 0.083 ms (the gate's per-op tax ≈ 11.7×)
+- vault single-writer (vault.append@1, 10-wide, n=300): 1777 writes/s sustained, p50 2.522 ms, p99 24.204 ms — SCALABILITY §4's ceiling, measured
+- state arbitration (acquire+release, 7 contended keys, n=500): 3957 cycles/s, p50 0.059 ms (host-op path, no compartment hop)
+- graph-routed dispatch (echo.ping@1 via whoOffers, n=200): p50 0.039 ms vs v1 recorded 0.03 ms (Map.get) — the Option C latency axis, measured: Δp50 0.039 ms, p99 6.641 ms
+- kernel-lens sweep (kernel.centrality@1, n=20, graph 35 nodes / 27 edges): p50 0.47 ms per query
+- audit-chain verify (kernel.audit.verify@1, n=20, chain 27 entries): p50 2.51 ms — tamper-evidence's price
