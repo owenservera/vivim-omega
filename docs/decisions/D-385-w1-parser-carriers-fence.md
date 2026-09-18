@@ -108,3 +108,8 @@ repo's own gates:
   two allowlist rows (any NEW drift shape still fails).
 - Second gate run post-flip: GREEN (recorded at ratification — see
   `build/gates.log` in the board/status refresh commit).
+
+Re-cited per D-390 (history-reset evidence reconciliation): the landing SHA(s) above
+belong to the pre-reset history superseded by the adoption of vivim-omega-latest
+(f780d06 -> 6d6a3ad, 2026-09-18); adoption commit f780d06 attests the landing state in the
+current history. Substance of this record unchanged; original SHA(s) preserved.

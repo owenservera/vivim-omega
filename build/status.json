@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-09-18T10:27:09.832Z",
+  "generatedAt": "2026-09-18T14:01:31.358Z",
   "repo": "vivim-omega",
   "branch": "omega",
-  "head": "dcc90b8",
+  "head": "cb022ad",
   "waves": [
     {
       "id": "Ω0",
@@ -90,7 +90,7 @@
     }
   ],
   "gate": {
-    "startedAt": "2026-09-18T10:25:48.936Z",
+    "startedAt": "2026-09-18T14:00:11.505Z",
     "checks": {
       "host-loc": {
         "ok": true,
@@ -101,29 +101,26 @@
       },
       "fresh-tree": {
         "ok": true,
+        "skipped": true,
         "detail": {
-          "vivim-final-enhanced": {
-            "head": "afebe00",
-            "clean": true
-          },
-          "vivim-final-program": {
-            "head": "4a5eb84",
-            "clean": true
-          },
+          "reason": "no sibling legacy repos present (clean clone / CI) — nothing to verify untouched",
           "legacyImports": 0
         }
       },
       "decisions": {
         "ok": true,
         "detail": {
-          "rows": 92,
-          "records": 66,
+          "rows": 94,
+          "records": 68,
           "ratified": 66,
           "grandfatherBelow": 313,
           "openQuestions": {
-            "count": 0,
-            "ids": [],
-            "board": "fresh"
+            "count": 2,
+            "ids": [
+              389,
+              390
+            ],
+            "board": "stale"
           }
         }
       },
@@ -187,14 +184,18 @@
           },
           "riskParityOps": 42,
           "matrixConformance": "green",
-          "contractTypes": 108,
+          "contractTypes": 124,
           "callSiteAllowlisted": [
             "CompositionSpecEntry",
             "LangContribution",
             "OutcomeStatus",
             "PROMOTION_INVARIANT",
+            "PlanStepTemplate",
+            "PlanTemplate",
+            "PlanTemplateV2",
             "PortErrorCode",
             "ProvenanceTier",
+            "SagaEvidenceRef",
             "StorageDriverContract",
             "StorageKey",
             "StorageOp",
@@ -209,7 +210,7 @@
           "adapters": [
             "plugins/vivim-vault/src/drivers/bun-sqlite.ts"
           ],
-          "scan": "32 prod dirs (incl. every plugins/*/src)"
+          "scan": "33 prod dirs (incl. every plugins/*/src)"
         }
       },
       "os-surface": {
@@ -218,20 +219,20 @@
           "seam": [
             "platform/src/platform.ts"
           ],
-          "scan": "32 prod dirs (incl. every plugins/*/src)"
+          "scan": "33 prod dirs (incl. every plugins/*/src)"
         }
       },
       "import-surface": {
         "ok": true,
         "detail": {
-          "scanned": 131,
+          "scanned": 136,
           "rules": 5
         }
       },
       "tests": {
         "ok": true,
         "detail": {
-          "pass": 886,
+          "pass": 903,
           "fail": 0,
           "maxConcurrency": 4
         }
@@ -240,7 +241,7 @@
         "ok": true,
         "detail": {
           "compileMs": 3,
-          "bootMs": 16,
+          "bootMs": 15,
           "echo": true,
           "counterBump": true,
           "counterValue": {
@@ -263,7 +264,7 @@
   },
   "hostLoc": 1039,
   "tests": {
-    "pass": 886,
+    "pass": 903,
     "fail": 0
   },
   "benchmarks": {

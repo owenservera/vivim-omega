@@ -43,6 +43,18 @@ const CALL_SITE_ALLOWLIST: Record<string, string> = {
   StorageDriverContract: "D-373 step-2 reservation: the cross-plugin driver contract (execute+health) for the broker-plugin driver step",
   StorageKey: "D-373 step-2 reservation: storage.kv key alias (rides the StorageOp wire shape)",
   StorageTable: "D-373 step-2 reservation: storage.kv table alias (rides the StorageOp wire shape)",
+  // D-389 deferred-by-design reservations (the intent mechanism's plan/saga
+  // vocabulary): the D-389 record ships the wire shapes and explicitly defers
+  // their consumers — projection mapping waits for plan:<type>@2 "once real
+  // workflow needs it", and the saga/compensation engine is out of scope
+  // (fresh consent required, implying rollback would be worse than stating the
+  // limit). Same posture as the D-373 storage.kv reservations above: the names
+  // are committed wire vocabulary; the writers arrive with their own wave and
+  // falsifier. Remove an entry the day its export gains a call site.
+  PlanTemplate: "D-389 deferred-by-design: v1 plan-template wire shape (same-payload DAG); projection consumer lands with plan:<type>@2",
+  PlanStepTemplate: "D-389 deferred-by-design: plan-step template row (rides PlanTemplate); projection consumer lands with plan:<type>@2",
+  PlanTemplateV2: "D-389 Phase-3 reservation: InputMapping-carrying template shape; consumer is the deferred projection mapping (plan:<type>@2 trigger)",
+  SagaEvidenceRef: "D-389 Phase-4 reservation: consent-gated compensation evidence ref; saga/rollback engine explicitly out of scope (D-389 deferred list)",
 };
 
 const SKIP_DIRS = new Set(["node_modules", ".git", "dev-vault", "build"]);

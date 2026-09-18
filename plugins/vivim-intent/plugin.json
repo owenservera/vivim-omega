@@ -27,5 +27,5 @@
     "justification": "Phase 1: vault persistence for intent/intent-plan, resolution delegated to director, every step gated by law + single-use attenuated delegation (§3.2)."
   },
   "runtime": { "tier": "worker-thread", "budget": { "cpuMs": 750, "memMB": 96 } },
-  "contentHash": "sha256:PROPOSED"
+  "contentHash": ""
 }

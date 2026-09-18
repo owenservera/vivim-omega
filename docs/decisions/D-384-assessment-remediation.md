@@ -114,3 +114,8 @@ revocation state, no blast radius).
   import-surface GREEN.
 - Findings sources: the owner-supplied assessment documents (static reads;
   line references re-verified against this tree before fixing).
+
+Re-cited per D-390 (history-reset evidence reconciliation): the landing SHA(s) above
+belong to the pre-reset history superseded by the adoption of vivim-omega-latest
+(f780d06 -> 6d6a3ad, 2026-09-18); adoption commit f780d06 attests the landing state in the
+current history. Substance of this record unchanged; original SHA(s) preserved.

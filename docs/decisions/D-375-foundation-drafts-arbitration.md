@@ -66,3 +66,8 @@ audit trail, and this record is the pointer the next wave reads first.
 - Owner directive 2026-09-16: extract, plan best-of-all-worlds, ratify the proposal,
   override internals, implement (delegated ratification authority, applied here).
 - Landing: 377c4ed — gate GREEN (776/776, host flat); the arbitrated scope shipped inside one commit with every landed piece carrying its live falsifier (D-373 parity digest, D-374 broker suite); deferred items carry named triggers in this record.
+
+Re-cited per D-390 (history-reset evidence reconciliation): the landing SHA(s) above
+belong to the pre-reset history superseded by the adoption of vivim-omega-latest
+(f780d06 -> 6d6a3ad, 2026-09-18); adoption commit f780d06 attests the landing state in the
+current history. Substance of this record unchanged; original SHA(s) preserved.

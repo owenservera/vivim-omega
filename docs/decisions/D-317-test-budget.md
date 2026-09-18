@@ -40,3 +40,8 @@ is not. The trigger for test-lane sharding should be the stable metric.
   culprits (533/1, 532/2) — contention, not regressions (all flake suspects green in
   isolation and in the constrained run). Thrash dominates past core count.
 - Owner confirmation recorded 2026-09-16 (delegated ratification, D-367 fast-path): option (b) count trigger — already mechanized by D-368 lanes (trigger crossed at 733; suite at 776 runs as lanes). Gate green at landing 377c4ed (776/776).
+
+Re-cited per D-390 (history-reset evidence reconciliation): the landing SHA(s) above
+belong to the pre-reset history superseded by the adoption of vivim-omega-latest
+(f780d06 -> 6d6a3ad, 2026-09-18); adoption commit f780d06 attests the landing state in the
+current history. Substance of this record unchanged; original SHA(s) preserved.

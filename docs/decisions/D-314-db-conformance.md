@@ -36,3 +36,8 @@ G12 and `PROPOSED-NEXT-STEPS.md` §8 Q2 (both docs concur).
 - `ARCHITECTURE-NEXT-STEPS.md` §3 G12, §4 Phase D (D2), §7 Q2.
 - `upgrades/New/PROPOSED-NEXT-STEPS.md` §8 Q2 (concurs: checklist now).
 - Owner confirmation recorded 2026-09-16 (delegated ratification, D-367 fast-path): option (a) checklist-now; (b) stays the named upgrade trigger (Phase A writers + DB status enum). Gate green at landing 377c4ed (776/776).
+
+Re-cited per D-390 (history-reset evidence reconciliation): the landing SHA(s) above
+belong to the pre-reset history superseded by the adoption of vivim-omega-latest
+(f780d06 -> 6d6a3ad, 2026-09-18); adoption commit f780d06 attests the landing state in the
+current history. Substance of this record unchanged; original SHA(s) preserved.

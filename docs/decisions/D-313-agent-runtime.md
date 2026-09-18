@@ -39,3 +39,8 @@ alive) is the worst outcome. See `ARCHITECTURE-NEXT-STEPS.md` G2.
 - `upgrades/New/PROPOSED-NEXT-STEPS.md` §3 (independent review concurs on B1a-first).
 - D-310 integration test already proves non-plugin principal traversal (`agent:forbidden-probe`).
 - Owner confirmation recorded 2026-09-16 (delegated ratification for the foundation wave, D-367 directive fast-path): option (a) stands — B1a fixture-replay first, enforcement stays composition-grant-shaped. Gate green at landing 377c4ed (776/776).
+
+Re-cited per D-390 (history-reset evidence reconciliation): the landing SHA(s) above
+belong to the pre-reset history superseded by the adoption of vivim-omega-latest
+(f780d06 -> 6d6a3ad, 2026-09-18); adoption commit f780d06 attests the landing state in the
+current history. Substance of this record unchanged; original SHA(s) preserved.

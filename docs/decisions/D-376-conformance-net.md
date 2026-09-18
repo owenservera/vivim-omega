@@ -57,3 +57,8 @@ grant (chat.json loses `resolve.classify@1`) and a seeded undeclared risk
   scenario 2 names `law.check@1 manifest declares MUTATION but LAW_POLICY_V1
   classifies EXTERNAL_MUTATION`. Unit-pinned in `tooling/gates/test/compositions.test.ts`
   and `tooling/gates/test/generate.test.ts`. Landing: 193dc61 — gate GREEN (structural stages + full suite; the second run followed ratification per D-364 cooling-off for the evidence-class rows).
+
+Re-cited per D-390 (history-reset evidence reconciliation): the landing SHA(s) above
+belong to the pre-reset history superseded by the adoption of vivim-omega-latest
+(f780d06 -> 6d6a3ad, 2026-09-18); adoption commit f780d06 attests the landing state in the
+current history. Substance of this record unchanged; original SHA(s) preserved.

@@ -32,3 +32,8 @@ D-360 bounds detection via `probe`/`probeStat`, but `heapUsed` is self-reported 
 - Unit tests: `classify().fast` true/false matrix + `budgetStatus` declared/default (watchdog.test.ts, D-366 block).
 - Falsifiers adversarial 13/14 still green (unresponsive reason contains "unresponsive", memory contains "heap over budget" — suffixes additive).
 - Landing: 377c4ed gate GREEN (776/776) — implementation was already in-tree (terminateFast + {fast} flag + budgetStatus/requireBudget journal), falsifiers adversarial 13/14 green, classify/budgetStatus units green; D-374's broker adopts the same 500ms fast-kill discipline for process lanes.
+
+Re-cited per D-390 (history-reset evidence reconciliation): the landing SHA(s) above
+belong to the pre-reset history superseded by the adoption of vivim-omega-latest
+(f780d06 -> 6d6a3ad, 2026-09-18); adoption commit f780d06 attests the landing state in the
+current history. Substance of this record unchanged; original SHA(s) preserved.

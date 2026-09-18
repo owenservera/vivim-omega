@@ -77,3 +77,8 @@ is EXTENDED, no new spec).
 - Gate: `omega:quick` + full gate green with host LOC unchanged at 999/1100 — landing
   SHA + numbers cited in the ratify commit.
 - Landing: 377c4ed — gate GREEN (same run: 776 pass / 0 fail, host 999/1100 — the host-loc-flat falsifier holds mechanically via git diff --stat -- host/src being empty); process-broker.test.ts 9/9 on real children (python 3.12 + node 24 shims, malformed flood BUDGET <10s wall, deadline 500ms honored, REFUSED paths, no orphans).
+
+Re-cited per D-390 (history-reset evidence reconciliation): the landing SHA(s) above
+belong to the pre-reset history superseded by the adoption of vivim-omega-latest
+(f780d06 -> 6d6a3ad, 2026-09-18); adoption commit f780d06 attests the landing state in the
+current history. Substance of this record unchanged; original SHA(s) preserved.

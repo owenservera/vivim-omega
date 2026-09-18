@@ -72,3 +72,8 @@ DRAFT-002's landing order — not in this slice.
 - Gate: `omega:quick` green (7/7 structural incl. rewritten bun-surface) + full gate
   green + host LOC unchanged — landing SHA + numbers cited in the ratify commit.
 - Landing: 377c4ed — gate GREEN (omega:quick 7/7 structural; full gate ok:true, 776 pass / 0 fail, host 999/1100 flat, attest booted), node canary 5/5; the parity falsifier ran green INSIDE that gate run (driver-conformance.test.ts 4/4, cross-runtime digest equality bun:sqlite<->node:sqlite).
+
+Re-cited per D-390 (history-reset evidence reconciliation): the landing SHA(s) above
+belong to the pre-reset history superseded by the adoption of vivim-omega-latest
+(f780d06 -> 6d6a3ad, 2026-09-18); adoption commit f780d06 attests the landing state in the
+current history. Substance of this record unchanged; original SHA(s) preserved.

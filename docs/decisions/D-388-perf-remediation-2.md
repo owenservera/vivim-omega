@@ -136,3 +136,8 @@ triggers instead of code.
 - Landing: PROPOSED `3ccfe07` (gate GREEN 886/886, host 1039/1100 FLAT) →
   RATIFIED with the second gate run post-flip per D-364 cooling-off
   (owner-delegated ratification, directive-equivalent evidence class).
+
+Re-cited per D-390 (history-reset evidence reconciliation): the landing SHA(s) above
+belong to the pre-reset history superseded by the adoption of vivim-omega-latest
+(f780d06 -> 6d6a3ad, 2026-09-18); adoption commit f780d06 attests the landing state in the
+current history. Substance of this record unchanged; original SHA(s) preserved.

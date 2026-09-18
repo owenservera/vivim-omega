@@ -66,3 +66,8 @@ scratch, no 17th spec ships.
   (`first-try.ping@1` → `{pong, who}`), tree restored exactly after
   (scaffold removed, `bun.lock` checked out, `bun install` resync).
   Landing: 193dc61 — gate GREEN (structural stages + full suite; the second run followed ratification per D-364 cooling-off for the evidence-class rows).
+
+Re-cited per D-390 (history-reset evidence reconciliation): the landing SHA(s) above
+belong to the pre-reset history superseded by the adoption of vivim-omega-latest
+(f780d06 -> 6d6a3ad, 2026-09-18); adoption commit f780d06 attests the landing state in the
+current history. Substance of this record unchanged; original SHA(s) preserved.

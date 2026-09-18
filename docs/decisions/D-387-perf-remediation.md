@@ -151,3 +151,8 @@ what does not survive measurement.
   cooling-off honored). Evidence-shape repair 2026-09-18: the decisions checker
   flagged this section for carrying no resolvable commit SHA — the landing
   citation above was restored; no substance edited.
+
+Re-cited per D-390 (history-reset evidence reconciliation): the landing SHA(s) above
+belong to the pre-reset history superseded by the adoption of vivim-omega-latest
+(f780d06 -> 6d6a3ad, 2026-09-18); adoption commit f780d06 attests the landing state in the
+current history. Substance of this record unchanged; original SHA(s) preserved.
