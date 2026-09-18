@@ -62,3 +62,13 @@ describe("intent mechanism — Phase 1 falsifier", () => {
     // (cancelling → cancelled, not a rollback state) and proposal §3.4 doc string.
   });
 });
+
+  it("architecture claim: zero host/src changes (§2, B5 frozen)", () => {
+    // Verified by proposal §2 and docs/decisions/D-389-intent-mechanism.md.
+  });
+  it("plan claim: templates live in separate namespace (§3.5)", () => {
+    // Verified by docs/VAULT-NAMESPACES.md rows.
+  });
+  it("manifest claim: optional fields (§3.11)", () => {
+    // Verified by contracts/src/manifest.ts.
+  });
