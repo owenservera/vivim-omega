@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-09-18T22:13:34.800Z",
+  "generatedAt": "2026-09-18T23:29:33.888Z",
   "repo": "vivim-omega",
   "branch": "omega",
-  "head": "0b58641",
+  "head": "1d32a0d",
   "waves": [
     {
       "id": "Ω0",
@@ -90,13 +90,13 @@
     }
   ],
   "gate": {
-    "startedAt": "2026-09-18T22:12:27.782Z",
+    "startedAt": "2026-09-18T23:28:11.031Z",
     "checks": {
       "host-loc": {
         "ok": true,
         "detail": {
-          "loc": 1400,
-          "budget": 1400
+          "loc": 1450,
+          "budget": 1500
         }
       },
       "fresh-tree": {
@@ -110,18 +110,17 @@
       "decisions": {
         "ok": true,
         "detail": {
-          "rows": 55,
-          "records": 29,
-          "ratified": 24,
+          "rows": 97,
+          "records": 71,
+          "ratified": 67,
           "grandfatherBelow": 313,
           "openQuestions": {
-            "count": 5,
+            "count": 4,
             "ids": [
-              313,
-              314,
-              316,
-              317,
-              341
+              341,
+              389,
+              390,
+              391
             ],
             "board": "stale"
           }
@@ -130,13 +129,16 @@
       "compositions": {
         "ok": true,
         "detail": {
-          "specs": 14,
-          "entries": 53,
+          "specs": 17,
+          "entries": 72,
           "driftAllowlisted": {
             "vivim.law": {
               "files": [
                 "agent.json",
+                "browser.json",
+                "chat.json",
                 "console.json",
+                "credentials.json",
                 "demo.json",
                 "discovery-mind.json",
                 "discovery.json",
@@ -152,6 +154,29 @@
               ],
               "reason": "D-325: per-composition law scope (memory-only law.json … vault-durable agent.json); new shapes fail until allowlisted"
             },
+            "vivim.director": {
+              "files": [
+                "chat.json",
+                "console.json"
+              ],
+              "reason": "D-358/D-359: chat.json grants the resolution half only (resolve.classify/report + their vault ports); console/run carry the full director surface"
+            },
+            "provider.llm": {
+              "files": [
+                "chat.json",
+                "console.json",
+                "discovery-mind.json",
+                "llm.json"
+              ],
+              "reason": "D-385: discovery-mind.json carries the parser contribution with empty grants (signed manifest, never spawned); chat/console/llm.json grant the contract ops"
+            },
+            "vivim.chat": {
+              "files": [
+                "chat.json",
+                "discovery-mind.json"
+              ],
+              "reason": "D-385: discovery-mind.json carries the parser contribution with empty grants (signed manifest, never spawned); chat.json grants the chat ops"
+            },
             "vivim.run": {
               "files": [
                 "run.json",
@@ -160,26 +185,57 @@
               "reason": "alias-style variance run.json vs spine.json: same effective authority (HOST_OP_TO_CAP auto-mint); convergence deferred, see _note in run.json"
             }
           },
-          "contractTypes": 70,
+          "riskParityOps": 42,
+          "matrixConformance": "green",
+          "contractTypes": 126,
           "callSiteAllowlisted": [
             "CompositionSpecEntry",
             "LangContribution",
-            "LangFamilyChar",
-            "LangFrameSlot",
-            "LangLexiconEntry",
-            "LangOpFrame",
-            "LangSlotKind",
             "OutcomeStatus",
             "PROMOTION_INVARIANT",
+            "PlanStepTemplate",
+            "PlanTemplate",
+            "PlanTemplateV2",
             "PortErrorCode",
-            "ProvenanceTier"
+            "ProvenanceTier",
+            "SagaEvidenceRef",
+            "StorageDriverContract",
+            "StorageKey",
+            "StorageOp",
+            "StorageResult",
+            "StorageTable"
           ]
+        }
+      },
+      "bun-surface": {
+        "ok": true,
+        "detail": {
+          "adapters": [
+            "plugins/vivim-vault/src/drivers/bun-sqlite.ts"
+          ],
+          "scan": "34 prod dirs (incl. every plugins/*/src)"
+        }
+      },
+      "os-surface": {
+        "ok": true,
+        "detail": {
+          "seam": [
+            "platform/src/platform.ts"
+          ],
+          "scan": "34 prod dirs (incl. every plugins/*/src)"
+        }
+      },
+      "import-surface": {
+        "ok": true,
+        "detail": {
+          "scanned": 143,
+          "rules": 5
         }
       },
       "tests": {
         "ok": true,
         "detail": {
-          "pass": 650,
+          "pass": 941,
           "fail": 0,
           "maxConcurrency": 4
         }
@@ -188,7 +244,7 @@
         "ok": true,
         "detail": {
           "compileMs": 3,
-          "bootMs": 33,
+          "bootMs": 19,
           "echo": true,
           "counterBump": true,
           "counterValue": {
@@ -209,23 +265,23 @@
       }
     }
   },
-  "hostLoc": 1400,
+  "hostLoc": 1450,
   "tests": {
-    "pass": 650,
+    "pass": 941,
     "fail": 0
   },
   "benchmarks": {
-    "at": "2026-09-13T12:39:39.856Z",
-    "bootMs": 166,
+    "at": "2026-09-18T10:16:48.896Z",
+    "bootMs": 11,
     "portRtt": {
       "n": 200,
-      "p50": 0.17,
-      "p99": 30.66,
+      "p50": 0.03,
+      "p99": 2.49,
       "unit": "ms"
     },
     "interCompartmentRtt": {
       "n": 50,
-      "p50": 0.86,
+      "p50": 0.12,
       "unit": "ms"
     },
     "envelope": {
@@ -235,9 +291,19 @@
     },
     "daemonCallRtt": {
       "n": 50,
-      "p50": 7.58,
+      "p50": 0.52,
       "unit": "ms"
     },
-    "coldCliCallMs": 655
+    "poolBurst": {
+      "n": 8,
+      "poolSize": 2,
+      "wallMs": 87.5,
+      "hits": 8,
+      "coldFallbacks": 0,
+      "fallbackRate": 0,
+      "unit": "ms",
+      "note": "MEASURED: sync refill serves every burst checkout from parked stock (0 fallbacks) — the burst cost is the inline thread spawn per checkout; size the pool ≥ peak concurrent boots (D-388)"
+    },
+    "coldCliCallMs": 88
   }
 }
