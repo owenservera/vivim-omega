@@ -1,0 +1,15 @@
+{
+  "manifestVersion": "1",
+  "id": "ghost.fan",
+  "version": "0.1.0",
+  "description": "D-340 pressure fixture — one member of the ghost swarm (cloned to ghost.fan-1..N by the pressure suite). fan.run@1 fires K concurrent calls into ghost.load@1, exercising concurrent dormant first-touch (singleflight spawn), the plugins-of-plugins chain, and — with N clones holding port:ghost.load@1 — the fan-in that makes the shared algorithm load-bearing without anyone assigning it.",
+  "entry": "src/index.ts",
+  "publisher": { "keyId": "", "signature": "" },
+  "contributions": {
+    "contract": [{ "kind": "contract", "id": "fan.run", "version": "1", "risk": "READ" }]
+  },
+  "dependencies": [{ "ref": "contract:ghost.load@1", "range": "*" }],
+  "capabilities": { "requested": ["port:ghost.load@1"], "justification": "Swarm member: consumes the shared algorithm (the fan-in signal) and fans concurrent calls into it." },
+  "runtime": { "tier": "worker-thread", "budget": { "cpuMs": 100, "memMB": 64 } },
+  "contentHash": ""
+}

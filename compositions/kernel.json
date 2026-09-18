@@ -1,0 +1,33 @@
+{
+  "name": "kernel",
+  "_note": "D-340/D-391 kernel composition: the genesis-kernel witness rig. Law + echo + counter ride the demo grant shapes (no new drift fingerprints); vivim.kernel-lens is phase-2 dormant (D-331) so lens ops (kernel.centrality@1, kernel.audit.verify@1) spawn on first touch through generation-aware resolution — the same path the ghost pressure suite exercises.",
+  "entries": [
+    {
+      "id": "vivim.law",
+      "source": "../plugins/law-stub",
+      "bootPhase": 0,
+      "grant": {
+        "capabilities": ["host.journal.append"],
+        "contracts": ["law.check@1", "law.registry@1", "law.consent.grant@1", "law.describe@1"]
+      }
+    },
+    {
+      "id": "omega.echo",
+      "source": "../examples/plugin-echo",
+      "bootPhase": 1,
+      "grant": { "capabilities": [], "contracts": ["echo.ping@1", "echo.stream@1"] }
+    },
+    {
+      "id": "omega.counter",
+      "source": "../examples/plugin-counter",
+      "bootPhase": 1,
+      "grant": { "capabilities": ["port:echo.ping@1"], "contracts": ["counter.bump@1", "counter.value@1"] }
+    },
+    {
+      "id": "vivim.kernel-lens",
+      "source": "../plugins/vivim-kernel-lens",
+      "bootPhase": 2,
+      "grant": { "capabilities": ["host.kernel.lens"], "contracts": ["kernel.centrality@1", "kernel.audit.verify@1"] }
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "manifestVersion": "1",
+  "id": "ghost.shape",
+  "version": "0.1.0",
+  "description": "D-340 pressure fixture — the honest coarse wrapper (the Rust a_coarse_plugin_wraps_legacy_surface_honestly port). Declares granularity coarse, names its internal seams (seam:session-memory, seam:prompt-templates), flags extractionCandidate — the granularity-agnostic manifest (requirement #5): a whole legacy VIVIM chunk wearing the same schema an atomic plugin wears, honestly reporting its own coarseness so a later extraction has real seams to cut along. Its op reports the declared shape; the graph node must carry granularity coarse + extractionCandidate true.",
+  "entry": "src/index.ts",
+  "publisher": { "keyId": "", "signature": "" },
+  "contributions": {
+    "contract": [{ "kind": "contract", "id": "ghost.shape", "version": "1", "risk": "READ" }]
+  },
+  "dependencies": [],
+  "capabilities": { "requested": [] },
+  "runtime": { "tier": "worker-thread", "budget": { "cpuMs": 100, "memMB": 64 } },
+  "contentHash": "",
+  "granularity": "coarse",
+  "internalSeams": ["seam:session-memory", "seam:prompt-templates"],
+  "extractionCandidate": true
+}

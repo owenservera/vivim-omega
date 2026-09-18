@@ -1,0 +1,18 @@
+{
+  "manifestVersion": "1",
+  "id": "ghost.twin",
+  "version": "0.1.0",
+  "description": "D-340 pressure fixture — the second generation. Offers echo.ping@2 (a NEW op version; echo itself keeps answering @1 — no route conflict, no reboot). twin.probe@1 calls echo.ping@1 through the old token: the version-locked caller must keep hitting the v1 generation even while v2 is live — per-execution generation pinning (requirement #9), demonstrated from inside a compartment rather than asserted at unit level.",
+  "entry": "src/index.ts",
+  "publisher": { "keyId": "", "signature": "" },
+  "contributions": {
+    "contract": [
+      { "kind": "contract", "id": "echo.ping", "version": "2", "risk": "READ" },
+      { "kind": "contract", "id": "twin.probe", "version": "1", "risk": "READ" }
+    ]
+  },
+  "dependencies": [{ "ref": "contract:echo.ping@1", "range": "1.x" }],
+  "capabilities": { "requested": ["port:echo.ping@1"], "justification": "The upgraded generation keeps a 1.x-pinned token so the in-flight/old-range caller story is exercised from a compartment, not only from tests." },
+  "runtime": { "tier": "worker-thread", "budget": { "cpuMs": 100, "memMB": 64 } },
+  "contentHash": ""
+}

@@ -3,3 +3,5 @@ dev-vault/
 *.log
 .DS_Store
 build/self-portrait.json
+.test-tmp/
+testkit/test/fixtures/ghosts/.gen/

@@ -1,5 +1,9 @@
 // µhost — boot.ts: verify everything (B1/B4), then spawn compartments in bootPhase order
 // (phase 0 = vivim.law, enforced at verify time), mint tokens, wire the router.
+// D-340: boot first attaches the genesis kernel (5 nodes, 2 closing grants — the ONLY
+// hardcoded identities) to the router; every Recipe entry then registers as ordinary
+// data on top of it. Genesis closes on itself; the phase-0 law rule still guards boot
+// order for the gate. Two rules, one kernel, no per-composition genesis.
 import type { PluginManifest, Recipe } from "@vivim/omega-contracts";
 import { mkdirSync, existsSync, writeFileSync } from "node:fs";
 import { ownerOnly } from "@vivim/omega-platform"; // D-372: the seam owns permissions (never throws, Windows-safe)
@@ -7,6 +11,7 @@ import { join, resolve } from "node:path";
 import { generateRootKey, loadRootKeyPem } from "./canon.ts";
 import { verifyRecipeSignature, verifyCompositionInvariants, verifyEntryWithRoot } from "./recipe.ts";
 import { buildRoutingTable, PortRouter } from "./ports.ts";
+import { bootstrapKernel } from "./genesis.ts";
 import { checkoutCompartment } from "./worker.ts";
 
 export interface BootedHost {
@@ -53,7 +58,10 @@ export async function bootComposition(recipe: Recipe, buildDir: string, vaultDir
   const { rootKey } = ensureVault(vaultDir);
   const { manifests, errors } = verifyComposition(recipe, resolve(buildDir), rootKey.publicKey);
   if (errors.length > 0) throw new Error(`fail-closed boot: ${errors.join("; ")}`);
-  const router = new PortRouter({ vaultDir, journal: true });
+  // D-340: the genesis kernel — closed bootstrap BEFORE any Recipe entry registers.
+  // The vault's root-of-trust key signs the chain: every later graph edge traces back
+  // to the same root that signed the Recipe itself (one root of trust, two surfaces).
+  const router = new PortRouter({ vaultDir, journal: true, kernel: bootstrapKernel(rootKey.keyId, rootKey.privateKeyPem, rootKey.publicKey) });
   // D-331 lazy activation: bootPhase 0 spawns eager (the law must gate from
   // the first tick); everything else registers dormant with minted tokens and
   // spawns on first routed call. The spawner is injected (ports stay

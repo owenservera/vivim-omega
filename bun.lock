@@ -246,6 +246,14 @@
         "@vivim/omega-shim": "workspace:*",
       },
     },
+    "plugins/vivim-kernel-lens": {
+      "name": "@vivim/plugins-vivim-kernel-lens",
+      "version": "0.1.0",
+      "dependencies": {
+        "@vivim/omega-contracts": "workspace:*",
+        "@vivim/omega-shim": "workspace:*",
+      },
+    },
     "plugins/vivim-law": {
       "name": "@vivim/plugin-vivim-law",
       "version": "0.1.0",
@@ -490,6 +498,8 @@
     "@vivim/plugins-vivim-director": ["@vivim/plugins-vivim-director@workspace:plugins/vivim-director"],
 
     "@vivim/plugins-vivim-intent": ["@vivim/plugins-vivim-intent@workspace:plugins/vivim-intent"],
+
+    "@vivim/plugins-vivim-kernel-lens": ["@vivim/plugins-vivim-kernel-lens@workspace:plugins/vivim-kernel-lens"],
 
     "@vivim/plugins-vivim-mind": ["@vivim/plugins-vivim-mind@workspace:plugins/vivim-mind"],
 

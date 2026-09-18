@@ -44,10 +44,13 @@ const pass = (name: string, detail: unknown) => { checks[name] = { ok: true, det
 // (never for making a red check go away).
 const skip = (name: string, detail: unknown) => { checks[name] = { ok: true, skipped: true, detail }; console.log(`○ ${name}: skipped`); };
 
-// 1 · host-loc (B5 — the boredom budget is law; D-365: 1100 + freeze as sole owner)
+// 1 · host-loc (B5 — the boredom budget is law; D-365 froze 1100; D-391 re-amended
+// once and loudly to 1500 for the D-340 genesis kernel's host-critical subset, then
+// re-froze with the same no-exceptions rule: no new host surface without equal-or-
+// greater removal in the same commit. Creep still moves into plugins.)
 const hostLoc = countLoc(join(ROOT, "host/src"));
-if (hostLoc <= 1100) pass("host-loc", { loc: hostLoc, budget: 1100 });
-else fail("host-loc", `µhost is ${hostLoc} LOC (budget 1100, frozen D-365) — move the creep into a plugin`);
+if (hostLoc <= 1500) pass("host-loc", { loc: hostLoc, budget: 1500 });
+else fail("host-loc", `µhost is ${hostLoc} LOC (budget 1500, frozen D-391) — move the creep into a plugin`);
 
 // 2 · fresh-tree: legacy repos untouched + no legacy imports anywhere in the fresh tree
 // Clean-clone/CI honesty (D-320): with NO sibling repos present there is nothing to

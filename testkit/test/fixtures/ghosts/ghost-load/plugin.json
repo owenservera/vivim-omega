@@ -1,0 +1,15 @@
+{
+  "manifestVersion": "1",
+  "id": "ghost.load",
+  "version": "0.1.0",
+  "description": "D-340 pressure fixture — the shared algorithm nobody labeled core. A deliberately boring middle hop: ghost.load@1 calls echo.ping@1 through its granted capability and returns the amplified result. When a swarm of plugins holds port:ghost.load@1, kernel.centrality@1 must surface THIS plugin's op as load-bearing purely from computed fan-in (requirement #7: computed, never assigned).",
+  "entry": "src/index.ts",
+  "publisher": { "keyId": "", "signature": "" },
+  "contributions": {
+    "contract": [{ "kind": "contract", "id": "ghost.load", "version": "1", "risk": "READ" }]
+  },
+  "dependencies": [{ "ref": "contract:echo.ping@1", "range": "1.x" }],
+  "capabilities": { "requested": ["port:echo.ping@1"], "justification": "The middle hop of the plugins-of-plugins chain (fan → load → echo): pressure fixture for inter-compartment calls through the kernel graph." },
+  "runtime": { "tier": "worker-thread", "budget": { "cpuMs": 100, "memMB": 64 } },
+  "contentHash": ""
+}

@@ -1,0 +1,21 @@
+{
+  "manifestVersion": "1",
+  "id": "vivim.kernel-lens",
+  "version": "0.1.0",
+  "description": "D-340 — the kernel lens (read-only, never an author): the plugin-side half of the Option C split. kernel.centrality@1 sweeps a host graph snapshot for load-bearing nodes (fan-in / blast-radius, computed — nobody assigns core status, requirement #7); kernel.audit.verify@1 reports the hash-chained grant chain verdict (tamper-evidence, requirement #8). Both ops are READ semantics BY KIND and BY CAPABILITY: the lens requests exactly one host capability (host.kernel.lens — the graph/chain READ surface) and holds zero write paths. It is a vivim.mind-style lens, NOT a second vivim.law: nothing in the dispatch path ever consults it. Determinism: same snapshot + same chain ⇒ same report; thresholds are composition config (data, never authority), defaults matching the Rust kernel (fanIn 5, blastRadius 20).",
+  "entry": "src/index.ts",
+  "publisher": { "keyId": "", "signature": "" },
+  "contributions": {
+    "contract": [
+      { "kind": "contract", "id": "kernel.centrality", "version": "1", "risk": "READ", "doc": "centrality {} → {loadBearing: [{id, fanIn, blastRadius}], thresholds, nodeCount, edgeCount} — the computed load-bearing report over a host.graph.snapshot@1 copy. A node crosses load-bearing when fanIn >= fanInThreshold OR blastRadius >= blastRadiusThreshold (per-deployment config, defaults 5/20, same conservative numbers as vivim_omega_core::centrality). READ semantics: the lens queries a snapshot; it never sits between a caller and a routed op." },
+      { "kind": "contract", "id": "kernel.audit.verify", "version": "1", "risk": "READ", "doc": "verify {} → {verified, length, headHash, signerKeyId} — the verdict over the signed, hash-chained grant provenance (host.audit.chain@1 copy-out). The chain records every graph mutation: genesis closing grants, offer edges, hold edges. Tampering with any past entry breaks the verdict for every later one. READ semantics; verdict computed host-side (one canonical verifyJson — never duplicated into a compartment)." }
+    ]
+  },
+  "dependencies": [],
+  "capabilities": {
+    "requested": ["host.kernel.lens"],
+    "justification": "The lens needs exactly one READ surface: the host's graph snapshot + audit chain (host.kernel.lens guards host.graph.snapshot@1 and host.audit.chain@1). It writes nothing, routes nothing, gates nothing — a wrong centrality report is falsifiable against the intact host graph, which is the whole design. These grants are made per-composition by the user-signed Recipe, never by this manifest."
+  },
+  "runtime": { "tier": "worker-thread", "budget": { "cpuMs": 200, "memMB": 64 } },
+  "contentHash": ""
+}

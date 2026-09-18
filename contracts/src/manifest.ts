@@ -67,6 +67,30 @@ export interface PluginManifest {
     process?: ProcessRuntime; // D-374: additive — manifests without it validate unchanged
   };
   contentHash: string; // "sha256:<hex>" over the plugin content dir (excl. plugin.json, node_modules)
+  granularity?: Granularity;          // D-340 (kernel requirement #5): DATA, not a schema fork — a coarse legacy-wrapping plugin and a future atomic one declare the SAME shape. Defaults to "atomic".
+  internalSeams?: string[];           // coarse plugins name the seams a later extraction would cut along
+  extractionCandidate?: boolean;      // honest self-report; computed centrality (kernel.centrality@1) is the ground truth that checks it
+}
+
+export type Granularity = "coarse" | "atomic";
+
+/** Manifest honesty validation (kernel requirement #5, the manifest.rs::validate port).
+ *  Catches self-reporting lies the structural parse cannot: an atomic plugin still
+ *  declaring internal seams (claiming to have extracted while it hasn't), and an
+ *  extraction candidate naming no seams (flagging intent without doing the cheap work
+ *  of naming what would be cut). Called at compile time — fail-closed, like every
+ *  other manifest check. */
+export function validateManifestHonesty(m: PluginManifest): string[] {
+  const errors: string[] = [];
+  const granularity = m.granularity ?? "atomic";
+  const seams = m.internalSeams ?? [];
+  if (granularity === "atomic" && seams.length > 0) {
+    errors.push(`${m.id}: atomic plugin declaring internalSeams — seams belong to coarse plugins (still claiming an unextracted interior?)`);
+  }
+  if (m.extractionCandidate === true && granularity !== "atomic" && seams.length === 0) {
+    errors.push(`${m.id}: extractionCandidate with no internalSeams — name the seams before flagging extraction intent`);
+  }
+  return errors;
 }
 
 /** Ops a plugin makes routable: contract/engine/provider contributions register ops as `<id>@<version>`. */

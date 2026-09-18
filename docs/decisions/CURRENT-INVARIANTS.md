@@ -13,7 +13,7 @@ Regenerated every ~30 ratified decisions (or one per wave-set, whichever comes f
 | **B2** | One `worker_threads` compartment per plugin — separate V8 isolates, shared-nothing. Every message crosses the Port Protocol. Isolation is against **coupling, not exhaustion** (D-321: `resourceLimits` are NOT enforced on Bun — re-verified on Linux, 130MB in a 32MB cap). The D-360 watchdog bounds *detection* time of a consuming compartment (adversarial 13/14); exhaustion within a sample window remains open until a process-per-compartment tier exists (flagged, not built — D-360). | host/src/worker.ts header, gate `bun-surface` (runtime-neutral prod tree), adversarial 13/14 |
 | **B3** | Capability tokens are verified host-side, outside every compartment. Token records are order-independent (alias keys and guarding caps resolve to the same effective cap). Revocation is a generation bump (attributable REVOKED register). | host/src/ports.ts `checkToken`, token-law tests |
 | **B4** | Any verification failure refuses the composition; boot falls back to the pinned recipe; the rename is the atomic durability boundary (stale tmp cleaned, mid-swap crash drills green). | recovery.ts, adversarial 8/9/12, B4 drill |
-| **B5** | The µhost is boring and may not grow: `host/src` ≤ 1,100 LOC, hard gate, FROZEN D-365 (sole owner — no new host surface without removing old surface in the same commit). Creep moves into plugins or out-of-tree tooling (the watchdog and the pool both live outside, injected). | gate `host-loc` (999/1100 at this snapshot) |
+| **B5** | The µhost is boring and may not grow: `host/src` ≤ 1,500 LOC, hard gate, re-frozen by D-391 (the D-365 1,100 freeze was amended ONCE, loudly, for the D-340 genesis kernel's host-critical subset — graph/genesis/state/audit/contract, 411 lines, itemized in the record; the same no-exceptions rule carries: no new host surface without removing old surface in the same commit). Creep moves into plugins or out-of-tree tooling (the watchdog and the pool both live outside, injected). | gate `host-loc` (1,450/1,500 at this snapshot) |
 
 ## The architecture laws (Ω)
 
@@ -63,7 +63,9 @@ Regenerated every ~30 ratified decisions (or one per wave-set, whichever comes f
   IN the record before RATIFIED, and a second gate run must follow ratification (same-day
   ratification stays legal for directive-class rows — solo-owner speed, honestly labeled).
 - **Directive fast-path (D-367):** directive rows ratify same-day on gate green by default; evidence B1–B4 keeps full cooling-off.
-- **Composition freeze (D-370):** 16 specs, no new spec without deleting/generating one (mechanized
+- **Composition freeze (D-370, amended D-391):** 17 specs (the kernel witness rig joined via the
+  D-377 matrix path — the freeze's target was hand-maintained drift, and matrix rows carry none),
+  no new spec except through the matrix/generator (mechanized
   by the D-376 conformance net + D-377 matrix/generator). Composition stance (D-316, closed
   2026-09-18): **N first-class compositions — no flagship**; grant variance is handled per-row
   by DRIFT_ALLOWLIST with D-pointers, never by a privileged spec.
@@ -107,7 +109,7 @@ being fixed (with its falsifier) or superseded (with a D-record pointer).
 
 Tracked explicitly so none of these is discovered late:
 
-- **Host LOC headroom is thin:** 1,039/1,100 (61 lines) under the FROZEN D-365 budget with
+- **Host LOC headroom is thin:** 1,450/1,500 (50 lines) under the re-frozen D-391 budget with
   no-exceptions enforcement. Any host-touching change must name its equal-or-greater removal
   BEFORE the code is written (B5: removal in the same commit — the removal cannot be partial).
 - **Test count crossed the sharding trigger** (D-317 ~700; D-368 lanes + quick gate were the

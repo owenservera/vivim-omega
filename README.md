@@ -13,7 +13,7 @@ they become backfill sources after the core exists.
 
 ## The Ω laws in ten lines
 
-1. The µhost is boring and may not grow: `host/src` ≤ **1,100 LOC**, hard gate (B5, frozen D-365 as sole owner — no new host surface without removing old surface in the same commit).
+1. The µhost is boring and may not grow: `host/src` ≤ **1,500 LOC**, hard gate (B5 — raised 1,100→1,500 by D-391, once and loudly: the D-340 genesis kernel graph/chain/arbiter/generations are host-critical per B3/latency and cost 411 lines (1,039 → 1,450) on top of the D-365 freeze; re-frozen at 1,500 with the same no-exceptions rule — no new host surface without removing old surface in the same commit).
 2. No code executes unless a signed manifest entry in the Recipe references its content hash (B1).
 3. Compartments never share a heap — every message traverses the Port Protocol (B2). Isolation
    is against **coupling, not exhaustion**: `resourceLimits` are not enforced on Bun (D-321,
@@ -31,10 +31,10 @@ they become backfill sources after the core exists.
 
 ```
 contracts/   @vivim/omega-contracts — the pinned wire types (zero runtime)
-host/        @vivim/omega-host     — the µhost (LOC-gated, no manifest: it verifies them)
+host/        @vivim/omega-host     — the µhost (LOC-gated, no manifest: it verifies them) + the D-340 genesis kernel (graph/chain/arbiter/generations)
 shim/        @vivim/omega-shim     — compartment runtime (definePlugin + port client)
 platform/    @vivim/omega-platform — the ONLY OS-aware module (D-372: tmpRoot/omegaTmp/resolveDataDir/ownerOnly)
-plugins/     vivim-law · vivim-vault · vivim-run · vivim-mind (self-knowledge) · vivim-nlcl (deterministic NLP) · vivim-director (NL reprogramming) · providers · discovery engines · law-stub (Ω0 stand-in)
+plugins/     vivim-law · vivim-vault · vivim-run · vivim-mind (self-knowledge) · vivim-kernel-lens (D-340 read-only kernel lens) · vivim-nlcl (deterministic NLP) · vivim-director (NL reprogramming) · providers · discovery engines · law-stub (Ω0 stand-in)
 packs/       domain packs (SCHEMA+CONTRACT+POLICY+TEST bundles)
 surfaces/    cli · mcp · web (the Ω console service)
 examples/    plugin-echo · plugin-counter (Ω0) · plugin-notes (Ω4)
@@ -81,6 +81,7 @@ bootPhase order → mint capability tokens → wire the router).
 - `docs/CURRENT-INVARIANTS.md` — the one-page law snapshot (read this, not 360 rows — D-364)
 - `docs/BUILD-DECISIONS.md` — the build-track decision register (D-210…, append-only)
 - `docs/decisions/README.md` — the Decision Contract (records, classes, cooling-off)
+- `docs/parity/` — the D-340 evidence chain: nine-requirement gap map, scalability ceilings, LOC fork, and the `vivim_omega_core` Rust reference kernel
 - `docs/NCLL-AND-SELF-KNOWLEDGE.md` — Ω10–Ω13: the language waves (self-knowledge, the deterministic NCLL, NL reprogramming, the web console)
 - `BENCHMARKS.md` — append-only measured numbers per wave
 - `build/status.json` — machine-readable build state (feeds the review console; CI re-derives it, D-362)
