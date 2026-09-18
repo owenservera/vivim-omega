@@ -1,0 +1,31 @@
+[
+  {
+    "title": "vault design review",
+    "create_time": 1735690000,
+    "update_time": 1735690100,
+    "mapping": {
+      "n1": {
+        "id": "msg-a1",
+        "message": { "id": "msg-a1", "author": { "role": "user" }, "content": { "parts": ["Review the vault append path."] }, "create_time": 1735690001 },
+        "parent": null
+      },
+      "n2": {
+        "id": "msg-a2",
+        "message": { "id": "msg-a2", "author": { "role": "assistant" }, "content": { "parts": ["The append path is a Merkle chain.", "Compaction never deletes."] }, "model": "gpt-4o", "create_time": 1735690010 },
+        "parent": "n1"
+      },
+      "n3": {
+        "id": "msg-a3",
+        "message": { "id": "msg-a3", "author": { "role": "user" }, "content": { "content_type": "code", "parts": [{"text": "ignored non-string part"}, "ship it"] } },
+        "parent": "n2"
+      }
+    }
+  },
+  {
+    "title": "empty mapping probe",
+    "create_time": 1735690200,
+    "mapping": {
+      "n1": { "id": "msg-b1", "message": null, "parent": null }
+    }
+  }
+]

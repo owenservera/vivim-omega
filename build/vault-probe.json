@@ -1,0 +1,68 @@
+{
+  "at": "2026-09-16T22:03:18.148Z",
+  "spec": "compositions/chat.json",
+  "scales": [
+    {
+      "mode": "chat.append@1 (the real writer path, serial)",
+      "nsMessages": 1000,
+      "conversations": 10,
+      "batchWallMs": 3674,
+      "appendThroughputMsPerMsg": 3.674,
+      "appendSoloMs": {
+        "n": 20,
+        "p50": 3.59,
+        "p99": 8.76
+      },
+      "historyIndexedMs": {
+        "n": 20,
+        "p50": 11.35,
+        "p99": 35.78
+      },
+      "historyLimit": 50,
+      "nsMessagesAtRead": 1000
+    },
+    {
+      "mode": "chat.append@1 (the real writer path, serial)",
+      "nsMessages": 10000,
+      "conversations": 100,
+      "batchWallMs": 118326,
+      "appendThroughputMsPerMsg": 11.833,
+      "appendSoloMs": {
+        "n": 20,
+        "p50": 3.72,
+        "p99": 4.7
+      },
+      "historyIndexedMs": {
+        "n": 20,
+        "p50": 11.78,
+        "p99": 36.54
+      },
+      "historyLimit": 50,
+      "nsMessagesAtRead": 11000
+    },
+    {
+      "mode": "root vault.append@1 seed (writer-shaped rows) + chat-layer samples below",
+      "nsMessages": 100000,
+      "conversations": 1000,
+      "batchWallMs": 55567,
+      "appendThroughputMsPerMsg": 0.556,
+      "appendSoloMs": {
+        "n": 20,
+        "p50": 4.65,
+        "p99": 6.5
+      },
+      "historyIndexedMs": {
+        "n": 20,
+        "p50": 11.95,
+        "p99": 76.83
+      },
+      "historyLimit": 50,
+      "nsMessagesAtRead": 111000
+    }
+  ],
+  "capRefusal": {
+    "error": "DEGRADED",
+    "detail": "handler chat.append@1 threw: Error: chat.append@1: conversation conv_2ad471f4b86d3536 reached the 200-message indexed cap — compaction/retention revisit trigger"
+  },
+  "verify": "green"
+}

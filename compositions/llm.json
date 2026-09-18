@@ -7,7 +7,14 @@
       "bootPhase": 0,
       "grant": {
         "capabilities": ["host.journal.append", "host.tokens.revoke"],
-        "contracts": ["law.check@1", "law.registry@1", "law.consent.grant@1", "law.tokens.revoke@1", "law.amendment@1", "law.describe@1"]
+        "contracts": [
+          "law.check@1",
+          "law.registry@1",
+          "law.consent.grant@1",
+          "law.tokens.revoke@1",
+          "law.amendment@1",
+          "law.describe@1"
+        ]
       },
       "config": { "journalPath": "" }
     },

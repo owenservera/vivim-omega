@@ -1,0 +1,7 @@
+{
+  "verdict": "unavailable",
+  "reason": "no cgroup v2 unified hierarchy at /sys/fs/cgroup — memory enforcement probing is Linux cgroup v2 only; treat process budgets as advisory per KNOWN-LIMITS L-15",
+  "root": "/sys/fs/cgroup",
+  "subgroup": null,
+  "measurements": null
+}

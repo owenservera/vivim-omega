@@ -1,0 +1,21 @@
+$ bun run tooling/gates/gate.ts
+✓ host-loc
+○ fresh-tree: skipped
+✓ decisions
+✓ compositions
+✓ bun-surface
+✓ os-surface
+✓ import-surface
+✓ tests
+[omega.counter] counter booted
+✓ attest
+{
+  "ok": true,
+  "failed": 0,
+  "hostLoc": 999,
+  "tests": {
+    "pass": 776,
+    "fail": 0
+  },
+  "at": "2026-09-16T17:04:09.586Z"
+}

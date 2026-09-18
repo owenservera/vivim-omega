@@ -25,11 +25,13 @@ Regenerated every ~30 ratified decisions (or one per wave-set, whichever comes f
 - Computation is routed, never vendored: resolution ≠ execution (D-323/D-337/D-359).
 - Everything else is a plugin. The host is transport, not policy.
 
-## Runtime surfaces and the adapter inventory (D-361)
+## Runtime surfaces and the adapter inventory (D-361 as rewritten by D-373)
 
 - The production tree (`host`, `shim`, `contracts`, `sdk`, `testkit`, `plugins/*`, `surfaces/*`)
-  contains **zero** runtime-specific APIs except ONE declared adapter:
-  `plugins/vivim-vault/src/db.ts` (`bun:sqlite`). A Node build swaps that single module.
+  contains **zero** runtime-specific APIs except the vault DRIVER LANE:
+  `plugins/vivim-vault/src/drivers/bun-sqlite.ts` (`bun:sqlite`). A Node build swaps the ONE
+  lane import (`./db.ts` → `./db.node.ts`, which binds `node:sqlite`) — proven byte-identical
+  by the cross-runtime conformance parity suite, not by trust (D-373).
 - Sync sleep is `Atomics.wait`-based (`sleepSync` exported from the shim; host-local in canon.ts).
 - The daemon listens via `node:net`; spawns via `node:child_process`; surfaces read specs via `node:fs`.
 - Dev/test toolchain is Bun (≥ 1.3.14 pinned), stated in README's Run section. The gate's
@@ -61,7 +63,10 @@ Regenerated every ~30 ratified decisions (or one per wave-set, whichever comes f
   IN the record before RATIFIED, and a second gate run must follow ratification (same-day
   ratification stays legal for directive-class rows — solo-owner speed, honestly labeled).
 - **Directive fast-path (D-367):** directive rows ratify same-day on gate green by default; evidence B1–B4 keeps full cooling-off.
-- **Composition freeze (D-370):** 16 specs, no new spec without deleting/generating one (social discipline until the D-316 net mechanizes it).
+- **Composition freeze (D-370):** 16 specs, no new spec without deleting/generating one (mechanized
+  by the D-376 conformance net + D-377 matrix/generator). Composition stance (D-316, closed
+  2026-09-18): **N first-class compositions — no flagship**; grant variance is handled per-row
+  by DRIFT_ALLOWLIST with D-pointers, never by a privileged spec.
 - Consolidation pass: every ~30 ratified decisions, refresh this page. The full log is never
   pruned or rewritten (append-only, supersede never edit).
 
@@ -70,3 +75,69 @@ Regenerated every ~30 ratified decisions (or one per wave-set, whichever comes f
 Every residual the tree knowingly carries lives on one page with its detector
 and revisit trigger: `docs/KNOWN-LIMITS.md`. A limit leaves that page only by
 being fixed (with its falsifier) or superseded (with a D-record pointer).
+
+## The storage driver lane (D-373)
+
+- The vault's byte-persistence sits behind one structural `SqliteDriver` seam (`sql.ts` +
+  `drivers/`); drivers are dumb byte stores — the spine owns CAS, Merkle changelog, refs and
+  compaction discipline, exactly as before. Every driver passes the SAME conformance workload;
+  a driver that diverges on the digest is broken by definition.
+- `(ns, id, rev)` and the refs edge list are load-bearing driver-contract fields; a driver
+  that decides what is live, or prunes history, is not a driver — it is a fork of the spine.
+
+## The polyglot process tier (D-374)
+
+- Compartments are worker-threads OR declared process pools. Process pools exist ONLY in
+  signed composition config (`config.processPools`); the broker REFUSES unknown pools and
+  undeclared ops; the caller can never name a command. B2 holds literally at the OS boundary:
+  shared-nothing, Port Protocol over ndjson stdio, fail-closed everywhere.
+- Malformed IPC is bounded (BUDGET, never a hang); deadlines fast-kill at 500ms cap (D-366
+  discipline); stderr is journaled, never inherited. Process budgets are advisory at spawn
+  (KNOWN-LIMITS) — the watchdog bounds detection; the OS-process boundary itself is the
+  containment upgrade over worker tiers (the D-360 exhaustion residual's sanctioned hatch).
+- `wasm` is forward-declared vocabulary only (D-354 reserve) — no shape, no implementation,
+  no trust claims until its own record.
+- **Containment probe (D-386):** `omega:containment` measures whether the kernel actually
+  bounds a process-tier child (cgroup v2 today; Windows Job Objects probe is the named next
+  slice). Enforcement is claimed ONLY from kernel-side measurements; `unavailable` is the
+  honest answer wherever the OS refuses the probe. GATE CONDITION: B1b and any Wave2 LAUNCHED
+  provider require verdict `enforced` on the target OS — or a recorded owner acceptance.
+
+## Budget watch (owner-directed, 2026-09-18 independent recommendation §8)
+
+Tracked explicitly so none of these is discovered late:
+
+- **Host LOC headroom is thin:** 1,039/1,100 (61 lines) under the FROZEN D-365 budget with
+  no-exceptions enforcement. Any host-touching change must name its equal-or-greater removal
+  BEFORE the code is written (B5: removal in the same commit — the removal cannot be partial).
+- **Test count crossed the sharding trigger** (D-317 ~700; D-368 lanes + quick gate were the
+  response). Per D-317's own discipline: re-check wall-time once the suite nears ~1,000
+  (currently 847).
+- **Single-principal boundary (L-11) is a fence, not a bug:** the first sharing-adjacent
+  feature requires the GAP-4 ruling first (D-379's reopen rule) — hold the line under scope
+  pressure.
+- **Calibration corpus + SLOs (L-12/L-13):** promotion thresholds remain unmeasured constants;
+  benchmarks carry walls, not envelopes. These must NOT become load-bearing for consequential
+  decisions (e.g., agent auto-routing) before Phase D / F-3 lands — sequence accordingly.
+
+## The W0 close-out layer (D-376…D-383, the migration-readiness laws)
+
+- **Conformance net (D-376):** the `compositions` gate stage is the one read-only net —
+  grant-vs-manifest, bootPhase-0 law, D-325 pairing, allowlisted grant drift, zero-call-site
+  contracts, risk parity (manifest-declared risk === LAW_POLICY classification, gate-layer),
+  and matrix conformance (specs regenerate byte-identical from `compositions/_matrix.json`).
+  Seeded drift fails with named diagnostics (`conformance-drift-seed.ts`).
+- **Authoring path (D-377):** `_matrix.json` is the source of truth for compositions; edit the
+  matrix, run `omega:generate composition`; hand-edited specs fail the gate. `omega:generate
+  plugin|pack` scaffolds with the authoring checklist (ns row, LAW_POLICY rows, matrix grant,
+  bun install, real-boot proof). New readers author via the generator, never by hand.
+- **Vault index + retention (D-378):** vivim.chat maintains per-conversation index rows
+  (`idx_<hex>`, bounded by CHAT_HISTORY_CAP); history/cap/seq ride the index (legacy scan is
+  the fallback; corrupt index refuses fail-closed). Retention windows per ns are DECLARED
+  (numbers in the D-378 record + VAULT-NAMESPACES chat row); mechanical enforcement is Wave3.
+  The probe (`omega:probe`) owns the append-latency + bounded-read numbers.
+- **Single-principal fence (D-379):** one principal per conversation; cross-principal reads
+  REFUSE as a verdict envelope and LEDGER (`refusal_*` rows, ns chat); sharing reopens only
+  by a new decision record. Provider bar (D-380), parser bar (D-381), observability spine
+  (D-382), and the surface pointer default (D-383) are the Wave1+ bars — read those records
+  before harvesting anything.

@@ -7,7 +7,14 @@
       "bootPhase": 0,
       "grant": {
         "capabilities": ["host.journal.append", "host.tokens.revoke"],
-        "contracts": ["law.check@1", "law.registry@1", "law.consent.grant@1", "law.tokens.revoke@1", "law.amendment@1", "law.describe@1"]
+        "contracts": [
+          "law.check@1",
+          "law.registry@1",
+          "law.consent.grant@1",
+          "law.tokens.revoke@1",
+          "law.amendment@1",
+          "law.describe@1"
+        ]
       }
     },
     {
@@ -22,7 +29,16 @@
       "bootPhase": 1,
       "grant": {
         "capabilities": [],
-        "contracts": ["vault.append@1", "vault.get@1", "vault.query@1", "vault.search@1", "vault.verify@1", "vault.compact@1", "vault.roundtrip@1"]
+        "contracts": [
+          "vault.append@1",
+          "vault.get@1",
+          "vault.getmany@1",
+          "vault.query@1",
+          "vault.search@1",
+          "vault.verify@1",
+          "vault.compact@1",
+          "vault.roundtrip@1"
+        ]
       },
       "config": { "dataDir": "${TMP}/omega-email-test/main/vault-data" }
     },
@@ -32,7 +48,14 @@
       "bootPhase": 1,
       "grant": {
         "capabilities": ["port:vault.append@1", "port:vault.get@1", "port:vault.query@1", "port:vault.search@1"],
-        "contracts": ["message.send@1", "message.list@1", "message.search@1", "message.read@1", "message.move@1", "message.receive@1"]
+        "contracts": [
+          "message.send@1",
+          "message.list@1",
+          "message.search@1",
+          "message.read@1",
+          "message.move@1",
+          "message.receive@1"
+        ]
       },
       "config": { "from": "demo@omega.local" }
     }

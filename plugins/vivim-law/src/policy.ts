@@ -49,13 +49,16 @@ export interface PolicyDoc {
  *  explicit require-consent RULE so storing a credential keeps the
  *  security-sensitive consent bar (the first-lineage put ceremony, now
  *  stated as policy data instead of default-riding).
+ *  1.4.0 (D-374): the polyglot process tier enters the net — exact row
+ *  `run.process.call@1` → MUTATION (journaled; pools exist only in signed
+ *  composition config, unknown pool REFUSED broker-side — fail-closed).
  *  1.3.0 (D-358): the chat pilot enters the net — exact rows `chat.open@1`
  *  and `chat.append@1` → MUTATION (vault-internal conversation storage, the
  *  same class family as `vault.*`; never default-riding, D-351's lesson).
  *  `chat.history@1` / `chat.resolve@1` are READ (never gate-triggering). */
 export const LAW_POLICY_V1: PolicyDoc = {
   policyId: "law.policy",
-  version: "1.3.0",
+  version: "1.4.0",
   description: "Ω1 baseline: risk-class defaults, mutation journaling, principal deny-list, credential-consent rule",
   riskTable: [
     { op: "risky.op@1", risk: "EXTERNAL_MUTATION" },
@@ -67,6 +70,7 @@ export const LAW_POLICY_V1: PolicyDoc = {
     { op: "credential.put@1", risk: "MUTATION" },           // D-356: vault-internal class — the consent bar lives in the rule below, not the class
     { op: "chat.open@1", risk: "MUTATION" },                // D-358: vault-internal conversation storage (same class family as vault.*)
     { op: "chat.append@1", risk: "MUTATION" },              // D-358: vault-internal message append — exact rows, never default-riding
+    { op: "run.process.call@1", risk: "MUTATION" },         // D-374: process-tier call — journaled; pools exist only in signed config, unknown pool REFUSED broker-side
   ],
   defaultRisk: "EXTERNAL_MUTATION", // unknown ops are treated as the strictest class (fail-closed)
   riskDefaults: {
@@ -92,12 +96,46 @@ function opMatches(pattern: string, op: string): boolean {
   return false;
 }
 
-/** Classify an op against the risk table (exact rows before prefix rows, first hit wins). */
+/** D-387 (perf review #9): the classification index is precomputed ONCE per policy
+ *  document instead of filter()+sort() on every risky-op call. Keyed by WeakMap on
+ *  the doc object: policy is DATA replaced by reference on amendment (ShadowAmendment
+ *  clones — never mutates a live doc), so a new doc builds a new index and stale
+ *  entries are garbage-collected. Exact rows keep first-wins (the old find());
+ *  prefix rows are sorted longest-first ONCE (stable sort — equal lengths keep
+ *  table order), and the call-time linear scan resolves the same winner the old
+ *  per-call sort resolved. Semantics byte-identical (D-351 exact-outranks-prefix
+ *  and D-384 specificity both preserved, pinned by the differential falsifier). */
+interface CompiledRiskIndex { exact: Map<string, RiskClass>; prefixes: RiskEntry[] }
+const riskIndexCache = new WeakMap<PolicyDoc, CompiledRiskIndex>();
+
+function riskIndex(doc: PolicyDoc): CompiledRiskIndex {
+  const cached = riskIndexCache.get(doc);
+  if (cached) return cached;
+  const exact = new Map<string, RiskClass>();
+  const prefixes: RiskEntry[] = [];
+  for (const r of doc.riskTable) {
+    if (r.op.endsWith("*")) prefixes.push(r);
+    else if (!exact.has(r.op)) exact.set(r.op, r.risk); // first exact row wins
+  }
+  prefixes.sort((a, b) => b.op.length - a.op.length); // stable: equal-length patterns keep table order
+  const idx: CompiledRiskIndex = { exact, prefixes };
+  riskIndexCache.set(doc, idx);
+  return idx;
+}
+
+/** Classify an op against the risk table (exact rows before prefix rows, first hit wins).
+ *  D-384: among PREFIX rows, the most specific (longest pattern) wins — specificity is
+ *  enforced by the interpreter, not by table-authoring order, so two overlapping prefixes
+ *  (e.g. `chat.*` and `chat.append.*`) can never silently swap outcomes by list order.
+ *  Equal-length patterns keep table order (stable sort).
+ *  D-387: evaluated against the precomputed index (see riskIndex) — no per-call allocation. */
 export function classifyRisk(doc: PolicyDoc, op: string): RiskClass {
-  const exact = doc.riskTable.find((r) => !r.op.endsWith("*") && r.op === op);
-  if (exact) return exact.risk;
-  const prefix = doc.riskTable.find((r) => r.op.endsWith("*") && opMatches(r.op, op));
-  if (prefix) return prefix.risk;
+  const idx = riskIndex(doc);
+  const exact = idx.exact.get(op);
+  if (exact !== undefined) return exact;
+  for (const r of idx.prefixes) {
+    if (opMatches(r.op, op)) return r.risk;
+  }
   return doc.defaultRisk;
 }
 

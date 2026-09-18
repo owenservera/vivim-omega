@@ -1,7 +1,7 @@
 // µhost — canon.ts: canonical JSON, content hashing, ed25519 (node:crypto, no deps).
 // One implementation; the SDK/tooling import it from here so digests can never diverge.
 import { createHash, generateKeyPairSync, createPrivateKey, createPublicKey, sign as edSign, verify as edVerify, randomBytes } from "node:crypto";
-import { readdirSync, readFileSync, statSync, writeFileSync, renameSync } from "node:fs";
+import { readdirSync, readFileSync, lstatSync, writeFileSync, renameSync, unlinkSync } from "node:fs";
 import { join, relative, sep } from "node:path";
 import { retryOsLock } from "@vivim/omega-platform"; // E-1: one backoff discipline for the rename boundary
 
@@ -23,14 +23,19 @@ export function sha256Hex(data: string | Buffer): string {
 
 export const EXCLUDE_CONTENT = new Set(["node_modules", ".git", "plugin.json", "package.json", "package.json.orig", ".DS_Store"]);
 
-/** Content hash over a plugin dir: sorted relative paths, each file's sha256, chained. */
+/** Content hash over a plugin dir: sorted relative paths, each file's sha256, chained.
+ *  D-384: symlinks are REJECTED, not followed (fail-closed). statSync silently
+ *  dereferenced links and folded the target's bytes into the hash — B1's signed
+ *  content hash must cover exactly the bytes in this tree, nothing else. */
 export function contentHashDir(dir: string): string {
   const files: string[] = [];
   const walk = (d: string) => {
     for (const name of readdirSync(d)) {
       if (EXCLUDE_CONTENT.has(name)) continue;
       const p = join(d, name);
-      if (statSync(p).isDirectory()) walk(p);
+      const st = lstatSync(p);
+      if (st.isSymbolicLink()) throw new Error(`contentHashDir: symlink in plugin source tree (fail-closed, D-384): ${relative(dir, p)}`);
+      if (st.isDirectory()) walk(p);
       else files.push(p);
     }
   };
@@ -84,9 +89,17 @@ export function atomicWrite(path: string, data: string): void {
   // Windows: transient locks (AV/indexer, lazy handle release) can EPERM/EBUSY
   // the rename. Bounded retry with backoff via the shared seam helper — the
   // boundary is unchanged, rename stays atomic.
-  const tmp = `${path}.tmp`;
+  // D-384: the tmp name is UNIQUE (pid + random, the casPut pattern) — a fixed
+  // `${path}.tmp` let two writers racing on the same path overwrite each other's
+  // tmp bytes before either rename fired. retryOsLock only guards the rename.
+  const tmp = `${path}.tmp-${process.pid.toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
   writeFileSync(tmp, data);
-  retryOsLock(() => renameSync(tmp, path));
+  try {
+    retryOsLock(() => renameSync(tmp, path));
+  } catch (e) {
+    try { unlinkSync(tmp); } catch { /* best-effort — never mask the rename error */ }
+    throw e;
+  }
 }
 
 export { writeFileSync };

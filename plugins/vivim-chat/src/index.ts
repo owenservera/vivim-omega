@@ -22,15 +22,16 @@
 // Handlers throw on bad payloads / failed port calls → DEGRADED at the boundary.
 import { definePlugin, startPlugin } from "@vivim/omega-shim";
 import type { PluginContext, CallMeta } from "@vivim/omega-shim";
-import type { PortResult, ResolveDecision, ChatConversation } from "@vivim/omega-contracts";
+import type { PortResult, ResolveDecision, ChatConversation, ChatMessage } from "@vivim/omega-contracts";
 import {
   CHAT_NS, asChatConversation, asChatMessage, chatConversationId, chatMessageId, resolveDecisionId,
 } from "@vivim/omega-contracts";
 import { randomBytes } from "node:crypto";
 import {
-  CHAT_HISTORY_CAP, checkContent, checkPrincipal, checkRole, nextMessageSeq,
-  orderMessages, parseAppendInput, parseHistoryInput,
+  CHAT_HISTORY_CAP, checkContent, checkPrincipal, checkRole, chatIndexId, asChatIndex,
+  nextChatIndex, nextMessageSeq, orderMessages, parseAppendInput, parseHistoryInput,
 } from "./chat.ts";
+import type { PrincipalRefusal, ChatIndex } from "./chat.ts";
 import {
   CHAT_CONSULT_OP, deterministicMatch, deterministicVerdict, parseResolveInput,
 } from "./resolve.ts";
@@ -92,13 +93,15 @@ async function serializeAppend<T>(conversationId: string, fn: () => Promise<T>):
   }
 }
 
-/** All messages of one conversation (sibling-proof by data filter).
- *  C-2: filter BEFORE any bound — slicing the raw row list first would let
- *  sibling conversations crowd out this conversation's messages (undercounted
- *  history AND duplicated seqs). The per-conversation CHAT_HISTORY_CAP is
- *  enforced by the caller (append refuses at cap); the scan itself is bounded
- *  by total ns size — pilot scale, with the D-335 retention revisit as the
- *  named trigger for a bounded-scan redesign. */
+/** All messages of one conversation (sibling-proof by data filter) — the
+ *  LEGACY fallback path (W0-3/D-378: used only when the conversation has no
+ *  index row yet). C-2: filter BEFORE any bound — slicing the raw row list
+ *  first would let sibling conversations crowd out this conversation's
+ *  messages (undercounted history AND duplicated seqs). The per-conversation
+ *  CHAT_HISTORY_CAP is enforced by the caller (append refuses at cap); the
+ *  scan itself is bounded by total ns size — the D-378 index makes the
+ *  INDEXED path O(cap) instead of O(ns), and this scan remains only for
+ *  rows written before the index existed (Wave3 backfill retires it). */
 async function loadConversationMessages(ctx: PluginContext, conversationId: string) {
   const rows = await portCall<VaultQueryRow[]>(ctx, "vault.query@1", { ns: CHAT_NS, filter: { idPrefix: "msg_" } });
   const messages = [];
@@ -110,6 +113,32 @@ async function loadConversationMessages(ctx: PluginContext, conversationId: stri
     messages.push(m);
   }
   return messages;
+}
+
+/** The indexed read path (W0-3/D-378): fetch exactly the index's entries —
+ *  ≤ CHAT_HISTORY_CAP gets, flat vs total ns size. Same skip-unreadable
+ *  discipline as the scan path; the index's own seq order is preserved. */
+async function fetchByIndex(ctx: PluginContext, idx: ChatIndex): Promise<ChatMessage[]> {
+  const ordered = [...idx.entries].sort((a, b) => a.seq - b.seq);
+  const out: ChatMessage[] = [];
+  for (const e of ordered) {
+    const got = await tryGet<VaultGetResult>(ctx, "vault.get@1", { ns: CHAT_NS, id: e.id });
+    if (!got) continue; // unreadable rows can't be history — skipped, not fatal
+    const m = asChatMessage(got.data);
+    if (m && m.conversationId === idx.conversationId) out.push(m);
+  }
+  return out;
+}
+
+/** Load the conversation's index row. Returns null when absent (legacy
+ *  conversation); a PRESENT-but-corrupt row throws (fail-closed — a corrupt
+ *  index must never silently downgrade to a full-scan read). */
+async function loadIndex(ctx: PluginContext, op: string, conversationId: string): Promise<ChatIndex | null> {
+  const got = await tryGet<VaultGetResult>(ctx, "vault.get@1", { ns: CHAT_NS, id: chatIndexId(conversationId) });
+  if (!got) return null;
+  const idx = asChatIndex(got.data);
+  if (!idx) throw new Error(`${op}: index row ${chatIndexId(conversationId)} is malformed — refusing fail-closed (D-378)`);
+  return idx;
 }
 
 export const def = definePlugin({
@@ -140,16 +169,20 @@ export const def = definePlugin({
     "chat.append@1": async (payload: unknown, ctx: PluginContext) => {
       const op = "chat.append@1";
       const input = parseAppendInput(payload); // throws → DEGRADED
-      // Serialized per conversation (C-1): seq assignment + append are one
-      // critical section — concurrent appends can neither duplicate seqs nor
-      // interleave reads and writes.
+      // Serialized per conversation (C-1): seq assignment + append + index
+      // update are one critical section — concurrent appends can neither
+      // duplicate seqs nor interleave reads and writes.
       return serializeAppend(input.conversationId, async () => {
         const { conv, rev: convRev } = await mustLoadConversation(ctx, input.conversationId);
-        const prior = await loadConversationMessages(ctx, input.conversationId);
-        if (prior.length >= CHAT_HISTORY_CAP) {
-          throw new Error(`${op}: conversation ${conv.id} reached the ${CHAT_HISTORY_CAP}-message scan cap — compaction/retention revisit trigger (D-335), refusing fail-closed`);
+        // W0-3/D-378: the writer-maintained index decides count + seq when it
+        // exists (O(1) vault ops); legacy conversations backfill from the scan.
+        const idx = await loadIndex(ctx, op, conv.id);
+        const priorMessages = idx ? [] : await loadConversationMessages(ctx, input.conversationId);
+        const priorCount = idx ? idx.count : priorMessages.length;
+        if (priorCount >= CHAT_HISTORY_CAP) {
+          throw new Error(`${op}: conversation ${conv.id} reached the ${CHAT_HISTORY_CAP}-message ${idx ? "indexed" : "scan"} cap — compaction/retention revisit trigger (D-335/D-378), refusing fail-closed`);
         }
-        const seq = nextMessageSeq(prior.length);
+        const seq = nextMessageSeq(priorCount);
         const id = chatMessageId(`msg_${randomBytes(8).toString("hex")}`);
         const createdAt = Date.now();
         const message = {
@@ -168,6 +201,14 @@ export const def = definePlugin({
           meta: { type: "message", conversationId: conv.id, role: input.role, seq },
           refs: [{ ns: CHAT_NS, id: conv.id, rev: convRev }],
         });
+        // index rides the SAME critical section as the message append (C-1);
+        // latest-wins row, bounded by the cap enforced above.
+        const index = nextChatIndex(conv.id, idx, priorMessages, { id, seq });
+        await portCall<VaultAppendResult>(ctx, "vault.append@1", {
+          ns: CHAT_NS, id: chatIndexId(conv.id), data: index,
+          meta: { type: "conversation-index", conversationId: conv.id },
+          refs: [{ ns: CHAT_NS, id: conv.id, rev: convRev }],
+        });
         return { messageId: id, rev: append.rev, seq };
       });
     },
@@ -175,7 +216,34 @@ export const def = definePlugin({
     "chat.history@1": async (payload: unknown, ctx: PluginContext) => {
       const input = parseHistoryInput(payload); // throws → DEGRADED
       const { conv } = await mustLoadConversation(ctx, input.conversationId);
-      const messages = orderMessages(await loadConversationMessages(ctx, input.conversationId));
+      // W0-4/D-379 single-principal fence: a read presented under a DIFFERENT
+      // principal than the conversation's owner refuses as a verdict (REFUSED
+      // envelope, never a bare DEGRADED) and the attempt is LEDGERED in the
+      // writer's own namespace. Absent principal = Phase-1 trusted-reader path.
+      if (input.principal !== undefined && input.principal !== conv.principal) {
+        const ledgerId = `refusal_${randomBytes(8).toString("hex")}`;
+        const ledger = await portCall<VaultAppendResult>(ctx, "vault.append@1", {
+          ns: CHAT_NS, id: ledgerId,
+          data: { conversationId: conv.id, owner: conv.principal, caller: input.principal, op: "chat.history@1", at: Date.now() },
+          meta: { type: "principal-refusal", conversationId: conv.id },
+          refs: [],
+        });
+        const refusal: PrincipalRefusal = {
+          refused: true,
+          error: "REFUSED",
+          op: "chat.history@1",
+          detail: `cross-principal read refused: conversation ${conv.id} belongs to ${conv.principal}, caller presented ${input.principal} (D-379 single-principal fence, Phase 1 — sharing reopens only by a new decision record)`,
+          ledgered: true,
+          ledgerRef: { ns: CHAT_NS, id: ledgerId, rev: ledger.rev },
+        };
+        return refusal;
+      }
+      // W0-3/D-378: indexed read (bounded by the cap) when the index row
+      // exists; the legacy scan remains the fallback for un-indexed rows.
+      const idx = await loadIndex(ctx, "chat.history@1", conv.id);
+      const messages = idx
+        ? await fetchByIndex(ctx, idx)
+        : orderMessages(await loadConversationMessages(ctx, input.conversationId));
       const limit = input.limit ?? messages.length;
       return {
         conversation: conv,

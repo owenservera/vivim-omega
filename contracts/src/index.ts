@@ -14,3 +14,4 @@ export * from "./parser.ts"; // D-355 (M7 re-land) — parser governance vocabul
 export * from "./chat.ts"; // D-358 (M2) — the chat pilot's record vocabulary (ns "chat")
 export * from "./surface.ts"; // D-359 (M4) — the shared surface derivation (A2: one source, N consumers)
 export * from "./consent.ts"; // stable consent-id derivation (law, testkit, surfaces — one definition)
+export * from "./storage.ts"; // D-373 (W0-10) — DB-agnostic storage vocabulary (drivers are dumb byte stores)

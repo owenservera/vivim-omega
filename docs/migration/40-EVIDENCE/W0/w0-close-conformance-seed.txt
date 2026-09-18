@@ -1,0 +1,4 @@
+scenario 0 (baseline): GREEN — specs 16, entries 66, parity ops 42, matrix green
+scenario 1 (lost grant): NAMED DIAGNOSTIC — chat.json: vivim.chat grants capability port:resolve.classify@1 with no routed implementation in this composition
+scenario 2 (undeclared risk): NAMED DIAGNOSTIC — agent.json: vivim.law: law.check@1 manifest declares MUTATION but LAW_POLICY_V1 classifies EXTERNAL_MUTATION (D-351 parity — fix the policy table (exact rows outrank prefixes) or the manifest; never let the two sources drift)
+conformance-drift-seed: GREEN — the net fails closed on seeded drift with named diagnostics (D-376 falsifier)

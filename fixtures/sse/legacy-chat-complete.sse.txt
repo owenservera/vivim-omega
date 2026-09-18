@@ -1,0 +1,30 @@
+# fixtures/sse/legacy-chat-complete.sse.txt
+# W1/T-04 recorded stream fixture — RECORDED SESSION, NEVER LIVE NETWORK.
+# Wire shape grounded in the frozen mine: vivim-final-program@4a5eb84
+# (tests/unit/engines/streaming-response-analyzer.test.ts pins the OpenAI-style
+# `data: {"choices":[...]}` + `data: [DONE]` grammar; the legacy
+# src/engines/parsers/sse-parser.ts is the algorithm this exercises).
+# Exercises: multi-line data (joined with \n), comment lines (ignored),
+# keep-alive data frames without deltas (no delta row), role-only first delta,
+# content deltas, and the [DONE] sentinel terminator.
+event: message_start
+data: {"choices":[{"delta":{"role":"assistant"}}]}
+
+: keep-alive comment — legacy law: silently ignored
+
+data: {"choices":[{"delta":{"content":"The vault "}}]}
+
+data: {"choices":[{"delta":{"content":"is a Merkle "}}]}
+
+data: {"choices":[{"delta":{"content":"chain."}}]}
+
+data: {
+data: {"choices":[{"delta":{"content":"done"}}]},
+data: {"choices":[{"delta":{}}]}
+data: }
+
+event: ping
+data: {"type":"ping","ts":1735690201900}
+
+data: [DONE]
+

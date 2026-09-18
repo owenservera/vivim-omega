@@ -1,0 +1,142 @@
+{
+  "tNumber": "T-06",
+  "subsystem": "Browser primitives + CDP proxy",
+  "mine": "vivim-final-program@4a5eb84",
+  "wave": "W2",
+  "boundaries": [
+    {
+      "op": "cdp.attach",
+      "files": [
+        "src/engines/chrome/cdp-proxy.ts"
+      ],
+      "landing": "provider-browser session/parsers (W2 restructure per the shape guide; authority wrapper replaced by capability tokens, mechanics kept)",
+      "harvestClass": "ALGORITHM",
+      "note": "file-by-file at the pin: src/engines/chrome/cdp-proxy.ts (372L @ vivim-final-program@4a5eb84)"
+    },
+    {
+      "op": "cdp.guard",
+      "files": [
+        "src/engines/chrome/async-mutex.ts",
+        "src/engines/chrome/circuit-breaker.ts",
+        "src/engines/chrome/health-monitor.ts"
+      ],
+      "landing": "provider-browser session resilience (W2) + watchdog budgets (D-382)",
+      "harvestClass": "PATTERN",
+      "note": "file-by-file at the pin: src/engines/chrome/async-mutex.ts (33L @ vivim-final-program@4a5eb84); src/engines/chrome/circuit-breaker.ts (79L @ vivim-final-program@4a5eb84); src/engines/chrome/health-monitor.ts (180L @ vivim-final-program@4a5eb84)"
+    },
+    {
+      "op": "cdp.trace",
+      "files": [
+        "src/engines/chrome/trace-log.ts"
+      ],
+      "landing": "mind spine observability (W6)",
+      "harvestClass": "DATA",
+      "note": "file-by-file at the pin: src/engines/chrome/trace-log.ts (32L @ vivim-final-program@4a5eb84)"
+    },
+    {
+      "op": "cdp.watchdog",
+      "files": [
+        "src/engines/cdp-watchdog.ts"
+      ],
+      "landing": "watchdog budgets (D-382), W2 admission",
+      "harvestClass": "PATTERN",
+      "note": "file-by-file at the pin: src/engines/cdp-watchdog.ts (106L @ vivim-final-program@4a5eb84)"
+    },
+    {
+      "op": "browser.contract",
+      "files": [
+        "src/engines/chrome/types.ts",
+        "src/engines/browser-action-types.ts",
+        "src/engines/browser-automation/types.ts"
+      ],
+      "landing": "provider-browser manifest + contracts (W2)",
+      "harvestClass": "CONTRACT",
+      "note": "file-by-file at the pin: src/engines/chrome/types.ts (145L @ vivim-final-program@4a5eb84); src/engines/browser-action-types.ts (108L @ vivim-final-program@4a5eb84); src/engines/browser-automation/types.ts (209L @ vivim-final-program@4a5eb84)"
+    },
+    {
+      "op": "browser.registry",
+      "files": [
+        "src/engines/browser-automation/registry.ts",
+        "src/engines/browser-automation/recipes.ts"
+      ],
+      "landing": "provider-browser op registry (W2)",
+      "harvestClass": "SHAPED",
+      "note": "file-by-file at the pin: src/engines/browser-automation/registry.ts (166L @ vivim-final-program@4a5eb84); src/engines/browser-automation/recipes.ts (291L @ vivim-final-program@4a5eb84)"
+    },
+    {
+      "op": "page.navigate",
+      "files": [
+        "src/engines/browser-automation/defs/nav.ts"
+      ],
+      "landing": "provider-browser session ops (W2)",
+      "harvestClass": "ALGORITHM",
+      "note": "file-by-file at the pin: src/engines/browser-automation/defs/nav.ts (134L @ vivim-final-program@4a5eb84)"
+    },
+    {
+      "op": "page.input",
+      "files": [
+        "src/engines/browser-automation/defs/input.ts",
+        "src/engines/browser-automation/defs/scroll.ts"
+      ],
+      "landing": "provider-browser session ops (W2)",
+      "harvestClass": "ALGORITHM",
+      "note": "file-by-file at the pin: src/engines/browser-automation/defs/input.ts (467L @ vivim-final-program@4a5eb84); src/engines/browser-automation/defs/scroll.ts (195L @ vivim-final-program@4a5eb84)"
+    },
+    {
+      "op": "page.observe",
+      "files": [
+        "src/engines/browser-automation/defs/observe.ts",
+        "src/engines/browser-automation/defs/state.ts"
+      ],
+      "landing": "provider-browser session ops (W2)",
+      "harvestClass": "ALGORITHM",
+      "note": "file-by-file at the pin: src/engines/browser-automation/defs/observe.ts (144L @ vivim-final-program@4a5eb84); src/engines/browser-automation/defs/state.ts (176L @ vivim-final-program@4a5eb84)"
+    },
+    {
+      "op": "page.extract",
+      "files": [
+        "src/engines/browser-automation/defs/extract.ts"
+      ],
+      "landing": "provider-browser session ops (W2)",
+      "harvestClass": "ALGORITHM",
+      "note": "file-by-file at the pin: src/engines/browser-automation/defs/extract.ts (222L @ vivim-final-program@4a5eb84)"
+    },
+    {
+      "op": "page.tab",
+      "files": [
+        "src/engines/browser-automation/defs/tab.ts"
+      ],
+      "landing": "provider-browser session ops (W2)",
+      "harvestClass": "ALGORITHM",
+      "note": "file-by-file at the pin: src/engines/browser-automation/defs/tab.ts (160L @ vivim-final-program@4a5eb84)"
+    },
+    {
+      "op": "net.intercept",
+      "files": [
+        "src/engines/browser-automation/defs/net.ts"
+      ],
+      "landing": "provider-browser session ops (W2)",
+      "harvestClass": "ALGORITHM",
+      "note": "file-by-file at the pin: src/engines/browser-automation/defs/net.ts (159L @ vivim-final-program@4a5eb84)"
+    },
+    {
+      "op": "flow.compose",
+      "files": [
+        "src/engines/browser-automation/defs/flow.ts",
+        "src/engines/browser-automation/defs/wait.ts"
+      ],
+      "landing": "provider-browser session ops (W2)",
+      "harvestClass": "ALGORITHM",
+      "note": "file-by-file at the pin: src/engines/browser-automation/defs/flow.ts (62L @ vivim-final-program@4a5eb84); src/engines/browser-automation/defs/wait.ts (178L @ vivim-final-program@4a5eb84)"
+    },
+    {
+      "op": "os.bridge",
+      "files": [
+        "src/engines/browser-automation/defs/os.ts"
+      ],
+      "landing": "expected mostly REMOVE at admission — os-surface law: only platform/ touches the OS",
+      "harvestClass": "SELECTIVE",
+      "note": "file-by-file at the pin: src/engines/browser-automation/defs/os.ts (90L @ vivim-final-program@4a5eb84)"
+    }
+  ]
+}

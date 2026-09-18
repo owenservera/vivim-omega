@@ -7,7 +7,7 @@
 // Returns { ok, headHash, entries, corruptAt? } — headHash is the RECOMPUTED head
 // (what the chain says it must be, not what a possibly-tampered row claims).
 
-import type { VaultDB } from "./db.ts";
+import type { VaultDB } from "./sql.ts";
 import { entryHash, GENESIS_HASH } from "./canon.ts";
 import { casHas } from "./cas.ts";
 
@@ -53,32 +53,42 @@ export function verify(v: VaultDB): VerifyResult {
   }
 
   // 2 · every changelog link resolves to a stored revision (hot or cold)
+  // D-387 (perf review #4): one set-based probe replaces the per-row loop that
+  // issued up to two SELECTs per changelog entry. NOT EXISTS over the two PKs
+  // is an index seek per row — O(n log n) in one statement, identical verdict:
+  // the lowest seq with no stored revision is the first divergence reported.
   if (corruptAt === undefined) {
-    for (const row of rows) {
-      const hot = db.query("SELECT 1 FROM objects WHERE ns = ? AND id = ? AND rev = ?").get(row.ns, row.id, row.rev);
-      const cold = hot ?? db.query("SELECT 1 FROM cold_objects WHERE ns = ? AND id = ? AND rev = ?").get(row.ns, row.id, row.rev);
-      if (!cold) {
-        corruptAt = row.seq; detail = `changelog seq ${row.seq} (${row.ns}/${row.id}@${row.rev}) has no stored revision — history rewritten`;
-        break;
-      }
+    const missing = db.query(`
+      SELECT c.seq AS seq, c.ns AS ns, c.id AS id, c.rev AS rev
+      FROM changelog c
+      WHERE NOT EXISTS (SELECT 1 FROM objects o WHERE o.ns = c.ns AND o.id = c.id AND o.rev = c.rev)
+        AND NOT EXISTS (SELECT 1 FROM cold_objects k WHERE k.ns = c.ns AND k.id = c.id AND k.rev = c.rev)
+      ORDER BY c.seq ASC
+      LIMIT 1
+    `).get() as { seq: number; ns: string; id: string; rev: number } | null;
+    if (missing) {
+      corruptAt = missing.seq;
+      detail = `changelog seq ${missing.seq} (${missing.ns}/${missing.id}@${missing.rev}) has no stored revision — history rewritten`;
     }
   }
 
   // 3 · every stored revision's cid resolves in CAS (hot + cold; CAS is append-only)
+  // D-387 (perf review #4): DISTINCT cids in one statement, then one existsSync
+  // per DISTINCT blob (repeated references cost one stat, not one per row).
   let missingCas = 0;
-  const checkRows = (table: string): void => {
-    for (const row of db.query(`SELECT ns, id, rev, cid FROM ${table}`).all() as unknown as { ns: string; id: string; rev: number; cid: string }[]) {
-      if (!casHas(v.dataDir, row.cid)) {
-        missingCas++;
-        if (corruptAt === undefined) {
-          const link = db.query("SELECT seq FROM changelog WHERE ns = ? AND id = ? AND rev = ? ORDER BY seq LIMIT 1").get(row.ns, row.id, row.rev) as { seq: number } | null;
-          if (link) { corruptAt = link.seq; detail = `CAS blob ${row.cid} for ${row.ns}/${row.id}@${row.rev} (changelog seq ${link.seq}) is missing`; }
-        }
+  const distinct = db.query("SELECT DISTINCT cid FROM objects UNION SELECT DISTINCT cid FROM cold_objects").all() as unknown as { cid: string }[];
+  for (const { cid } of distinct) {
+    if (casHas(v.dataDir, cid)) continue;
+    missingCas++;
+    if (corruptAt === undefined) {
+      // rare corruption path: resolve the lowest changelog seq that references this blob
+      const carrier = db.query("SELECT ns, id, rev FROM objects WHERE cid = ? UNION ALL SELECT ns, id, rev FROM cold_objects WHERE cid = ? LIMIT 1").get(cid, cid) as { ns: string; id: string; rev: number } | null;
+      if (carrier) {
+        const link = db.query("SELECT seq FROM changelog WHERE ns = ? AND id = ? AND rev = ? ORDER BY seq LIMIT 1").get(carrier.ns, carrier.id, carrier.rev) as { seq: number } | null;
+        if (link) { corruptAt = link.seq; detail = `CAS blob ${cid} for ${carrier.ns}/${carrier.id}@${carrier.rev} (changelog seq ${link.seq}) is missing`; }
       }
     }
-  };
-  checkRows("objects");
-  checkRows("cold_objects");
+  }
   if (missingCas > 0 && detail === undefined) detail = `${missingCas} stored revision(s) have missing CAS blobs`;
 
   const ok = corruptAt === undefined && missingCas === 0;

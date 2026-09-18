@@ -133,6 +133,30 @@ describe("Ω13 · interpret + execute: the owner's example end-to-end", () => {
     expect(r2.outcome.result).toMatchObject({ messageId: expect.stringMatching(/^msg_/) });
   });
 
+  test("D-384: /api/consent ignores a client-supplied principal (no cross-principal forgery)", async () => {
+    const socket: Socket = io(`http://127.0.0.1:${service.port}/?XTransformPort=${service.port}`, {
+      path: "/", transports: ["websocket", "polling"], forceNew: true, reconnection: false, timeout: 5000,
+    });
+    const journalEvents: Array<Record<string, unknown>> = [];
+    socket.on("journal", (p: { events?: Array<Record<string, unknown>> }) => { for (const e of p.events ?? []) journalEvents.push(e); });
+    await new Promise<void>((resolve) => socket.on("connect", () => resolve()));
+    // the old surface forwarded body.principal into law.consent.grant@1 — an
+    // unauthenticated client could forge a grant naming ANY principal. The grant
+    // must now go through with the principal field IGNORED (id-only ceremony).
+    const id = consentIdFor("omega.attacker", "message.send@1");
+    const g = await (await fetch(`${base}/api/consent`, { method: "POST", body: JSON.stringify({ consentId: id, principal: "omega.attacker" }) })).json() as { ok: boolean; granted: boolean };
+    expect(g.granted).toBe(true);
+    // the journal is the audit channel: the grant entry carries no client-chosen
+    // principal — only the root caller attribution (a forged grant would carry
+    // principal:"omega.attacker" as the narrowed owner).
+    await new Promise((r) => setTimeout(r, 1200));
+    const grant = [...journalEvents].reverse().find((e) => e["op"] === "law.consent.grant" && e["action"] === "grant" && e["consentId"] === id);
+    expect(grant).toBeTruthy();
+    expect(grant!["principal"]).toBeUndefined();
+    expect(grant!["caller"]).toBe("root");
+    socket.disconnect();
+  });
+
   test("ambiguous Peter: execute with the primary pick works; disambiguation picks are data", async () => {
     const r = await (await fetch(`${base}/api/execute`, { method: "POST", body: JSON.stringify({ text: "send this to Peter about the follow-up" }) })).json() as { outcome: ExecOutcomeWire };
     // consent was granted in the previous test → executes with the primary (Peter Miller)

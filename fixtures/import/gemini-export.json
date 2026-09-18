@@ -1,0 +1,17 @@
+[
+  {
+    "id": "g-2001",
+    "title": "gemini export probe",
+    "messages": [
+      { "author": "user", "content": "What is the composition cap?", "timestamp": 1735690300000 },
+      { "author": "model", "content": "Sixteen specs, matrix-managed.", "timestamp": "2026-09-16T10:10:00.000Z" },
+      { "author": "model", "content": "Missing timestamp lands estimated." }
+    ]
+  },
+  {
+    "id": "g-2002",
+    "messages": [
+      { "author": "user", "content": "second conversation, no title" }
+    ]
+  }
+]

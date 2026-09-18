@@ -54,11 +54,11 @@ const MIND_CONFIG = {
 };
 
 const LAW_CONTRACTS = ["law.check@1", "law.registry@1", "law.consent.grant@1", "law.tokens.revoke@1", "law.amendment@1"];
-const VAULT_CONTRACTS = ["vault.append@1", "vault.get@1", "vault.query@1", "vault.search@1", "vault.verify@1", "vault.compact@1", "vault.roundtrip@1"];
+const VAULT_CONTRACTS = ["vault.append@1", "vault.get@1", "vault.getmany@1", "vault.query@1", "vault.search@1", "vault.verify@1", "vault.compact@1", "vault.roundtrip@1"];
 const MESSAGE_CONTRACTS = ["message.send@1", "message.receive@1", "message.list@1", "message.search@1", "message.read@1", "message.move@1"];
 const PROVIDER_CAPS = ["port:vault.append@1", "port:vault.get@1", "port:vault.query@1", "port:vault.search@1"];
 const MIND_CONTRACTS = ["mind.snapshot@1", "mind.query@1"];
-const MIND_CAPS = ["port:law.registry@1", "port:vault.query@1", "port:vault.get@1", "port:vault.verify@1"]; // the four READ ports (D-350 adds the Merkle walk)
+const MIND_CAPS = ["port:law.registry@1", "port:vault.query@1", "port:vault.getmany@1", "port:vault.verify@1"]; // D-387: batched window reads replace per-row get // the four READ ports (D-350 adds the Merkle walk)
 
 /** Spec copy of the console-style composition (law + pack + vault + provider + mind), with the
  *  mind's config injected and the law's journal replay pointed at the router's journal

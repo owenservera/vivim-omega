@@ -7,7 +7,14 @@
       "bootPhase": 0,
       "grant": {
         "capabilities": ["host.journal.append", "host.tokens.revoke"],
-        "contracts": ["law.check@1", "law.registry@1", "law.consent.grant@1", "law.tokens.revoke@1", "law.amendment@1", "law.describe@1"]
+        "contracts": [
+          "law.check@1",
+          "law.registry@1",
+          "law.consent.grant@1",
+          "law.tokens.revoke@1",
+          "law.amendment@1",
+          "law.describe@1"
+        ]
       }
     },
     {
@@ -16,7 +23,16 @@
       "bootPhase": 1,
       "grant": {
         "capabilities": [],
-        "contracts": ["vault.append@1", "vault.get@1", "vault.query@1", "vault.search@1", "vault.verify@1", "vault.compact@1", "vault.roundtrip@1"]
+        "contracts": [
+          "vault.append@1",
+          "vault.get@1",
+          "vault.getmany@1",
+          "vault.query@1",
+          "vault.search@1",
+          "vault.verify@1",
+          "vault.compact@1",
+          "vault.roundtrip@1"
+        ]
       },
       "config": { "dataDir": "dev-vault/console/vault-data" }
     },
@@ -32,7 +48,14 @@
       "bootPhase": 1,
       "grant": {
         "capabilities": ["port:vault.append@1", "port:vault.get@1", "port:vault.query@1", "port:vault.search@1"],
-        "contracts": ["message.send@1", "message.list@1", "message.search@1", "message.read@1", "message.move@1", "message.receive@1"]
+        "contracts": [
+          "message.send@1",
+          "message.list@1",
+          "message.search@1",
+          "message.read@1",
+          "message.move@1",
+          "message.receive@1"
+        ]
       },
       "config": { "from": "demo@omega.local" }
     },
@@ -41,7 +64,7 @@
       "source": "../plugins/vivim-mind",
       "bootPhase": 1,
       "grant": {
-        "capabilities": ["port:law.registry@1", "port:vault.query@1", "port:vault.get@1", "port:vault.verify@1"],
+        "capabilities": ["port:law.registry@1", "port:vault.query@1", "port:vault.getmany@1", "port:vault.verify@1"],
         "contracts": ["mind.snapshot@1", "mind.query@1", "mind.portrait@1"]
       },
       "config": {
@@ -50,8 +73,18 @@
         "selfAddresses": ["me@omega.local", "demo@omega.local"],
         "entityCap": 200,
         "ops": [
-          { "op": "message.send@1", "risk": "EXTERNAL_MUTATION", "provider": "provider.email.file", "title": "send a message" },
-          { "op": "message.receive@1", "risk": "READ", "provider": "provider.email.file", "title": "simulate an incoming message" },
+          {
+            "op": "message.send@1",
+            "risk": "EXTERNAL_MUTATION",
+            "provider": "provider.email.file",
+            "title": "send a message"
+          },
+          {
+            "op": "message.receive@1",
+            "risk": "READ",
+            "provider": "provider.email.file",
+            "title": "simulate an incoming message"
+          },
           { "op": "message.list@1", "risk": "READ", "provider": "provider.email.file", "title": "list messages" },
           { "op": "message.search@1", "risk": "READ", "provider": "provider.email.file", "title": "search messages" },
           { "op": "message.read@1", "risk": "READ", "provider": "provider.email.file", "title": "read a message" },
@@ -66,17 +99,14 @@
       "id": "vivim.nlcl",
       "source": "../plugins/vivim-nlcl",
       "bootPhase": 1,
-      "grant": {
-        "capabilities": ["port:mind.snapshot@1"],
-        "contracts": ["nlcl.interpret@1"]
-      }
+      "grant": { "capabilities": ["port:mind.snapshot@1"], "contracts": ["nlcl.interpret@1"] }
     },
     {
       "id": "vivim.director",
       "source": "../plugins/vivim-director",
       "bootPhase": 1,
       "grant": {
-        "capabilities": ["port:vault.append@1", "port:vault.query@1", "port:vault.get@1", "port:message.send@1"],
+        "capabilities": ["port:vault.append@1", "port:vault.query@1", "port:vault.get@1", "port:vault.getmany@1", "port:message.send@1"],
         "contracts": ["director.rule@1", "director.registry@1", "director.teach@1", "director.tick@1"]
       },
       "config": { "intervalMs": 500 }
@@ -85,10 +115,7 @@
       "id": "provider.llm",
       "source": "../plugins/provider-llm",
       "bootPhase": 1,
-      "grant": {
-        "capabilities": [],
-        "contracts": ["chat.complete@1"]
-      }
+      "grant": { "capabilities": [], "contracts": ["chat.complete@1"] }
     }
   ]
 }

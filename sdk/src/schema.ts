@@ -5,7 +5,7 @@
 // after Ω4 is an amendment-class event — mirrors contracts/src/port.ts header law.
 import { z } from "zod";
 import { CONTRIBUTION_KINDS } from "@vivim/omega-contracts";
-import type { PluginManifest, Recipe, CompositionEntry, CompositionSpec, PortMessage, PortResult, LawDecision, ConsentGrant, DependencyRef, Contribution } from "@vivim/omega-contracts";
+import type { PluginManifest, Recipe, CompositionEntry, CompositionSpec, PortMessage, PortResult, LawDecision, ConsentGrant, DependencyRef, Contribution, RuntimeTier } from "@vivim/omega-contracts";
 
 // ---- shared atoms -----------------------------------------------------------
 
@@ -80,6 +80,9 @@ export const DependencyRefSchema = z.strictObject({
   range: z.string().min(1),
 });
 
+/** D-374: the tier enum is ONE source of truth — contracts owns the union, the schema satisfies it. */
+export const RUNTIME_TIERS = ["worker-thread", "process", "wasm"] as const satisfies readonly RuntimeTier[];
+
 export const PluginManifestSchema = z.strictObject({
   manifestVersion: z.literal("1"),
   id: z.string().regex(ID_PATTERN, { error: "manifest id must match ^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$" }),
@@ -94,8 +97,21 @@ export const PluginManifestSchema = z.strictObject({
     justification: z.string().optional(),
   }),
   runtime: z.strictObject({
-    tier: z.literal("worker-thread"),
-    budget: z.strictObject({ cpuMs: z.number().optional(), memMB: z.number().optional() }),
+    // D-374: tier vocabulary widens additively — "worker-thread" is the only tier
+    // the µhost spawns (B2); "process" compartments spawn through the vivim-run
+    // broker; "wasm" is forward-declared only (D-354 reserve, no shape yet).
+    tier: z.enum(RUNTIME_TIERS),
+    // D-388: intervalMs is the per-compartment WATCHDOG probe cadence (ms) —
+    // the interim L-1 measure: latency-sensitive compositions declare a tighter
+    // detection window without changing the global default. Policy data for the
+    // out-of-tree watchdog (tooling/watchdog), never host plumbing.
+    budget: z.strictObject({ cpuMs: z.number().optional(), memMB: z.number().optional(), intervalMs: z.number().optional() }),
+    process: z.strictObject({
+      cmd: z.array(z.string().min(1)).min(1),
+      stdio: z.literal("ndjson"),
+      credentialRefs: z.array(z.string()).optional(), // resolved via credential.use — never literal env/manifest secrets
+      poolSize: z.number().int().positive().optional(),
+    }).optional(),
   }),
   contentHash: z.union([z.literal(""), z.string().regex(HASH_PATTERN, { error: 'contentHash must be "sha256:<hex>" or "" (pre-compile)' })]),
 });

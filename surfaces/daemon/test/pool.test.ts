@@ -119,6 +119,49 @@ describe("D-329 pool mechanics — stock, fallback, entry-per-assignment", () =>
     expect(p.snapshot()).toMatchObject({ checkouts: 6, hits: 6 });
     await p.shutdown();
   });
+
+  test("D-388 §2.2 burst: N > size concurrent checkouts stay served (sync refill) — the cost is the inline spawn, and the stats stay consistent", async () => {
+    const p = new IsolatePool(2);
+    p.start();
+    // 8 concurrent checkouts against 2 parked slots. MEASURED TRUTH (D-388
+    // falsifier): refill() runs synchronously inside acquire(), so the stock
+    // never starves — every consumer is served a parked worker and the burst
+    // cost hides in per-checkout thread spawns (bench reports the wall).
+    // coldFallbacks is the pool-could-not-construct-a-thread signal, not the
+    // burst signal the review assumed.
+    const t0 = performance.now();
+    const got = await Promise.all(Array.from({ length: 8 }, () => p.acquire(ECHO_ENTRY)));
+    const burstWallMs = performance.now() - t0;
+    for (const w of got) if (w) track(w);
+    const s = p.snapshot();
+    expect(got.every((w) => w !== null)).toBe(true); // served, never errored, never hung
+    // THE INVARIANT: checkouts = hits + coldFallbacks (assignFailures ⊆ hits)
+    expect(s.checkouts).toBe(8);
+    expect(s.checkouts).toBe(s.hits + s.coldFallbacks);
+    expect(s.hits).toBe(8);
+    expect(s.coldFallbacks).toBe(0);
+    expect(s.assignFailures).toBe(0);
+    expect(s.parked).toBeLessThanOrEqual(2); // the parked bound holds even mid-burst
+    console.log(`[D-388] burst n=8 size=2: ${burstWallMs.toFixed(1)}ms wall (${(burstWallMs / 8).toFixed(1)}ms/checkout — inline spawn cost, cf. D-329 checkout p50 52–60ms)`);
+    await p.shutdown();
+  });
+
+  test("D-388 §2.2 a post-burst serial checkout is served parked and the accounting stays monotonic", async () => {
+    const p = new IsolatePool(1);
+    p.start();
+    const burst = await Promise.all(Array.from({ length: 5 }, () => p.acquire(ECHO_ENTRY)));
+    for (const w of burst) if (w) track(w);
+    const burstStats = p.snapshot();
+    expect(burstStats).toMatchObject({ checkouts: 5, hits: 5, coldFallbacks: 0, assignFailures: 0 });
+    const w = track((await p.acquire(ECHO_ENTRY))!);
+    expect(w).not.toBeNull();
+    const after = p.snapshot();
+    expect(after.checkouts).toBe(6);
+    expect(after.hits).toBe(6);
+    expect(after.coldFallbacks).toBe(0); // accounting never inflates
+    expect(after.parked).toBeLessThanOrEqual(1);
+    await p.shutdown();
+  });
 });
 
 describe("D-329 adversarial — no state bleeds across pool-slot reuse (ship-blocker)", () => {

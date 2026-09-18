@@ -14,10 +14,7 @@
       "id": "omega.notes",
       "source": "../examples/plugin-notes",
       "bootPhase": 1,
-      "grant": {
-        "capabilities": ["host.journal.append"],
-        "contracts": ["note.write@1", "note.list@1"]
-      }
+      "grant": { "capabilities": ["host.journal.append"], "contracts": ["note.write@1", "note.list@1"] }
     }
   ]
 }

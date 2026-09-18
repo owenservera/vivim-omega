@@ -17,6 +17,7 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node
 import { join, resolve, dirname } from "node:path";
 import { bootWithRecovery, compileComposition, contentHashDir, ensureVault, setPoolHook } from "@vivim/omega-host";
 import type { BootedHost } from "@vivim/omega-host";
+import { ownerOnly } from "@vivim/omega-platform"; // D-372 seam: the one sanctioned permission call (D-384: the daemon secret file gets the same treatment as the root signing key)
 import type { CompositionSpec } from "@vivim/omega-contracts";
 import {
   DAEMON_FILE, checkSecret, mintSecret, snapshotSources, sameSnapshot, type SourceSnapshot,
@@ -63,6 +64,15 @@ let lastCacheEvent: { kind: string; matched?: string[] } = { kind: "cold" };
 // clears the hook and terminates parked stock; assigned workers belong to their
 // host owner and shut down with it.
 export const DEFAULT_POOL_SIZE = 4;
+// D-388 tuning rule (perf review round 2 §2.2, MEASURED): refill() runs
+// synchronously inside acquire(), so a burst larger than the pool never
+// cold-falls-back — instead EVERY burst checkout pays a fresh inline thread
+// spawn (~26.5 ms cold spawn on record). coldFallbacks only rises when Worker
+// construction itself fails, which is the worse signal. Either way: size the
+// pool ≥ the deployment's expected peak CONCURRENT compartment boots
+// (--pool-size / startDaemon.poolSize is the knob); the daemon `status` op
+// carries the live pool snapshot and omega:bench reports the burst wall cost,
+// so an undersized pool is measured, not guessed.
 let isolatePool: IsolatePool | null = null;
 
 export interface DaemonHandle {
@@ -149,10 +159,18 @@ async function bootFromRecipe(vault: string, recipePath: string): Promise<{ host
 
 function writeDaemonFile(port: number): void {
   if (!running) return;
-  writeFileSync(join(vaultDir, DAEMON_FILE), JSON.stringify({
+  // D-384: daemon.json carries the 32-byte bearer secret for full root-principal RPC —
+  // the same sensitivity class as the vault's root signing key, which already writes
+  // {mode: 0o600} + ownerOnly(). Plain writeFileSync inherited the process umask
+  // (typically 0644, world-readable) — on a shared box any local user could read the
+  // secret and reach the daemon over loopback. The gate enforces HOW permissions are
+  // set (no raw chmod); remembering to apply them to every sensitive file stays with us.
+  const file = join(vaultDir, DAEMON_FILE);
+  writeFileSync(file, JSON.stringify({
     port, pid: process.pid, secret: running.secret,
     startedAt: running.startedAt, specPath: running.specPath, recipeSha: running.recipeSha,
-  }));
+  }), { mode: 0o600 });
+  ownerOnly(file); // D-372 seam (best-effort on Windows ACLs — the writeFileSync mode above already applied where supported)
 }
 
 async function cleanup(): Promise<void> {
@@ -308,7 +326,6 @@ async function handle(req: WireRequest): Promise<{ ok: boolean; value?: unknown;
   if (!running) return { ok: false, error: "DEGRADED", detail: "daemon not booted" };
   if (!checkSecret(req.secret, running.secret)) return { ok: false, error: "REFUSED", detail: "bad daemon secret" };
   armIdle(); // every authed request resets the idle clock (unauthed probes must not extend lifetime)
-  armIdle();
   const payload = (req.payload ?? {}) as Record<string, unknown>;
   switch (req.op) {
     case "ping":
@@ -366,7 +383,7 @@ async function handle(req: WireRequest): Promise<{ ok: boolean; value?: unknown;
 async function main(): Promise<void> {
   const argv = process.argv.slice(2);
   if (argv[0] !== "start") {
-    console.error("usage: bun run surfaces/daemon/src/daemon.ts start --vault <dir> [--composition <file> | --recipe <file>] [--idle-ms <n>] [--port <n>]");
+    console.error("usage: bun run surfaces/daemon/src/daemon.ts start --vault <dir> [--composition <file> | --recipe <file>] [--idle-ms <n>] [--port <n>] [--pool-size <n>]");
     process.exit(2);
   }
   const flag = (name: string): string | undefined => {
@@ -384,6 +401,7 @@ async function main(): Promise<void> {
     ...(flag("--recipe") ? { recipePath: flag("--recipe")! } : {}),
     ...(flag("--idle-ms") !== undefined ? { idleMs: Number(flag("--idle-ms")) } : {}),
     ...(flag("--port") !== undefined ? { port: Number(flag("--port")) } : {}),
+    ...(flag("--pool-size") !== undefined ? { poolSize: Number(flag("--pool-size")) } : {}), // D-388: the per-deployment tuning knob
   });
   process.on("SIGINT", () => void shutdown(0));
   process.on("SIGTERM", () => void shutdown(0));

@@ -5,7 +5,7 @@
 //   GET  /api/snapshot   → { world, nlclVersion, uptime }
 //   POST /api/interpret  { text }      → { interpretation }   (authoritative parse)
 //   POST /api/execute    { text }      → ExecuteOutcome (consent refusals as data)
-//   POST /api/consent    { consentId, principal? } → { granted }
+//   POST /api/consent    { consentId }            → { granted }  (D-384: principal is never client-supplied)
 //   POST /api/assist     { text }      → { suggestion, sim }  (the opt-in LLM edge)
 //
 //   WS (socket.io, path "/"): 'journal' (live law-journal events), 'world' (version bumps
@@ -134,10 +134,11 @@ export async function startConsoleService(opts: ConsoleServiceOptions): Promise<
     if (req.method === "POST" && (url === "/api/consent" || url === "/consent")) {
       const body = await readBody();
       const consentId = typeof body["consentId"] === "string" ? body["consentId"] : "";
-      const principal = typeof body["principal"] === "string" ? body["principal"] : undefined;
       if (consentId.length === 0) return send(400, { ok: false, error: "consentId required" });
       try {
-        const r = await service.consent(consentId, principal);
+        // D-384: the client's `principal` field (if any) is deliberately ignored — a
+        // network client must not be able to forge grants naming other principals.
+        const r = await service.consent(consentId);
         broadcastWorld();
         return send(200, { ok: r.granted, ...r });
       } catch (e) { return send(503, { ok: false, error: String(e) }); }

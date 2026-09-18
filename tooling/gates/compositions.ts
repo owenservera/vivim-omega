@@ -17,12 +17,22 @@
 //      is flagged (vocabulary without a writer/reader — the plan's top risk,
 //      backstopped mechanically). Intentional reservations are allowlisted
 //      with a D-record pointer, never silently.
+//   6. D-351/D-376 risk parity: every routed op whose manifest declares non-READ
+//      risk must classify IDENTICALLY in LAW_POLICY_V1 — the two risk sources
+//      (manifest decides WHETHER the gate fires, policy decides WHAT it says)
+//      may never disagree. Formerly test-only (policy-parity.test.ts); now a
+//      gate-stage check so a seeded undeclared risk fails with a named diagnostic.
+//   7. D-377 matrix conformance: compositions/_matrix.json is the source of
+//      truth — every shipped spec must regenerate byte-identical from it.
+//      A drifted hand-edit fails here with a named first-diff line.
 // Pure file reads + manifest parses; never boots anything. Wired as the
 // `compositions` stage of omega:gate; D-332 extends this net in V2.5.
 import { readdirSync, readFileSync, existsSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { routableOps, HOST_OPS, type PluginManifest } from "@vivim/omega-contracts";
 import { HOST_OP_TO_CAP } from "@vivim/omega-contracts";
+import { LAW_POLICY_V1, classifyRisk } from "@vivim/plugin-vivim-law/src/policy.ts";
+import { emitCompositions } from "../generate/generate.ts";
 
 interface SpecEntry {
   id: string;
@@ -52,6 +62,14 @@ const DRIFT_ALLOWLIST: Record<string, string> = {
   // note, so convergence (drop the aliases, refresh the note) is a deliberate
   // follow-up, not a drive-by in this wave.
   "vivim.run": "alias-style variance run.json vs spine.json: same effective authority (HOST_OP_TO_CAP auto-mint); convergence deferred, see _note in run.json",
+  // W1 (D-385): provider.llm + vivim.chat ride along in discovery-mind.json as
+  // PARSER-contribution carriers — the W1 falsifier's compile ceremony must
+  // SIGN the manifests that declare the governed parsers (D-355). Grants are
+  // deliberately EMPTY there (parser contributions register no op — D-355
+  // governance data, never routable), while chat/console/llm.json grant their
+  // contract ops. The variance IS the design: same manifests, different roles.
+  "provider.llm": "D-385: discovery-mind.json carries the parser contribution with empty grants (signed manifest, never spawned); chat/console/llm.json grant the contract ops",
+  "vivim.chat": "D-385: discovery-mind.json carries the parser contribution with empty grants (signed manifest, never spawned); chat.json grants the chat ops",
 };
 
 const HOST_OPS_SET = new Set<string>(Object.values(HOST_OPS));
@@ -76,10 +94,15 @@ function manifestOps(specDir: string, entry: SpecEntry): { ops: string[]; found:
   }
 }
 
-export async function checkCompositions(ROOT: string): Promise<CompositionsResult> {
+export async function checkCompositions(
+  ROOT: string,
+  opts: { compositionsDir?: string } = {},
+): Promise<CompositionsResult> {
   const issues: string[] = [];
-  const dir = join(ROOT, "compositions");
-  const files = readdirSync(dir).filter((f) => f.endsWith(".json")).sort();
+  const dir = opts.compositionsDir ?? join(ROOT, "compositions");
+  let matrixOk = false; // check 7 result (read in detail below)
+  // `_`-prefixed files are not specs (_matrix.json is the D-377 source of truth).
+  const files = readdirSync(dir).filter((f) => f.endsWith(".json") && !f.startsWith("_")).sort();
   const grants = new Map<string, Set<string>>(); // pluginId → grant fingerprints
   const grantDetail = new Map<string, Map<string, string[]>>(); // pluginId → fingerprint → spec files
   let entries = 0;
@@ -178,10 +201,68 @@ export async function checkCompositions(ROOT: string): Promise<CompositionsResul
     }
   }
 
+  // Check 6 · D-351/D-376 risk parity: manifest-declared risk === policy
+  // classification, for every ROUTED op with declared non-READ risk across
+  // every shipped composition (the same domain policy-parity.test.ts pins;
+  // here it fails the GATE, not just a test file).
+  let parityChecked = 0;
+  for (const f of files) {
+    let spec: { entries?: SpecEntry[] };
+    try {
+      spec = JSON.parse(readFileSync(join(dir, f), "utf-8")) as { entries?: SpecEntry[] };
+    } catch { continue; } // unreadable specs already flagged in the main loop
+    for (const e of spec.entries ?? []) {
+      const manifestPath = resolve(dir, e.source, "plugin.json");
+      if (!existsSync(manifestPath)) continue; // manifest missing already flagged
+      let m: PluginManifest;
+      try { m = JSON.parse(readFileSync(manifestPath, "utf-8")) as PluginManifest; } catch { continue; }
+      const granted = new Set(e.grant?.contracts ?? []);
+      for (const c of m.contributions?.contract ?? []) {
+        if (!c.risk || c.risk === "READ") continue; // never gate-triggering — outside the net's domain
+        const op = `${c.id}@${c.version}`;
+        if (!granted.has(op)) continue; // routed only if the composition grants it
+        parityChecked++;
+        const policyRisk = classifyRisk(LAW_POLICY_V1, op);
+        if (policyRisk !== c.risk) {
+          issues.push(
+            `${f}: ${e.id}: ${op} manifest declares ${c.risk} but LAW_POLICY_V1 classifies ${policyRisk} ` +
+            `(D-351 parity — fix the policy table (exact rows outrank prefixes) or the manifest; never let the two sources drift)`,
+          );
+        }
+      }
+    }
+  }
+
+  // Check 7 · D-377 matrix conformance: every shipped spec regenerates
+  // byte-identical from _matrix.json. A hand-edited spec is drift — the named
+  // first-diff line is the diagnostic. Scaffolds without a matrix skip loudly.
+  const hasMatrix = existsSync(join(dir, "_matrix.json"));
+  if (hasMatrix) {
+    try {
+      const { ok, reports } = emitCompositions(dir, { write: false });
+      for (const r of reports) {
+        if (r.status === "identical") continue;
+        issues.push(
+          `_matrix.json ↔ ${r.name}.json ${r.status === "missing" ? "spec missing" : "drift"}` +
+          `${r.firstDiffLine ? ` (first diff line ${r.firstDiffLine})` : ""} — regenerate via omega:generate composition or fix the matrix (D-377)`,
+        );
+      }
+      if (ok) matrixOk = true;
+    } catch (e) {
+      issues.push(`matrix conformance check failed to run: ${String(e)}`);
+    }
+  }
+
   // Check 5 · D-332: exported contracts/ vocabulary with zero tree-wide
   // call sites (vocabulary without a writer/reader). Merged into this net's
   // issues so the gate's `compositions` stage backstops the plan's top risk.
-  const detail: Record<string, unknown> = { specs: files.length, entries, driftAllowlisted: drifted };
+  const detail: Record<string, unknown> = {
+    specs: files.length,
+    entries,
+    driftAllowlisted: drifted,
+    riskParityOps: parityChecked,
+    matrixConformance: hasMatrix ? (matrixOk ? "green" : "red") : "absent (scaffold)",
+  };
   try {
     const { checkContractCallSites } = await import("./contract-sites.ts");
     const sites = await checkContractCallSites(ROOT);

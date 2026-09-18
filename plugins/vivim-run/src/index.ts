@@ -9,6 +9,7 @@ import { definePlugin, startPlugin } from "@vivim/omega-shim";
 import { TaskPool, type SubmitOutcome, type TaskResult } from "./pool.ts";
 import { clampDeadline, normalizePriority, type TaskRequest } from "./queue.ts";
 import { HealthMonitor } from "./health.ts";
+import { ProcessBroker, parseBrokerConfig, type ProcessCallRequest } from "./process-broker.ts";
 
 /** run.submit never blocks the caller past deadline + this slack (Ω3 budget law). */
 const SUBMIT_SLACK_MS = 2_000;
@@ -21,6 +22,7 @@ function defaultCapacity(): number {
 
 let pool: TaskPool | null = null;
 let health: HealthMonitor | null = null;
+let broker: ProcessBroker | null = null;
 
 function watchdogOutcome(req: TaskRequest, deadlineMs: number): TaskResult {
   return {
@@ -53,11 +55,14 @@ startPlugin(
       pool = new TaskPool({ capacity, caller: ctx.port, log: (m) => ctx.log(`[run] ${m}`) });
       health = new HealthMonitor({ caller: ctx.port, log: (m) => ctx.log(`[health] ${m}`) });
       health.start();
+      // D-374: the polyglot process tier — pools live ONLY in signed config (composition data passthrough)
+      broker = new ProcessBroker(parseBrokerConfig(ctx.config, (m) => ctx.log(m)), (m) => ctx.log(m));
       ctx.log(`vivim.run booted: capacity=${capacity} (cpus=${cpus().length})`);
     },
 
     onShutdown() {
       health?.stop();
+      void broker?.shutdownAll();
     },
 
     ops: {
@@ -74,6 +79,12 @@ startPlugin(
       "run.stats@1": () => pool!.stats(),
 
       "run.health@1": () => health!.snapshot(50),
+
+      // D-374: the polyglot process tier — one routable op, pools from signed config only
+      "run.process.call@1": (payload: unknown): Promise<ProcessCallResult> => {
+        const req = (payload ?? {}) as ProcessCallRequest;
+        return broker!.call(req);
+      },
     },
   }),
 );

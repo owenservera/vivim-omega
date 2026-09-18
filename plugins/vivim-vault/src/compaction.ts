@@ -8,8 +8,8 @@
 // Reads are never blocked: this runs inside the single-writer queue as synchronous
 // SQLite work; live read ops execute between statements on the same connection.
 
-import type { VaultDB } from "./db.ts";
-import { ftsDelete, liveRefs } from "./db.ts";
+import type { VaultDB } from "./sql.ts";
+import { ftsDeleteMany, liveRefs } from "./sql.ts";
 
 export interface CompactResult { moved: number; kept: number; protected: number }
 
@@ -33,6 +33,12 @@ export function compact(v: VaultDB, ns: string, keep: number): CompactResult {
     let kept = 0;
     let protectedCount = 0;
     const now = Date.now();
+    // D-387 (perf review #2): the per-row FTS delete was candidates × fts_size
+    // (unindexed columns → full scan per row). The move loop keeps its cheap
+    // PK-indexed INSERT/DELETE per candidate but only COLLECTS the triples;
+    // one ftsDeleteMany scan below removes every moved revision's FTS row in
+    // the same transaction.
+    const movedTargets: Array<{ id: string; rev: number }> = [];
     for (const [id, revs] of byId) {
       const hot = revs.slice(-keep);           // newest `keep` stay hot
       const candidates = revs.slice(0, Math.max(0, revs.length - keep)); // superseded
@@ -42,11 +48,12 @@ export function compact(v: VaultDB, ns: string, keep: number): CompactResult {
         db.query(
           "INSERT INTO cold_objects (ns, id, rev, cid, meta, moved_at) SELECT ns, id, rev, cid, meta, ? FROM objects WHERE ns = ? AND id = ? AND rev = ?",
         ).run(now, ns, id, rev);
-        ftsDelete(db, ns, id, rev);
         db.query("DELETE FROM objects WHERE ns = ? AND id = ? AND rev = ?").run(ns, id, rev);
+        movedTargets.push({ id, rev });
         moved++;
       }
     }
+    ftsDeleteMany(db, ns, movedTargets);
     db.exec("COMMIT");
     return { moved, kept, protected: protectedCount };
   } catch (err) {

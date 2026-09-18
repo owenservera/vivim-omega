@@ -26,12 +26,19 @@ export interface ConsoleService {
   host: BootedHost;
   /** mind.snapshot@1 through the router (root principal). */
   world(): Promise<WorldModel>;
+  /** mind.snapshot@1 with includeBodies:false — the poll's version-check path
+   *  (D-387): v is a function of evidence counts, so the light snapshot detects
+   *  exactly the same version bumps without re-fetching every body. */
+  worldLight(): Promise<WorldModel>;
   /** Authoritative interpret (same pure engine the browser runs). */
   interpretText(text: string): Promise<Interpretation>;
   /** NL → interpret → route. Consent refusals pass through as data for the confirm card. */
   execute(text: string): Promise<ExecuteOutcome>;
-  /** The ✓ confirm card: grant a consent (optionally for a specific principal). */
-  consent(consentId: string, principal?: string): Promise<{ granted: boolean; detail?: string }>;
+  /** The ✓ confirm card: grant a consent. D-384: the consent id is the ONLY client
+   *  input — principal is NOT client-suppliable. Ids are deterministic hashes of
+   *  (principal, op), so the id alone carries the ceremony; letting a network
+   *  client name an arbitrary principal enabled cross-principal consent forgery. */
+  consent(consentId: string): Promise<{ granted: boolean; detail?: string }>;
   /** The opt-in LLM edge (N2): a SUGGESTION, never an execution. */
   assist(text: string): Promise<{ suggestion: string; sim: boolean }>;
   uptimeMs(): number;
@@ -46,6 +53,15 @@ export function createConsoleService(host: BootedHost, startedAt: number): Conso
 
   const world = async (): Promise<WorldModel> => {
     const r = await call("mind.snapshot@1", {});
+    if (!r.ok) throw new Error(`mind.snapshot@1 ${r.error}: ${r.detail ?? ""}`);
+    return (r.value as MindSnapshotResult).world;
+  };
+
+  // D-387 (perf review #1): bodies are the heavy half of a snapshot; the poll
+  // only needs v. Same machinery, includeBodies:false (v is count-derived —
+  // identical version detection, a fraction of the bytes).
+  const worldLight = async (): Promise<WorldModel> => {
+    const r = await call("mind.snapshot@1", { includeBodies: false });
     if (!r.ok) throw new Error(`mind.snapshot@1 ${r.error}: ${r.detail ?? ""}`);
     return (r.value as MindSnapshotResult).world;
   };
@@ -99,11 +115,13 @@ export function createConsoleService(host: BootedHost, startedAt: number): Conso
     return out;
   };
 
-  const consent = async (consentId: string, principal?: string): Promise<{ granted: boolean; detail?: string }> => {
+  const consent = async (consentId: string): Promise<{ granted: boolean; detail?: string }> => {
     if (typeof consentId !== "string" || !/^consent_[0-9a-f]+$/.test(consentId)) {
       return { granted: false, detail: "consentId must match consent_<hex>" };
     }
-    const r = await call("law.consent.grant@1", { consentId, ...(principal !== undefined ? { principal } : {}) });
+    // D-384: no principal passthrough — the law-side binding (non-root callers may
+    // only manage their own consents) plus this surface rule close the forgery path.
+    const r = await call("law.consent.grant@1", { consentId });
     if (!r.ok) return { granted: false, detail: `${r.error}: ${r.detail ?? ""}` };
     const v = (r.value ?? {}) as Record<string, unknown>;
     return { granted: true, detail: `generation ${String(v["generation"] ?? "?")} · ${String(v["active"] ?? "?")} active consents` };
@@ -124,7 +142,7 @@ export function createConsoleService(host: BootedHost, startedAt: number): Conso
     return { suggestion: v.completion?.content ?? "", sim: v.sim ?? false };
   };
 
-  return { host, world, interpretText, execute, consent, assist, uptimeMs: () => Date.now() - startedAt };
+  return { host, world, worldLight, interpretText, execute, consent, assist, uptimeMs: () => Date.now() - startedAt };
 }
 
 function surfacePayload(ir: IR | null, interp: Interpretation, w: WorldModel): { kind: "help" | "entity" | "assist"; payload: Record<string, unknown> } {

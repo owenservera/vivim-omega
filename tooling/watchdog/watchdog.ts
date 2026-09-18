@@ -32,9 +32,9 @@
 import type { PortRouter } from "@vivim/omega-host";
 import { HOST_OPS } from "@vivim/omega-contracts";
 
-export interface WatchdogBudget { memMB?: number; missLimit?: number; overLimit?: number }
+export interface WatchdogBudget { memMB?: number; missLimit?: number; overLimit?: number; intervalMs?: number }
 export interface WatchdogOptions {
-  intervalMs?: number;        // sample cadence (default 250)
+  intervalMs?: number;        // sample cadence (default 250) — the GLOBAL default, unchanged by D-388
   missLimit?: number;         // consecutive unanswered samples → evict (default 3)
   overLimit?: number;         // consecutive over-budget heap samples → evict (default 2)
   defaultMemMB?: number;      // budget when the manifest declares none (default 256)
@@ -67,6 +67,30 @@ export function budgetStatus(id: string, budgets: Map<string, WatchdogBudget>, d
   return { memMB: defaultMemMB, declared: false };
 }
 
+/** D-388 pure policy: is compartment `id` due for a probe at `now`?
+ *  A budget-declared intervalMs (the interim L-1 measure: a latency-sensitive
+ *  compartment buys a shorter detection window with a small steady-state CPU
+ *  cost) overrides the global cadence for THAT compartment only; the global
+ *  default is never changed by a declaration. */
+export function dueForSample(budget: WatchdogBudget | undefined, globalIntervalMs: number, lastSampledAt: number | undefined, now: number): boolean {
+  const declared = budget?.intervalMs;
+  const interval = typeof declared === "number" && declared > 0 ? declared : globalIntervalMs;
+  if (lastSampledAt === undefined) return true;
+  return now - lastSampledAt >= interval;
+}
+
+/** D-388 pure policy: the timer cadence that can serve every declared cadence —
+ *  min(global default, tightest declared interval). Compartments WITHOUT a
+ *  declared interval still sample at the global default (the faster timer just
+ *  skips them), so no compartment's cadence changes unless it declares one. */
+export function watchdogTickInterval(opts: { intervalMs?: number }, budgets: Map<string, WatchdogBudget>): number {
+  let min = opts.intervalMs ?? 250;
+  for (const b of budgets.values()) {
+    if (typeof b.intervalMs === "number" && b.intervalMs > 0 && b.intervalMs < min) min = b.intervalMs;
+  }
+  return min;
+}
+
 interface Track { pending: boolean; missStreak: number; overStreak: number; samples: Sample[] }
 
 export function startWatchdog(router: PortRouter, opts: WatchdogOptions = {}): Watchdog {
@@ -78,6 +102,7 @@ export function startWatchdog(router: PortRouter, opts: WatchdogOptions = {}): W
   const evictions: Eviction[] = [];
   const tracks = new Map<string, Track>();
   const listening = new Set<string>();
+  const lastSampledAt = new Map<string, number>(); // D-388: per-compartment cadence
   const listeners = new Map<string, (m: { type?: string; heapUsed?: number; rss?: number; cpuUs?: number }) => void>();
   let stopped = false;
 
@@ -96,9 +121,15 @@ export function startWatchdog(router: PortRouter, opts: WatchdogOptions = {}): W
 
   const tick = async (): Promise<void> => {
     if (stopped) return;
+    const now = Date.now(); // D-388: one clock for the per-compartment cadence
     const st = router.status().compartments as Record<string, { state?: string }>;
     for (const [id, c] of Object.entries(st)) {
       if (c.state !== "active" || evictions.some((e) => e.id === id)) continue;
+      // D-388: skip compartments whose personal cadence has not elapsed — a
+      // declared intervalMs samples tighter, an undeclared one keeps the
+      // global default (the faster timer never tightens anyone by side effect)
+      if (!dueForSample(budgets.get(id), intervalMs, lastSampledAt.get(id), now)) continue;
+      lastSampledAt.set(id, now);
       const w = router.compartmentWorker(id);
       if (!w) continue;
       if (!listening.has(id)) {
@@ -128,6 +159,7 @@ export function startWatchdog(router: PortRouter, opts: WatchdogOptions = {}): W
         listeners.delete(id);
         listening.delete(id);
         tracks.delete(id);
+        lastSampledAt.delete(id); // D-388: no stale cadence state for a dead compartment
         opts.onEvict?.(id, verdict.reason);
       } else if (opts.requireBudget || opts.onDefaultBudget) {
         const st2 = budgetStatus(id, budgets, defaultMemMB);
@@ -141,7 +173,7 @@ export function startWatchdog(router: PortRouter, opts: WatchdogOptions = {}): W
     }
   };
 
-  const timer: ReturnType<typeof setInterval> = setInterval(() => { void tick(); }, intervalMs);
+  const timer: ReturnType<typeof setInterval> = setInterval(() => { void tick(); }, watchdogTickInterval(opts, budgets)); // D-388: fast enough for the tightest declared cadence
   (timer as { unref?: () => void }).unref?.();
   return {
     stop(): void {

@@ -12,6 +12,7 @@
 // an unverifiable policy can never promote anything.
 
 import type { PluginManifest } from "@vivim/omega-contracts";
+import { asParserPin, parserContributionId, type ParserPin } from "@vivim/omega-contracts";
 
 export interface PromotionPolicy {
   policyId: string;
@@ -57,4 +58,63 @@ export function loadPromotionPolicy(manifest: PluginManifest): PromotionPolicy {
     requiredProbes,
     evidenceRequired,
   };
+}
+
+// ---- the governed parser-pin registry (D-355 fail-closed genealogy, W1) ------
+
+const REGISTRY_CONTRIBUTION_ID = "discovery.parser-registry";
+
+/** Where the governed parser set came from (recorded in refusals, never invented). */
+export const PARSER_REGISTRY_SOURCE = "manifest:discovery.parser-registry@1";
+
+export interface GovernedParserRegistry {
+  policyId: string;
+  version: string;
+  /** key = `parser:<archetype>:<provider>@<version>` → the governed pin. */
+  pins: Map<string, ParserPin>;
+}
+
+/** Load + validate the governed parser-pin registry from the manifest's POLICY
+ *  contribution. Throws on malformed/missing registry — a gate that cannot
+ *  name the governed parsers refuses to verify parser genealogy at all
+ *  (fail-closed: no registry, no pins, no promotions carrying pins). */
+export function loadGovernedParserRegistry(manifest: PluginManifest): GovernedParserRegistry {
+  const list = manifest.contributions.policy ?? [];
+  const hit = list.find((c) => c.id === REGISTRY_CONTRIBUTION_ID);
+  if (!hit) {
+    throw new Error(`discovery.verify@1: manifest carries no POLICY contribution ${REGISTRY_CONTRIBUTION_ID} — the gate refuses parser-pinned verifications without the governed registry (${PARSER_REGISTRY_SOURCE})`);
+  }
+  const doc = (hit as { policy?: unknown }).policy;
+  if (doc === null || typeof doc !== "object" || Array.isArray(doc)) {
+    throw new Error(`discovery.verify@1: policy contribution ${REGISTRY_CONTRIBUTION_ID}@${hit.version} carries no policy object`);
+  }
+  const p = doc as Record<string, unknown>;
+  const raw = p.governedParserPins;
+  if (!Array.isArray(raw) || raw.length === 0) {
+    throw new Error(`discovery.verify@1: ${REGISTRY_CONTRIBUTION_ID}.governedParserPins must be a non-empty array of ParserPin`);
+  }
+  const pins = new Map<string, ParserPin>();
+  for (const rawPin of raw) {
+    const pin = asParserPin(rawPin); // total validation — throws with the reason
+    const key = `${parserContributionId(pin.providerId, pin.archetypeSlug)}@${pin.version}`;
+    if (pins.has(key)) {
+      throw new Error(`discovery.verify@1: ${REGISTRY_CONTRIBUTION_ID} lists ${key} twice (a governed parser is declared once)`);
+    }
+    pins.set(key, pin);
+  }
+  return {
+    policyId: typeof p.policyId === "string" && p.policyId.length > 0 ? p.policyId : `${REGISTRY_CONTRIBUTION_ID}`,
+    version: typeof p.version === "string" && p.version.length > 0 ? p.version : hit.version,
+    pins,
+  };
+}
+
+/** Is this pin GOVERNED? Exact match on (providerId, archetypeSlug, version)
+ *  against the manifest-declared registry — the pin a run carries must be a
+ *  signed parser contribution, not a caller invention (D-355 §4: an
+ *  unpinned/unknown parser identity REFUSES discovery-derived re-verification;
+ *  the fence the W1 falsifier exercises). */
+export function isGovernedParserPin(registry: GovernedParserRegistry, pin: ParserPin): boolean {
+  const key = `${parserContributionId(pin.providerId, pin.archetypeSlug)}@${pin.version}`;
+  return registry.pins.has(key);
 }

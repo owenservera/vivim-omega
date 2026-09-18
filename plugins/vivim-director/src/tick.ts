@@ -4,11 +4,16 @@
 //   1. vault.query ns "email" (bounded 200 rows); (id → rev) memory from the
 //      previous tick cheaply finds NEW/CHANGED objects (unchanged rows cost one
 //      query row, not a get).
-//   2. per new/changed id: vault.get → keep only meta.type "message" AND
-//      folder "inbox" AND flags.seen false AND from not a self address.
-//   3. skip when the fired ledger already has it (vault.get ns "automation"
-//      id fired:<messageId> ok ⇒ processed) — the ledger, not memory, is the
-//      no-refire authority (fresh boots stay no-refire by construction).
+//   2. ONE vault.getmany@1 fetches EVERY candidate still new/changed (D-388:
+//      the per-row get loop was up to 200 sequential port hops; candidates that
+//      fail to resolve keep their rev unrecorded — the next tick retries
+//      honestly). Keep only meta.type "message" AND folder "inbox" AND
+//      flags.seen false AND from not a self address.
+//   3. ONE vault.getmany@1 checks the fired ledger for every trigger candidate
+//      (ns "automation" id fired:<messageId> ok ⇒ processed) — the ledger, not
+//      memory, is the no-refire authority (fresh boots stay no-refire by
+//      construction). Rule loading stays lazy + per-row (skip-not-fatal there
+//      would be lost to a batch-all-fail; see D-388).
 //   4. load rules (query ns "automation" idPrefix "rule:" + bounded gets),
 //      keep enabled only, sort by id asc (deterministic).
 //   5. match: rule.when.from === null (anyone) OR
@@ -38,7 +43,16 @@ import {
 // ---- shared vault wire shapes (mirrored per the B2 import law) ----
 
 export interface VaultQueryRow { id: string; rev: number; cid: string }
+// VaultGetResult was the vault.get@1 body shape (D-388 moved the tick's read
+// phase onto vault.getmany@1 rows); kept exported for wire-shape mirror tests.
 export interface VaultGetResult { rev: number; cid: string; data: unknown; meta: unknown; refs: unknown }
+
+/** vault.getmany@1 row (D-388): missing is DATA ({found:false}), never an error —
+ *  a batch must not lose its other rows; a malformed envelope still THROWS
+ *  (fail-closed, identical to vault.get@1). Mirrored per the B2 import law. */
+export interface VaultGetManyRowFound { id: string; found: true; rev: number; cid: string; data: unknown; meta: unknown }
+export interface VaultGetManyRowMissing { id: string; found: false }
+export type VaultGetManyRow = VaultGetManyRowFound | VaultGetManyRowMissing;
 
 /** v1 scan bound: at most 200 email rows examined per tick (bounded by contract doc). */
 export const TICK_SCAN_CAP = 200;
@@ -173,22 +187,43 @@ export async function runTick(ctx: PluginContext, cfg: TickConfig, state: TickSt
   }
   const rows = ((qr.value as VaultQueryRow[]) ?? []).slice(0, TICK_SCAN_CAP);
   const scanned = rows.length;
+  const revById = new Map(rows.map((r) => [r.id, r.rev] as const));
 
   let rules: RuleData[] | null = null; // lazy: loaded once, on the first candidate that needs them
   let ruleRowsTotal = -1; // rule ROWS seen (incl. disabled); -1 = not loaded yet
 
-  for (const row of rows) {
-    // memory optimization: an unchanged (id, rev) costs one query row, not a get
-    if (state.prevRevs.get(row.id) === row.rev) continue;
+  // 2. candidates = rows the (id → rev) memory has never seen (one query row each);
+  //    EVERY candidate's body is fetched in ONE vault.getmany@1 hop (D-388) —
+  //    the old loop paid up to 200 sequential vault.get@1 round trips per tick.
+  const candidates = rows.filter((row) => state.prevRevs.get(row.id) !== row.rev);
+  const bodies = new Map<string, VaultGetManyRow>();
+  if (candidates.length > 0) {
+    const br: PortResult = await ctx.port.call("vault.getmany@1", {
+      ns: EMAIL_NS,
+      ids: candidates.map((row) => row.id),
+    });
+    if (br.ok) {
+      for (const row of (br.value as VaultGetManyRow[]) ?? []) bodies.set(row.id, row);
+    } else {
+      // whole-batch failure: every candidate keeps its rev unrecorded — the
+      // next tick retries honestly (same posture as the old per-row get failure)
+      error ??= `vault.getmany@1 (email bodies) ${br.error}: ${br.detail ?? ""}`;
+    }
+  }
 
-    // 2. get + predicate
-    const gr: PortResult = await ctx.port.call("vault.get@1", { ns: EMAIL_NS, id: row.id });
-    if (!gr.ok) {
-      // leave the rev unrecorded — the next tick retries honestly
-      error ??= `vault.get@1 ${gr.error}: ${gr.detail ?? ""}`;
+  // predicate pass, in the scan's deterministic order
+  interface TriggerJob { rowId: string; message: TriggerMessage }
+  const triggers: TriggerJob[] = [];
+  for (const row of candidates) {
+    const got = bodies.get(row.id);
+    if (!got) continue; // batch failed or row unresolved — rev stays unrecorded (retry next tick)
+    if (!got.found) {
+      // the row vanished between query and read (deleted): old path treated a
+      // failed get the same way — error noted, rev unrecorded, next tick's
+      // query simply won't list it
+      error ??= `vault.getmany@1 (email bodies): row ${row.id} missing at read time`;
       continue;
     }
-    const got = gr.value as VaultGetResult;
     const message = isMessageMeta(got.meta) ? asTriggerMessage("director.tick@1", row.id, got.data) : null;
     if (
       message === null ||
@@ -199,13 +234,38 @@ export async function runTick(ctx: PluginContext, cfg: TickConfig, state: TickSt
       state.prevRevs.set(row.id, row.rev); // foreign/seen/self — not a trigger, cheap next tick
       continue;
     }
+    triggers.push({ rowId: row.id, message });
+  }
 
-    // 3. fired-ledger check (the no-refire authority — memory is only an optimization)
-    const ledgerGet: PortResult = await ctx.port.call("vault.get@1", { ns: AUTOMATION_NS, id: `${FIRED_PREFIX}${message.id}` });
-    if (ledgerGet.ok) {
-      state.prevRevs.set(row.id, row.rev); // already processed — never refires
-      continue;
+  // 3. fired-ledger check for every trigger candidate in ONE vault.getmany@1
+  //    (D-388) — a found ledger row is the no-refire authority; a batch failure
+  //    falls toward FIRING (at-least-once, the same direction the old per-row
+  //    ledger-get failure took), bounded by the ledger append below.
+  const jobs: TriggerJob[] = [];
+  if (triggers.length > 0) {
+    const lr: PortResult = await ctx.port.call("vault.getmany@1", {
+      ns: AUTOMATION_NS,
+      ids: triggers.map((t) => `${FIRED_PREFIX}${t.message.id}`),
+    });
+    const ledger = new Set<string>();
+    if (lr.ok) {
+      for (const row of (lr.value as VaultGetManyRow[]) ?? []) {
+        if (row.found) ledger.add(row.id);
+      }
+    } else {
+      error ??= `vault.getmany@1 (fired ledger) ${lr.error}: ${lr.detail ?? ""}`;
     }
+    for (const t of triggers) {
+      if (ledger.has(`${FIRED_PREFIX}${t.message.id}`)) {
+        state.prevRevs.set(t.rowId, revById.get(t.rowId)!); // already processed — never refires
+        continue;
+      }
+      jobs.push(t);
+    }
+  }
+
+  for (const job of jobs) {
+    const { rowId, message } = job;
 
     // 4. rules (lazy, once per tick)
     if (rules === null) {
@@ -244,7 +304,7 @@ export async function runTick(ctx: PluginContext, cfg: TickConfig, state: TickSt
     });
     if (append.ok) {
       processed++;
-      state.prevRevs.set(row.id, row.rev);
+      state.prevRevs.set(rowId, revById.get(rowId)!);
     } else {
       // at-least-once: the rev stays unrecorded so the next tick retries the
       // message (the report carries the error — never silent)

@@ -110,34 +110,37 @@ describe("open-questions board — team surface over PROPOSED records", () => {
     const qs = listOpenQuestions(root);
     const ids = qs.map((q) => q.n);
     expect(ids).toEqual([...ids].sort((a, b) => a - b)); // D-number order, append-proof
-    for (const known of [313, 314, 316, 317]) expect(ids).toContain(known);
+    // Ratification history cleared the board: foundation wave (96a58f4) cleared
+    // D-313/314/317 + D-366/372/373/374/375; the W0 close-out cleared D-376..D-383;
+    // W1 cleared D-385. D-316 closed 2026-09-18 — its own revisit trigger met (the
+    // D-376 net shipped and reported; independent recommendation §6 concurred),
+    // bringing the board to zero. (2026-09-18 test-led correction: this test
+    // previously pinned D-316 as the open board with hasTbd — the state moved.)
+    for (const ratified of [313, 314, 315, 316, 317, 366, 372, 373, 374, 375]) expect(ids).not.toContain(ratified);
     // ratified records leave the board: D-315 (quarantine semantics, confirmed
     // by B1a) parses RATIFIED in its record and is absent here.
-    expect(ids).not.toContain(315);
     expect(parseRecord(315, "docs/decisions/D-315-quarantine-semantics.md",
       readFileSync(join(root, "docs/decisions/D-315-quarantine-semantics.md"), "utf-8")).status).toBe("RATIFIED");
     // everything listed is genuinely PROPOSED in its record (no ratified stragglers on the board)
     for (const q of qs) {
       const text = readFileSync(join(root, q.file), "utf-8");
       expect(parseRecord(q.n, q.file, text).status).toBe("PROPOSED");
-    }
-    for (const q of qs) {
       expect(q.title.length).toBeGreaterThan(0);
       expect(q.recommended.length).toBeGreaterThan(0);
       expect(q.awaiting).toMatch(/Owner/);
     }
-    expect(qs.find((q) => q.n === 316)!.hasTbd).toBe(true); // genuinely undecided
-    expect(qs.find((q) => q.n === 313)!.hasTbd).toBe(false);
   });
 
   test("rendered board has the marker, one row per question, and the workflow", () => {
     const md = renderOpenQuestionsBoard(root, "abc1234", "2026-01-01T00:00:00.000Z");
     expect(md).toContain("<!-- base: abc1234");
     expect(md).toContain("bun run omega:questions --write");
-    const qs = listOpenQuestions(root);
-    expect(qs.length).toBeGreaterThan(0);
-    for (const q of qs) expect(md).toContain(`D-${q.n}`);
     expect(md).toContain("How to propose");
+    const qs = listOpenQuestions(root);
+    for (const q of qs) expect(md).toContain(`D-${q.n}`);
+    // zero-open is a legal, healthy state (D-316 closure, 2026-09-18) — the
+    // renderer must say so explicitly rather than render an empty table.
+    if (qs.length === 0) expect(md).toContain("No open questions");
   });
 
   test("boardFreshness reads the marker once the file exists", () => {

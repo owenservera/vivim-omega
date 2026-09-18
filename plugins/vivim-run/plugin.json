@@ -9,7 +9,8 @@
     "contract": [
       { "kind": "contract", "id": "run.submit", "version": "1", "risk": "READ" },
       { "kind": "contract", "id": "run.stats", "version": "1", "risk": "READ" },
-      { "kind": "contract", "id": "run.health", "version": "1", "risk": "READ" }
+      { "kind": "contract", "id": "run.health", "version": "1", "risk": "READ" },
+      { "kind": "contract", "id": "run.process.call", "version": "1", "risk": "MUTATION", "justification": "D-374 polyglot process tier: calls a declared process pool through the broker; pools exist only in signed composition config" }
     ]
   },
   "dependencies": [],

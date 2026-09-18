@@ -158,7 +158,7 @@ describe("GATE-Ω1 — composition [vivim.law, omega.risky, omega.echo] boots an
     expect(divEntry).toBeDefined();
   });
 
-  test("law.tokens.revoke@1 delegates to the host: generation bump + journal entry; echo still serves root", async () => {
+  test("law.tokens.revoke@1 delegates to the host: scoped flip (D-384), generation flat, journal entry; echo still serves root", async () => {
     const before = host.router.status().generation;
     const tr = await call("law.tokens.revoke@1", { pluginId: "omega.echo" });
     expect(tr.ok).toBe(true);
@@ -166,12 +166,14 @@ describe("GATE-Ω1 — composition [vivim.law, omega.risky, omega.echo] boots an
       const v = tr.value as { revoked: boolean; pluginId: string; hostGeneration?: number; affectedTokens?: number };
       expect(v.revoked).toBe(true);
       expect(v.pluginId).toBe("omega.echo");
-      expect(v.hostGeneration).toBeGreaterThan(before);
-      // echo granted no outbound capabilities → scoped count is 0; the revocation mechanism
-      // is the GLOBAL generation bump (every pre-bump token now fails REVOKED — asserted below)
+      // D-384: scoped revoke flips matching records only — the generation stays FLAT
+      // (pre-D-384 the unconditional bump here was the audit's §2 bug: "quarantine one
+      // plugin" silently revoked every token in the composition)
+      expect(v.hostGeneration).toBe(before);
+      // echo granted no outbound capabilities → scoped count is 0
       expect(v.affectedTokens).toBe(0);
     }
-    expect(host.router.status().generation).toBeGreaterThan(before); // host gen bump (REVOKED register proven host-side in Ω0)
+    expect(host.router.status().generation).toBe(before); // scoped revoke: generation flat
     const e = await call("echo.ping@1", { still: "alive" });
     expect(e.ok).toBe(true); // root needs no token — echo unaffected for root callers
     const entries = readJournal(journalFile);
@@ -194,9 +196,9 @@ describe("GATE-Ω1 — composition [vivim.law, omega.risky, omega.echo] boots an
       expect(v.states["omega.echo"]?.state).toBe("active");
     }
     // live consent counting: grant one for a different principal, the count follows.
-    // (post-revoke, the law's own journal token is REVOKED — the grant succeeds but its
-    // journal append fails closed, so the journal line count must stay flat: REVOKED
-    // register observable for a real compartment's real token, without breaking the op)
+    // D-384: the scoped revoke above no longer revokes the law's own journal token, so
+    // the grant's journal append now LANDS (pre-D-384 the global bump killed it and the
+    // journal stayed flat — the fix restores audit completeness for post-revoke grants).
     const linesBefore = readJournal(journalFile).length;
     const cid2 = consentIdFor("omega.risky", "risky.op@1");
     const g2 = await call("law.consent.grant@1", { consentId: cid2 });
@@ -204,7 +206,48 @@ describe("GATE-Ω1 — composition [vivim.law, omega.risky, omega.echo] boots an
     const reg2 = await call("law.registry@1");
     expect(reg2.ok).toBe(true);
     if (reg2.ok) expect((reg2.value as { consents: number }).consents).toBe(1);
-    expect(readJournal(journalFile).length).toBe(linesBefore);
+    expect(readJournal(journalFile).length).toBeGreaterThan(linesBefore);
+  });
+
+  test("D-384: cross-principal consent forgery refuses — a compartment may only grant its own consents", async () => {
+    // register an emulated caller holding the real law.consent.grant capability (the
+    // router validates the token host-side; the op routes to the REAL vivim.law here)
+    const router = host.router as any;
+    const sent: any[] = [];
+    let cb: ((m: any) => void) | null = null;
+    const fake = {
+      pluginId: "omega.forger", state: "active",
+      stats: { delivered: 0, calls: 0, errors: 0, crashes: 0, bootedAt: Date.now() },
+      post: (m: any) => sent.push(m),
+      onMessage: (f: (m: any) => void) => { cb = f; },
+      onCrash: () => {},
+      terminate: async () => {},
+    };
+    const entry = { id: "omega.forger", version: "0.0.1", source: ".", manifestPath: ".", manifestHash: "sha256:x", contentHash: "sha256:x", grant: { capabilities: ["port:law.consent.grant@1"], contracts: [] }, bootPhase: 1 };
+    router.register(entry, host.manifests.get("omega.echo")!, fake, {});
+    const toks = router.mintTokensFor(entry);
+    for (const [cap, tok] of Object.entries(toks)) router.tokens.set(tok, { token: tok, pluginId: "omega.forger", cap, gen: router.generation });
+    const tok = toks["port:law.consent.grant@1"];
+    const ask = (callId: string, payload: unknown) => cb!({ type: "call", callId, capabilityToken: tok, op: "law.consent.grant@1", payload, deadlineMs: 500 });
+    const replyFor = (callId: string) => sent.find((m) => m.type === "result" && m.callId === callId)?.result;
+    const settle = () => new Promise((r) => setTimeout(r, 150));
+
+    // a compartment naming ANOTHER principal → refused before any state change
+    const foreignId = consentIdFor("vivim.director", "message.send@1");
+    ask("f1", { consentId: foreignId, principal: "vivim.director" }); await settle();
+    const f1 = replyFor("f1");
+    expect(f1?.ok).toBe(false);
+    expect(f1?.error).toBe("DEGRADED");
+    expect(String(f1?.detail)).toContain("cross-principal refusal");
+
+    // self-grant: the caller's own principal is the one legitimate non-root shape
+    const selfId = consentIdFor("omega.forger", "risky.op@1");
+    ask("f2", { consentId: selfId, principal: "omega.forger" }); await settle();
+    expect(replyFor("f2")?.ok).toBe(true);
+
+    // root — the surfaces' human proxy — still grants for any principal (the console ceremony)
+    const g = await host.router.callAsRoot("law.consent.grant@1", { consentId: foreignId, principal: "vivim.director" });
+    expect(g.ok).toBe(true);
   });
 });
 

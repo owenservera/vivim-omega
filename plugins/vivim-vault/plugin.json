@@ -26,6 +26,7 @@
     "contract": [
       { "kind": "contract", "id": "vault.append", "version": "1", "risk": "MUTATION" },
       { "kind": "contract", "id": "vault.get", "version": "1", "risk": "READ" },
+      { "kind": "contract", "id": "vault.getmany", "version": "1", "risk": "READ", "doc": "D-387: bounded batch of latest-rev-per-id reads (ids ≤ 512 distinct) — one port hop instead of one per id; missing ids are {found:false} data, malformed envelopes and missing CAS blobs still throw fail-closed." },
       { "kind": "contract", "id": "vault.query", "version": "1", "risk": "READ" },
       { "kind": "contract", "id": "vault.search", "version": "1", "risk": "READ" },
       { "kind": "contract", "id": "vault.verify", "version": "1", "risk": "READ" },

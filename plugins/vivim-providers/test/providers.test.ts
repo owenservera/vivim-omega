@@ -120,7 +120,10 @@ describe("D-319 — realization loop end-to-end (map → verify → registry rea
     // A1 canary, dormant-aware (D-331): the wired pipeline registers dormant
     // with the full route table — first touch (the map test below) activates.
     expect(st.dormant).toEqual([
-      "discovery.inference", "discovery.mapping", "discovery.verification", "vivim.providers", "vivim.vault",
+      "discovery.inference", "discovery.mapping", "discovery.verification",
+      // W1 (D-385): the parser-contribution carriers ride dormant with empty grants
+      "provider.llm", "vivim.chat",
+      "vivim.providers", "vivim.vault",
     ]);
   }, 60_000);
 

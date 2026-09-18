@@ -13,7 +13,7 @@ import { mkdirSync } from "node:fs";
 import { isAbsolute, relative, resolve } from "node:path";
 import { casCopyAll, casGet } from "./cas.ts";
 import { bodyText } from "./canon.ts";
-import { dbPath, DDL, ftsUpsert, openVault, openDatabase, type Database, type VaultDB } from "./db.ts";
+import { dbPath, DDL, ftsInsert, openVault, openDatabase, type Database, type VaultDB } from "./sql.ts";
 import { verify } from "./verify.ts";
 
 export interface RoundtripResult { ok: boolean; entries: number; headHash: string; detail?: string; blobsCopied?: number }
@@ -58,7 +58,7 @@ export function roundtrip(v: VaultDB, targetDir: string): RoundtripResult {
     for (const row of src.query("SELECT ns, id, rev, cid FROM objects").all() as unknown as { ns: string; id: string; rev: number; cid: string }[]) {
       let body: string | null = null;
       try { body = bodyText(casGet(dstRoot, row.cid)); } catch { /* missing blob in copy — verify() will report it */ }
-      if (body !== null) ftsUpsert(target, row.ns, row.id, row.rev, body);
+      if (body !== null) ftsInsert(target, row.ns, row.id, row.rev, body);
     }
     target.exec("COMMIT");
   } catch (err) {

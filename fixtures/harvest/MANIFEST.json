@@ -1,0 +1,65 @@
+{
+  "fixtures": [
+    {
+      "bytes": 1040,
+      "final": true,
+      "fixture": "fixtures/import/chatgpt-conversations.json",
+      "harvestedAt": "2026-09-17",
+      "kind": "import",
+      "provenance": {
+        "mine": "vivim-final-program@4a5eb84",
+        "originPath": "src/engines/parsers/chatgpt-import.ts",
+        "recordedOnly": true
+      },
+      "rows": 6,
+      "sha256": "035a61c23104dc3ad6de9d9ef45ca4389e9d946e1275da83ea204d3a360ae50e",
+      "source": "chatgpt"
+    },
+    {
+      "bytes": 700,
+      "final": true,
+      "fixture": "fixtures/import/claude-export.json",
+      "harvestedAt": "2026-09-17",
+      "kind": "import",
+      "provenance": {
+        "mine": "vivim-final-program@4a5eb84",
+        "originPath": "src/engines/parsers/claude-import.ts",
+        "recordedOnly": true
+      },
+      "rows": 6,
+      "sha256": "7c1e6e9df6f2388c4fe6d629d2d8c1be844779421c06efe8e3d65f4a4b592189",
+      "source": "claude"
+    },
+    {
+      "bytes": 507,
+      "final": true,
+      "fixture": "fixtures/import/gemini-export.json",
+      "harvestedAt": "2026-09-17",
+      "kind": "import",
+      "provenance": {
+        "mine": "vivim-final-program@4a5eb84",
+        "originPath": "src/engines/parsers/gemini-import.ts",
+        "recordedOnly": true
+      },
+      "rows": 7,
+      "sha256": "47cb2634013aab4393b31e2831b5a1a987d26f625fb50f96ed3593d7e4d3dff1",
+      "source": "gemini"
+    },
+    {
+      "bytes": 1072,
+      "final": true,
+      "fixture": "fixtures/sse/legacy-chat-complete.sse.txt",
+      "harvestedAt": "2026-09-17",
+      "kind": "sse",
+      "provenance": {
+        "mine": "vivim-final-program@4a5eb84",
+        "originPath": "src/engines/parsers/sse-parser.ts",
+        "recordedOnly": true
+      },
+      "rows": 10,
+      "sha256": "83ee61037e2ee9b24125b6b5d6ff5cc406b69ae1b605c479a1f6b81ce96fa3cf",
+      "source": "llm"
+    }
+  ],
+  "version": 1
+}

@@ -95,9 +95,56 @@ describe("Ω0 runtime law", () => {
     ask("atk3", token["port:counter.value@1"], "counter.value@1"); await settle(); // legitimately granted → passes B3
     expect(replyFor("atk3")?.ok).toBe(true);
 
-    await host.router.callAsRoot("host.tokens.revoke@1", { pluginId: "omega.attacker" }); // root bumps generation
+    await host.router.callAsRoot("host.tokens.revoke@1", { pluginId: "omega.attacker" }); // scoped revoke (D-384): flips omega.attacker's records only
     ask("atk4", token["port:counter.value@1"], "counter.value@1"); await settle();
     expect(replyFor("atk4")?.error).toBe("REVOKED");
+  });
+
+  test("D-384: scoped token revoke is SCOPED — untargeted compartments keep working (symmetry)", async () => {
+    const router = host.router as any;
+    const mk = (id: string) => {
+      const sent: any[] = [];
+      let cb: ((m: any) => void) | null = null;
+      const handle = {
+        pluginId: id, state: "active",
+        stats: { delivered: 0, calls: 0, errors: 0, crashes: 0, bootedAt: Date.now() },
+        post: (m: any) => sent.push(m),
+        onMessage: (f: (m: any) => void) => { cb = f; },
+        onCrash: () => {},
+        terminate: async () => {},
+      };
+      return { sent, handle, ask: (callId: string, tok: string, op: string) => cb!({ type: "call", callId, capabilityToken: tok, op, payload: {}, deadlineMs: 200 }) };
+    };
+    const entryFor = (id: string) => ({ id, version: "0.0.1", source: ".", manifestPath: ".", manifestHash: "sha256:x", contentHash: "sha256:x", grant: { capabilities: ["port:counter.value@1"], contracts: [] }, bootPhase: 1 });
+    const a = mk("omega.revoke-a");
+    const b = mk("omega.revoke-b");
+    router.register(entryFor("omega.revoke-a"), host.manifests.get("omega.echo")!, a.handle, {});
+    router.register(entryFor("omega.revoke-b"), host.manifests.get("omega.echo")!, b.handle, {});
+    for (const [id, c] of [["omega.revoke-a", a], ["omega.revoke-b", b]] as const) {
+      const toks = router.mintTokensFor(entryFor(id));
+      for (const [cap, tok] of Object.entries(toks)) router.tokens.set(tok, { token: tok, pluginId: id, cap, gen: router.generation });
+      (c as any).tok = toks["port:counter.value@1"];
+    }
+    const replyFor = (c: ReturnType<typeof mk>, callId: string) => c.sent.find((m) => m.type === "result" && m.callId === callId)?.result;
+    const settle = () => new Promise((r) => setTimeout(r, 80));
+
+    a.ask("a1", (a as any).tok, "counter.value@1"); await settle();
+    expect(replyFor(a, "a1")?.ok).toBe(true);
+
+    // THE assertion the suite never had (the original audit's §2): revoke A, B survives.
+    const r = await host.router.callAsRoot("host.tokens.revoke@1", { pluginId: "omega.revoke-a" });
+    expect(r.ok).toBe(true);
+    if (r.ok) expect((r.value as any).affectedTokens).toBeGreaterThan(0);
+    a.ask("a2", (a as any).tok, "counter.value@1"); await settle();
+    expect(replyFor(a, "a2")?.error).toBe("REVOKED");
+    b.ask("b1", (b as any).tok, "counter.value@1"); await settle();
+    expect(replyFor(b, "b1")?.ok).toBe(true); // ← pre-D-384 this came back REVOKED (global bump)
+
+    // revoke-all (no pluginId): the generation-bump path revokes everything
+    const all = await host.router.callAsRoot("host.tokens.revoke@1", {});
+    expect(all.ok).toBe(true);
+    b.ask("b2", (b as any).tok, "counter.value@1"); await settle();
+    expect(replyFor(b, "b2")?.error).toBe("REVOKED");
   });
 
   test("law journal records gate decisions (allow/deny path pre-law)", async () => {

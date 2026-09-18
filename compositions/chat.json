@@ -8,7 +8,14 @@
       "bootPhase": 0,
       "grant": {
         "capabilities": ["host.journal.append", "host.tokens.revoke"],
-        "contracts": ["law.check@1", "law.registry@1", "law.consent.grant@1", "law.tokens.revoke@1", "law.amendment@1", "law.describe@1"]
+        "contracts": [
+          "law.check@1",
+          "law.registry@1",
+          "law.consent.grant@1",
+          "law.tokens.revoke@1",
+          "law.amendment@1",
+          "law.describe@1"
+        ]
       },
       "config": { "journalPath": "" }
     },
@@ -18,7 +25,16 @@
       "bootPhase": 1,
       "grant": {
         "capabilities": [],
-        "contracts": ["vault.append@1", "vault.get@1", "vault.query@1", "vault.search@1", "vault.verify@1", "vault.compact@1", "vault.roundtrip@1"]
+        "contracts": [
+          "vault.append@1",
+          "vault.get@1",
+          "vault.getmany@1",
+          "vault.query@1",
+          "vault.search@1",
+          "vault.verify@1",
+          "vault.compact@1",
+          "vault.roundtrip@1"
+        ]
       },
       "config": { "dataDir": "${TMP}/omega-chat/vault-data" }
     },
@@ -27,7 +43,7 @@
       "source": "../plugins/vivim-director",
       "bootPhase": 1,
       "grant": {
-        "capabilities": ["port:vault.append@1", "port:vault.query@1", "port:vault.get@1"],
+        "capabilities": ["port:vault.append@1", "port:vault.query@1", "port:vault.get@1", "port:vault.getmany@1"],
         "contracts": ["resolve.classify@1", "resolve.report@1"]
       },
       "config": { "intervalMs": 3600000 }
@@ -36,10 +52,7 @@
       "id": "provider.llm",
       "source": "../plugins/provider-llm",
       "bootPhase": 1,
-      "grant": {
-        "capabilities": [],
-        "contracts": ["chat.complete@1"]
-      }
+      "grant": { "capabilities": [], "contracts": ["chat.complete@1"] }
     },
     {
       "id": "vivim.chat",

@@ -6,12 +6,7 @@
       "source": "../plugins/vivim-law",
       "bootPhase": 0,
       "grant": {
-        "capabilities": [
-          "port:host.journal.append@1",
-          "host.journal.append",
-          "port:host.tokens.revoke@1",
-          "host.tokens.revoke"
-        ],
+        "capabilities": ["port:host.journal.append@1", "host.journal.append", "port:host.tokens.revoke@1", "host.tokens.revoke"],
         "contracts": [
           "law.check@1",
           "law.registry@1",

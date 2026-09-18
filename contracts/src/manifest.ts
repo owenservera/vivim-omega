@@ -29,6 +29,25 @@ export interface DependencyRef {
   range: string;       // "1.x" | "*"
 }
 
+// D-374 (W0-10 / FOUNDATION-DRAFT-002): the runtime tier vocabulary widens
+// additively. "worker-thread" is the only tier the µhost spawns (B2);
+// "process" compartments are spawned by the vivim-run broker (platformSpawn,
+// ndjson stdio); "wasm" is FORWARD-DECLARED ONLY — no WasmRuntime shape, no
+// implementation, reserved for the D-354 isolation-taxonomy ruling.
+export type RuntimeTier = "worker-thread" | "process" | "wasm";
+
+/** How a process-tier compartment is spawned — declared on the TARGET plugin's
+ *  manifest (additive, optional), embedded into broker config by the W0-1
+ *  generator when it lands. `cmd` is the shim invocation; `stdio` is pinned to
+ *  "ndjson" (the D-374 wire discipline); secrets ride credentialRefs resolved
+ *  via credential.use — never literal env, never manifest values. */
+export interface ProcessRuntime {
+  cmd: string[];
+  stdio: "ndjson";
+  credentialRefs?: string[];
+  poolSize?: number;
+}
+
 export interface PluginManifest {
   manifestVersion: "1";
   id: string;          // "vivim.law" | "vivim.vault" | "omega.echo" | "com.example.gmail"
@@ -39,7 +58,11 @@ export interface PluginManifest {
   contributions: Partial<Record<ContributionKind, Contribution[]>>;
   dependencies: DependencyRef[];
   capabilities: { requested: string[]; justification?: string };
-  runtime: { tier: "worker-thread"; budget: { cpuMs?: number; memMB?: number } };
+  runtime: {
+    tier: RuntimeTier;
+    budget: { cpuMs?: number; memMB?: number };
+    process?: ProcessRuntime; // D-374: additive — manifests without it validate unchanged
+  };
   contentHash: string; // "sha256:<hex>" over the plugin content dir (excl. plugin.json, node_modules)
 }
 

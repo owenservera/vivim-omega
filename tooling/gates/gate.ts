@@ -126,13 +126,15 @@ function prodDirs(): string[] {
   return dirs;
 }
 
-// 5 · bun-surface (D-361): the production tree stays runtime-neutral — zero `Bun.*`
-// calls and zero `bun` imports except the ONE declared adapter (the vault's sqlite
-// module). Dev tooling (this gate runs `bun test`) and tests are out of scope by policy.
+// 5 · bun-surface (D-361 as rewritten by D-373): the production tree stays
+// runtime-neutral — zero `Bun.*` calls and zero `bun` imports except the vault
+// DRIVER LANE (`plugins/vivim-vault/src/drivers/` — any storage driver there may
+// import `bun:sqlite`; still zero Bun.* calls anywhere). Dev tooling (this gate
+// runs `bun test`) and tests are out of scope by policy.
 try {
   const PROD_DIRS = prodDirs();
   const ADAPTERS: Record<string, string> = {
-    "plugins/vivim-vault/src/db.ts": "D-361: the only bun:sqlite import (a Node build swaps this one module)",
+    "plugins/vivim-vault/src/drivers/bun-sqlite.ts": "D-373: the vault driver lane — bun:sqlite lives in the declared driver lane (was: the single db.ts file, D-361)",
   };
   const BUN_RE = /Bun\.|from\s+["']bun|import\s*\(\s*["']bun|require\(\s*["']bun/;
   const hits: string[] = [];

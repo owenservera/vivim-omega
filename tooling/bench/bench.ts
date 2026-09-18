@@ -5,9 +5,11 @@
 import { mkdirSync, rmSync, readFileSync, existsSync } from "node:fs";
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
+import type { Worker } from "node:worker_threads";
 import { compileComposition, ensureVault, bootComposition } from "@vivim/omega-host";
 import { startDaemon } from "@vivim/surfaces-daemon";
 import { callDaemon, readDaemonInfo } from "@vivim/daemon-client";
+import { IsolatePool } from "../../surfaces/daemon/src/pool.ts";
 
 const ROOT = join(import.meta.dir, "../..");
 
@@ -65,6 +67,27 @@ for (let i = 0; i < 50; i++) {
 await daemon.close();
 rmSync(daemonVault, { recursive: true, force: true });
 const dsorted = [...daemonRtts].sort((a, b) => a - b);
+
+// Pool burst awareness (D-388, perf review round 2 §2.2): a burst of concurrent
+// checkouts was assumed to degrade to cold spawns once it outgrew the pool.
+// MEASURED (falsifier + this case): refill() runs synchronously inside acquire(),
+// so the stock never starves — instead each burst checkout pays a fresh inline
+// thread spawn. The wall cost IS the degradation signal, now measured every run
+// alongside hits/coldFallbacks (coldFallbacks = Worker construction failed, the
+// worse signal) and mirrored live by the daemon `status` op's pool snapshot.
+const BURST_N = 8;
+const BURST_POOL_SIZE = 2;
+const burstEntry = join(ROOT, "examples/plugin-echo/src/index.ts");
+const burstPool = new IsolatePool(BURST_POOL_SIZE);
+burstPool.start();
+const burstT0 = performance.now();
+const burstWorkers = await Promise.all(Array.from({ length: BURST_N }, () => burstPool.acquire(burstEntry)));
+const burstWall = performance.now() - burstT0;
+const burstStats = burstPool.snapshot();
+await burstPool.shutdown();
+// acquired workers belong to their consumer (the bench here) — terminate exactly once
+await Promise.all(burstWorkers.filter((w): w is Worker => w !== null).map((w) => w.terminate().catch(() => {})));
+
 // Cold floor: one full CLI child process, warm vault, --no-daemon (documents what
 // the warm path removes; machine-dependent — spawn-dominated, not product-dominated).
 const coldVault = join(ROOT, "dev-vault-bench-cold");
@@ -86,6 +109,12 @@ const result = {
   interCompartmentRtt: { n: inter.length, p50: +[...inter].sort((a, b) => a - b)[Math.floor(inter.length / 2)].toFixed(2), unit: "ms" },
   envelope: { rttP99Max: 50, bootMax: 500, unit: "ms" },
   daemonCallRtt: { n: daemonRtts.length, p50: +(dsorted.length ? pct(dsorted, 50).toFixed(2) : -1), unit: "ms" },
+  poolBurst: {
+    n: BURST_N, poolSize: BURST_POOL_SIZE, wallMs: +burstWall.toFixed(1),
+    hits: burstStats.hits, coldFallbacks: burstStats.coldFallbacks,
+    fallbackRate: +((burstStats.coldFallbacks / Math.max(1, burstStats.checkouts)) * 100).toFixed(1),
+    unit: "ms", note: "MEASURED: sync refill serves every burst checkout from parked stock (0 fallbacks) — the burst cost is the inline thread spawn per checkout; size the pool ≥ peak concurrent boots (D-388)",
+  },
   coldCliCallMs: coldCliMs,
 };
 writeFileSync(join(ROOT, "build", "benchmarks.json"), JSON.stringify(result, null, 2));
@@ -101,6 +130,7 @@ const body = hasHeader ? prev.slice(firstNl + 1).replace(/^\r?\n/, "") : prev;
 const line = `## ${result.at} — daemon warm path (D-322)
 - daemon call RTT p50: ${result.daemonCallRtt.p50} ms over ${result.daemonCallRtt.n} protocol calls (TCP loopback + op, same demo composition)
 - cold CLI wall for one echo call: ${result.coldCliCallMs} ms (full child process, warm vault, --no-daemon — the spawn floor the warm path removes)
+- pool burst (D-388): ${result.poolBurst.n} concurrent checkouts vs poolSize ${result.poolBurst.poolSize} → ${result.poolBurst.hits} hit / ${result.poolBurst.coldFallbacks} cold fallbacks (${result.poolBurst.fallbackRate}% fallback rate) in ${result.poolBurst.wallMs} ms wall — the burst-degradation signal is measured, not invisible
 `;
 writeFileSync(BENCH_FILE, `${header}${body}${body.endsWith("\n") || body.length === 0 ? "" : "\n"}${line}`);
 console.log(JSON.stringify(result, null, 2));

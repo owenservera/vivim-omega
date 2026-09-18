@@ -296,6 +296,60 @@ describe("D-358/D-359 — the chat pilot falsifier on one real boot of compositi
     expect(badConv.ok).toBe(false);
   });
 
+  test("W0-3/D-378: appends maintain the writer-maintained index; history reads the indexed path", async () => {
+    // convId carries the pilot conversation — every append since the index
+    // landed writes idx_<hex> (same critical section as the message append).
+    const idx = await root<{ rev: number; data: { conversationId: string; count: number; entries: Array<{ id: string; seq: number }> } }>(
+      "vault.get@1", { ns: "chat", id: `idx_${convId.slice("conv_".length)}` },
+    );
+    expect(idx.data.conversationId).toBe(convId);
+    expect(idx.data.count).toBe(idx.data.entries.length); // count === entries, the D-378 invariant
+    expect(idx.data.count).toBeGreaterThanOrEqual(3);
+    // indexed history and the index agree on order + size (bounded: ≤ CAP gets)
+    const h = await root<{ messages: Array<{ seq: number }>; total: number }>("chat.history@1", { conversationId: convId });
+    expect(h.total).toBe(idx.data.count);
+    expect(h.messages.map((m) => m.seq)).toEqual(idx.data.entries.map((e) => e.seq));
+  });
+
+  test("W0-3/D-378: the indexed cap refusal stays fail-closed (200 appends, the 201st refuses)", async () => {
+    const cap = await root<{ conversationId: string }>("chat.open@1", { principal: "user:cap" });
+    for (let i = 1; i <= 200; i++) {
+      await root<{ seq: number }>("chat.append@1", { conversationId: cap.conversationId, role: "user", content: `cap ${i}` });
+    }
+    const over = await raw("chat.append@1", { conversationId: cap.conversationId, role: "user", content: "one too many" });
+    expect(over.ok).toBe(false);
+    expect(over.detail ?? over.error).toContain("indexed");
+    expect(over.detail ?? over.error).toContain("refusing fail-closed");
+    const h = await root<{ total: number }>("chat.history@1", { conversationId: cap.conversationId });
+    expect(h.total).toBe(200);
+  }, 120_000);
+
+  test("W0-4/D-379: the cross-principal read REFUSES as a verdict and LEDGERS the attempt", async () => {
+    // the pilot conversation belongs to user:ada — a read presented under
+    // user:mallory refuses (REFUSED envelope) and writes the refusal ledger row
+    const r = await raw("chat.history@1", { conversationId: convId, principal: "user:mallory" });
+    expect(r.ok).toBe(true); // a policy VERDICT, not a port failure
+    const refusal = (r as { value?: { refused?: boolean; error?: string; op?: string; detail?: string; ledgered?: boolean; ledgerRef?: { ns: string; id: string; rev: number } } }).value ?? {};
+    expect(refusal.refused).toBe(true);
+    expect(refusal.error).toBe("REFUSED");
+    expect(refusal.op).toBe("chat.history@1");
+    expect(refusal.ledgered).toBe(true);
+    expect(refusal.ledgerRef?.ns).toBe("chat");
+    // the ledger row is real, inspectable, and names both principals
+    const led = await root<{ data: { conversationId: string; owner: string; caller: string; op: string }; meta: { type: string } }>(
+      "vault.get@1", { ns: "chat", id: refusal.ledgerRef!.id },
+    );
+    expect(led.meta.type).toBe("principal-refusal");
+    expect(led.data.owner).toBe("user:ada");
+    expect(led.data.caller).toBe("user:mallory");
+    expect(led.data.conversationId).toBe(convId);
+    // the owner passes the fence; the absent-principal Phase-1 path is unchanged
+    const own = await root<{ total: number }>("chat.history@1", { conversationId: convId, principal: "user:ada" });
+    expect(own.total).toBeGreaterThan(0);
+    const anon = await root<{ total: number }>("chat.history@1", { conversationId: convId });
+    expect(anon.total).toBe(own.total);
+  });
+
   test("the vault's Merkle integrity holds over the whole pilot (ns chat included)", async () => {
     const v = await root<{ ok: boolean }>("vault.verify@1", {});
     expect(v.ok).toBe(true);

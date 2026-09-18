@@ -229,13 +229,20 @@ startPlugin(definePlugin({
       });
     },
 
-    /** Grant a consent (default) or explicitly deny-revoke it ({action:"revoke"}). */
+    /** Grant a consent (default) or explicitly deny-revoke it ({action:"revoke"}).
+     *  D-384 principal binding: a non-root caller may only manage consents for
+     *  ITSELF. Root — the surfaces' human proxy (console/CLI) — may grant for
+     *  any principal; that delegation is the consent ceremony. Anything else is
+     *  cross-principal forgery and refuses before any state change. */
     "law.consent.grant@1": async (payload: unknown, ctx: PluginContext | null, meta: CallMeta) => {
       const p = asObj(payload);
       const consentId = str(p["consentId"]);
       const action = p["action"] === "revoke" || p["action"] === "deny-revoke" ? "revoke" : "grant";
       const principal = optStr(p["principal"]);
       const scope = optStr(p["scope"]);
+      if (principal !== undefined && meta.from !== "root" && principal !== meta.from) {
+        throw new Error(`law.consent.grant: caller '${meta.from}' may not manage consents for principal '${principal}' (cross-principal refusal, D-384)`);
+      }
 
       if (action === "revoke") {
         const revoked = consentTable.revoke(consentId);
@@ -268,8 +275,11 @@ startPlugin(definePlugin({
       const pluginId = str(p["pluginId"]);
       if (!pluginId) throw new Error("law.tokens.revoke: payload requires {pluginId}");
       registry.observe(pluginId, "active", "tokens.revoke");
-      // journal the intent BEFORE delegating: the host's generation bump revokes our own
-      // journal token too (global bump), so post-revoke appends fail closed and best-effort.
+      // journal the intent BEFORE delegating. D-384: a scoped revoke no longer
+      // touches this compartment's own tokens (per-record revocation, not a
+      // global generation bump) — the intent-first order is kept anyway so the
+      // intent is durable even for the revoke-all path, which does invalidate
+      // our own journal token (post-revoke appends then fail closed, best-effort).
       await journal(ctx, { source: "vivim.law", op: "law.tokens.revoke", principal: meta.from, pluginId, causationId: meta.causationId });
       const r: PortResult = await ctx!.port.call(HOST_OPS.tokensRevoke, { pluginId });
       bump();

@@ -1,6 +1,7 @@
 // µhost — recovery.ts: B4 fail-closed. Boot either yields a valid composition or preserves
 // the previous one. Incoming recipes are pinned only AFTER full verification; a mid-swap
-// crash leaves recipe.pinned.tmp garbage (cleaned on next boot) and the old pin intact.
+// crash leaves recipe.pinned.tmp* garbage (unique-suffixed since D-384; cleaned on next
+// boot) and the old pin intact.
 import { existsSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import type { Recipe } from "@vivim/omega-contracts";

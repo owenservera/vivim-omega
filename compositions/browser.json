@@ -8,7 +8,16 @@
       "bootPhase": 0,
       "grant": {
         "capabilities": ["host.journal.append", "host.tokens.revoke", "port:vault.append@1", "port:vault.query@1", "port:vault.get@1"],
-        "contracts": ["law.check@1", "law.registry@1", "law.consent.grant@1", "law.tokens.revoke@1", "law.forbidden.set@1", "law.forbidden.reload@1", "law.amendment@1", "law.describe@1"]
+        "contracts": [
+          "law.check@1",
+          "law.registry@1",
+          "law.consent.grant@1",
+          "law.tokens.revoke@1",
+          "law.forbidden.set@1",
+          "law.forbidden.reload@1",
+          "law.amendment@1",
+          "law.describe@1"
+        ]
       }
     },
     {
@@ -17,7 +26,16 @@
       "bootPhase": 1,
       "grant": {
         "capabilities": [],
-        "contracts": ["vault.append@1", "vault.get@1", "vault.query@1", "vault.search@1", "vault.verify@1", "vault.compact@1", "vault.roundtrip@1"]
+        "contracts": [
+          "vault.append@1",
+          "vault.get@1",
+          "vault.getmany@1",
+          "vault.query@1",
+          "vault.search@1",
+          "vault.verify@1",
+          "vault.compact@1",
+          "vault.roundtrip@1"
+        ]
       },
       "config": { "dataDir": "${TMP}/omega-browser/vault-data" }
     },
@@ -31,39 +49,27 @@
       "id": "discovery.perception",
       "source": "../plugins/discovery-perception",
       "bootPhase": 1,
-      "grant": {
-        "capabilities": ["port:vault.append@1", "port:vault.get@1"],
-        "contracts": ["discovery.perceive@1"]
-      },
+      "grant": { "capabilities": ["port:vault.append@1", "port:vault.get@1"], "contracts": ["discovery.perceive@1"] },
       "config": { "fixturesDir": "fixtures" }
     },
     {
       "id": "discovery.inference",
       "source": "../plugins/discovery-inference",
       "bootPhase": 1,
-      "grant": {
-        "capabilities": ["port:vault.append@1", "port:vault.get@1"],
-        "contracts": ["discovery.infer@1"]
-      }
+      "grant": { "capabilities": ["port:vault.append@1", "port:vault.get@1"], "contracts": ["discovery.infer@1"] }
     },
     {
       "id": "discovery.mapping",
       "source": "../plugins/discovery-mapping",
       "bootPhase": 1,
-      "grant": {
-        "capabilities": ["port:vault.append@1"],
-        "contracts": ["discovery.map@1", "discovery.variations@1"]
-      },
+      "grant": { "capabilities": ["port:vault.append@1"], "contracts": ["discovery.map@1", "discovery.variations@1"] },
       "config": { "blueprintPath": "packs/domain-email/plugin.json" }
     },
     {
       "id": "discovery.verification",
       "source": "../plugins/discovery-verification",
       "bootPhase": 1,
-      "grant": {
-        "capabilities": ["port:vault.append@1", "port:vault.get@1"],
-        "contracts": ["discovery.verify@1"]
-      }
+      "grant": { "capabilities": ["port:vault.append@1", "port:vault.get@1"], "contracts": ["discovery.verify@1"] }
     },
     {
       "id": "vivim.credentials",

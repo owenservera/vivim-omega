@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-09-15T20:15:49.351Z",
+  "generatedAt": "2026-09-18T10:27:09.832Z",
   "repo": "vivim-omega",
   "branch": "omega",
-  "head": "cc4f6f4",
+  "head": "dcc90b8",
   "waves": [
     {
       "id": "Ω0",
@@ -90,39 +90,40 @@
     }
   ],
   "gate": {
-    "startedAt": "2026-09-15T20:14:41.303Z",
+    "startedAt": "2026-09-18T10:25:48.936Z",
     "checks": {
       "host-loc": {
         "ok": true,
         "detail": {
-          "loc": 999,
-          "budget": 1000
+          "loc": 1039,
+          "budget": 1100
         }
       },
       "fresh-tree": {
         "ok": true,
-        "skipped": true,
         "detail": {
-          "reason": "no sibling legacy repos present (clean clone / CI) — nothing to verify untouched",
+          "vivim-final-enhanced": {
+            "head": "afebe00",
+            "clean": true
+          },
+          "vivim-final-program": {
+            "head": "4a5eb84",
+            "clean": true
+          },
           "legacyImports": 0
         }
       },
       "decisions": {
         "ok": true,
         "detail": {
-          "rows": 68,
-          "records": 42,
-          "ratified": 38,
+          "rows": 92,
+          "records": 66,
+          "ratified": 66,
           "grandfatherBelow": 313,
           "openQuestions": {
-            "count": 4,
-            "ids": [
-              313,
-              314,
-              316,
-              317
-            ],
-            "board": "stale"
+            "count": 0,
+            "ids": [],
+            "board": "fresh"
           }
         }
       },
@@ -130,7 +131,7 @@
         "ok": true,
         "detail": {
           "specs": 16,
-          "entries": 66,
+          "entries": 68,
           "driftAllowlisted": {
             "vivim.law": {
               "files": [
@@ -160,6 +161,22 @@
               ],
               "reason": "D-358/D-359: chat.json grants the resolution half only (resolve.classify/report + their vault ports); console/run carry the full director surface"
             },
+            "provider.llm": {
+              "files": [
+                "chat.json",
+                "console.json",
+                "discovery-mind.json",
+                "llm.json"
+              ],
+              "reason": "D-385: discovery-mind.json carries the parser contribution with empty grants (signed manifest, never spawned); chat/console/llm.json grant the contract ops"
+            },
+            "vivim.chat": {
+              "files": [
+                "chat.json",
+                "discovery-mind.json"
+              ],
+              "reason": "D-385: discovery-mind.json carries the parser contribution with empty grants (signed manifest, never spawned); chat.json grants the chat ops"
+            },
             "vivim.run": {
               "files": [
                 "run.json",
@@ -168,19 +185,21 @@
               "reason": "alias-style variance run.json vs spine.json: same effective authority (HOST_OP_TO_CAP auto-mint); convergence deferred, see _note in run.json"
             }
           },
-          "contractTypes": 94,
+          "riskParityOps": 42,
+          "matrixConformance": "green",
+          "contractTypes": 108,
           "callSiteAllowlisted": [
             "CompositionSpecEntry",
             "LangContribution",
-            "LangFamilyChar",
-            "LangFrameSlot",
-            "LangLexiconEntry",
-            "LangOpFrame",
-            "LangSlotKind",
             "OutcomeStatus",
             "PROMOTION_INVARIANT",
             "PortErrorCode",
-            "ProvenanceTier"
+            "ProvenanceTier",
+            "StorageDriverContract",
+            "StorageKey",
+            "StorageOp",
+            "StorageResult",
+            "StorageTable"
           ]
         }
       },
@@ -188,15 +207,31 @@
         "ok": true,
         "detail": {
           "adapters": [
-            "plugins/vivim-vault/src/db.ts"
+            "plugins/vivim-vault/src/drivers/bun-sqlite.ts"
           ],
-          "scan": "31 prod dirs (incl. every plugins/*/src)"
+          "scan": "32 prod dirs (incl. every plugins/*/src)"
+        }
+      },
+      "os-surface": {
+        "ok": true,
+        "detail": {
+          "seam": [
+            "platform/src/platform.ts"
+          ],
+          "scan": "32 prod dirs (incl. every plugins/*/src)"
+        }
+      },
+      "import-surface": {
+        "ok": true,
+        "detail": {
+          "scanned": 131,
+          "rules": 5
         }
       },
       "tests": {
         "ok": true,
         "detail": {
-          "pass": 733,
+          "pass": 886,
           "fail": 0,
           "maxConcurrency": 4
         }
@@ -205,7 +240,7 @@
         "ok": true,
         "detail": {
           "compileMs": 3,
-          "bootMs": 15,
+          "bootMs": 16,
           "echo": true,
           "counterBump": true,
           "counterValue": {
@@ -226,23 +261,23 @@
       }
     }
   },
-  "hostLoc": 999,
+  "hostLoc": 1039,
   "tests": {
-    "pass": 733,
+    "pass": 886,
     "fail": 0
   },
   "benchmarks": {
-    "at": "2026-09-15T19:59:53.866Z",
-    "bootMs": 10,
+    "at": "2026-09-18T10:16:48.896Z",
+    "bootMs": 11,
     "portRtt": {
       "n": 200,
       "p50": 0.03,
-      "p99": 0.78,
+      "p99": 2.49,
       "unit": "ms"
     },
     "interCompartmentRtt": {
       "n": 50,
-      "p50": 0.1,
+      "p50": 0.12,
       "unit": "ms"
     },
     "envelope": {
@@ -252,9 +287,19 @@
     },
     "daemonCallRtt": {
       "n": 50,
-      "p50": 0.51,
+      "p50": 0.52,
       "unit": "ms"
     },
-    "coldCliCallMs": 68
+    "poolBurst": {
+      "n": 8,
+      "poolSize": 2,
+      "wallMs": 87.5,
+      "hits": 8,
+      "coldFallbacks": 0,
+      "fallbackRate": 0,
+      "unit": "ms",
+      "note": "MEASURED: sync refill serves every burst checkout from parked stock (0 fallbacks) — the burst cost is the inline thread spawn per checkout; size the pool ≥ peak concurrent boots (D-388)"
+    },
+    "coldCliCallMs": 88
   }
 }

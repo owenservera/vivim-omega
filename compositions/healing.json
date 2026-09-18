@@ -6,12 +6,7 @@
       "source": "../plugins/vivim-law",
       "bootPhase": 0,
       "grant": {
-        "capabilities": [
-          "port:host.journal.append@1",
-          "host.journal.append",
-          "port:host.tokens.revoke@1",
-          "host.tokens.revoke"
-        ],
+        "capabilities": ["port:host.journal.append@1", "host.journal.append", "port:host.tokens.revoke@1", "host.tokens.revoke"],
         "contracts": [
           "law.check@1",
           "law.registry@1",
@@ -32,6 +27,7 @@
         "contracts": [
           "vault.append@1",
           "vault.get@1",
+          "vault.getmany@1",
           "vault.query@1",
           "vault.search@1",
           "vault.verify@1",
@@ -45,10 +41,7 @@
       "id": "discovery.healing",
       "source": "../plugins/discovery-healing",
       "bootPhase": 1,
-      "grant": {
-        "capabilities": ["port:vault.append@1", "port:vault.get@1"],
-        "contracts": ["discovery.heal@1"]
-      }
+      "grant": { "capabilities": ["port:vault.append@1", "port:vault.get@1"], "contracts": ["discovery.heal@1"] }
     }
   ]
 }

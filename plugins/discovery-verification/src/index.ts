@@ -38,7 +38,7 @@ import { definePlugin, startPlugin } from "@vivim/omega-shim";
 import type { PluginContext, CallMeta } from "@vivim/omega-shim";
 import type { EpistemicStatus, PortResult, ProviderClass, ProviderRealization, RealizationStatus } from "@vivim/omega-contracts";
 import { archetypeSlugForOp, providerRealizationId, asParserPin, parserContributionId, type ParserPin } from "@vivim/omega-contracts";
-import { loadPromotionPolicy, POLICY_SOURCE, type PromotionPolicy } from "./policy.ts";
+import { loadPromotionPolicy, loadGovernedParserRegistry, isGovernedParserPin, PARSER_REGISTRY_SOURCE, POLICY_SOURCE, type PromotionPolicy } from "./policy.ts";
 import { evaluatePromotion, isValidProbe, refKey, type Probe, type BindingLike } from "./evaluate.ts";
 
 export const DISCOVERY_NS = "discovery";
@@ -144,8 +144,10 @@ const PROVIDER_CLASSES = ["SIMULATOR", "API_NATIVE", "BROWSER_MEDIATED"] as cons
 
 /** Optional realization writer identity: {id, class?, parserPins?} (class defaults SIMULATOR).
  *  Absent (undefined/null) disables ns-providers writes entirely.
- *  D-355: parserPins are total-validated (asParserPin) and dup-checked per
- *  (providerId, archetypeSlug) — a run may not verify the same parser twice. */
+ *  D-355: parserPins are total-validated (asParserPin), dup-checked per
+ *  (providerId, archetypeSlug) — a run may not verify the same parser twice —
+ *  and GOVERNED against the manifest-declared parser registry (the fence lives
+ *  in the verify handler, before any vault write). */
 function normalizeProvider(v: unknown): { id: string; class: ProviderClass; parserPins: ParserPin[] } | null {
   if (v === undefined || v === null) return null;
   if (typeof v !== "object" || Array.isArray(v)) {
@@ -231,6 +233,25 @@ export const def = definePlugin({
       const mapping = normalizeMapping(p.mapping);
       const probes = normalizeProbes(p.probes);
 
+      // Provider identity + the D-355 GENEALOGY FENCE, BEFORE any vault write:
+      // a run that CARRIES parser pins may only pin GOVERNED parser
+      // contributions (the manifest-declared registry is the closed set).
+      // Anything else is a caller invention — it refuses here, so an ungoverned
+      // pin can never land a promotion event or a realization row (fail-closed;
+      // the fence the W1 falsifier exercises). Absent provider / absent pins
+      // disable the genealogy leg entirely (verify behaves exactly as before).
+      const provider = normalizeProvider(p.provider);
+      if (provider !== null && provider.parserPins.length > 0) {
+        const registry = loadGovernedParserRegistry(ctx.manifest);
+        for (const pin of provider.parserPins) {
+          if (!isGovernedParserPin(registry, pin)) {
+            throw new Error(
+              `discovery.verify@1: parser pin ${parserContributionId(pin.providerId, pin.archetypeSlug)}@${pin.version} is not a governed parser contribution (${PARSER_REGISTRY_SOURCE}) — refusing (fail-closed genealogy: parsers are signed manifest data, never caller inventions)`,
+            );
+          }
+        }
+      }
+
       // Resolve every cited evidence ref — the vault is the proof substrate.
       const allRefs = probes.flatMap((pr) => pr.evidence);
       const { resolved, notes: resolutionNotes } = await resolveEvidence(ctx, allRefs);
@@ -264,7 +285,6 @@ export const def = definePlugin({
       // | TESTING (probes all pass so far but proof incomplete — still under
       // evaluation). Never-probed bindings get no record (absence reads as
       // DRAFT downstream, matching the registry default).
-      const provider = normalizeProvider(p.provider);
       const realizations: Array<{ id: string; status: RealizationStatus; rev: number }> = [];
       if (provider !== null) {
         for (const r of evaluation.results) {

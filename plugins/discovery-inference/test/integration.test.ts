@@ -323,7 +323,10 @@ describe("GATE-Ω8 — the discovery-mind pipeline (compositions/discovery-mind.
       const st = host.router.status();
       expect((st.compartments as Record<string, { state: string }>)["vivim.law"]?.state).toBe("active");
       expect(st.dormant).toEqual([
-        "discovery.inference", "discovery.mapping", "discovery.verification", "vivim.providers", "vivim.vault",
+        "discovery.inference", "discovery.mapping", "discovery.verification",
+        // W1 (D-385): the parser-contribution carriers ride dormant with empty grants
+        "provider.llm", "vivim.chat",
+        "vivim.providers", "vivim.vault",
       ]); // D-331: verified-but-unspawned; the infer call below is the first touch
       // perception + inference on the shipped composition, then map WITHOUT a payload
       // blueprint — the engine reads config.blueprintPath (the pack's CONTRACT

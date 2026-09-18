@@ -1,7 +1,7 @@
 // µhost — recipe.ts: the Recipe is the only grantor. Verify signature (B4), pin atomically,
 // and compile composition specs into signed recipes at first boot.
 import type { CompositionEntry, CompositionSpec, PluginManifest, Recipe } from "@vivim/omega-contracts";
-import { readFileSync, existsSync, mkdirSync, rmSync } from "node:fs";
+import { readFileSync, existsSync, mkdirSync, rmSync, readdirSync } from "node:fs";
 import { join, resolve, relative } from "node:path";
 import { canonicalJson, contentHashDir, sha256Hex, signJson, verifyJson, atomicWrite } from "./canon.ts";
 
@@ -63,10 +63,21 @@ export function pinRecipe(vaultDir: string, r: Recipe): void {
 }
 
 export function cleanupStaleSwap(vaultDir: string): boolean {
-  const tmp = join(vaultDir, "recipe.pinned.tmp");
-  const existed = existsSync(tmp);
-  if (existed) rmSync(tmp);
-  return existed;
+  // D-384: atomicWrite's tmp name is unique (`${path}.tmp-<pid>-<rand>`, the casPut
+  // pattern), so the stale-swap sweep matches the whole tmp family — the fixed legacy
+  // name first, then any unique-suffixed garbage a mid-swap crash may have left.
+  const legacy = join(vaultDir, "recipe.pinned.tmp");
+  const existed = existsSync(legacy);
+  if (existed) rmSync(legacy, { force: true });
+  let swept = false;
+  try {
+    for (const name of readdirSync(vaultDir)) {
+      if (!name.startsWith("recipe.pinned.tmp-")) continue;
+      rmSync(join(vaultDir, name), { force: true });
+      swept = true;
+    }
+  } catch { /* unreadable vault dir — boot verify fails closed downstream anyway */ }
+  return existed || swept;
 }
 
 // ---- compile: the first-boot ceremony (spec → signed manifests + signed recipe) ----

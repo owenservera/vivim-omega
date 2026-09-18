@@ -1,0 +1,14 @@
+[
+  {
+    "uuid": "c-1001",
+    "name": "claude export probe",
+    "created_at": "2026-09-16T10:00:00.000Z",
+    "updated_at": "2026-09-16T10:05:00.000Z",
+    "chat_messages": [
+      { "sender": "human", "text": "Explain driver parity.", "created_at": "2026-09-16T10:00:00.000Z" },
+      { "sender": "assistant", "content": [ { "type": "text", "text": "bun:sqlite and node:sqlite must produce" }, { "type": "text", "text": " byte-identical workload digests." } ], "created_at": "2026-09-16T10:01:30.000Z" },
+      { "sender": "human", "content": "plain string content variant", "created_at": "2026-09-16T10:02:00.000Z" },
+      { "sender": "system", "text": "no timestamp on this one" }
+    ]
+  }
+]

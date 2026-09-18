@@ -1,0 +1,163 @@
+{
+  "generatedAt": "2026-09-16T22:21:15.818Z",
+  "repo": "vivim-omega",
+  "branch": "omega",
+  "head": "4e14d1d",
+  "hostLoc": 999,
+  "tests": {
+    "pass": 787,
+    "fail": 0
+  },
+  "gate": {
+    "startedAt": "2026-09-16T22:20:00.791Z",
+    "checks": {
+      "host-loc": {
+        "ok": true,
+        "detail": {
+          "loc": 999,
+          "budget": 1100
+        }
+      },
+      "fresh-tree": {
+        "ok": true,
+        "skipped": true,
+        "detail": {
+          "reason": "no sibling legacy repos present (clean clone / CI) \u2014 nothing to verify untouched",
+          "legacyImports": 0
+        }
+      },
+      "decisions": {
+        "ok": true,
+        "detail": {
+          "rows": 87,
+          "records": 61,
+          "ratified": 60,
+          "grandfatherBelow": 313,
+          "openQuestions": {
+            "count": 1,
+            "ids": [
+              316
+            ],
+            "board": "fresh"
+          }
+        }
+      },
+      "compositions": {
+        "ok": true,
+        "detail": {
+          "specs": 16,
+          "entries": 66,
+          "driftAllowlisted": {
+            "vivim.law": {
+              "files": [
+                "agent.json",
+                "browser.json",
+                "chat.json",
+                "console.json",
+                "credentials.json",
+                "demo.json",
+                "discovery-mind.json",
+                "discovery.json",
+                "email.json",
+                "healing.json",
+                "law.json",
+                "llm.json",
+                "notes.json",
+                "run.json",
+                "spine.json",
+                "vault.json"
+              ],
+              "reason": "D-325: per-composition law scope (memory-only law.json \u2026 vault-durable agent.json); new shapes fail until allowlisted"
+            },
+            "vivim.director": {
+              "files": [
+                "chat.json",
+                "console.json"
+              ],
+              "reason": "D-358/D-359: chat.json grants the resolution half only (resolve.classify/report + their vault ports); console/run carry the full director surface"
+            },
+            "vivim.run": {
+              "files": [
+                "run.json",
+                "spine.json"
+              ],
+              "reason": "alias-style variance run.json vs spine.json: same effective authority (HOST_OP_TO_CAP auto-mint); convergence deferred, see _note in run.json"
+            }
+          },
+          "riskParityOps": 42,
+          "matrixConformance": "green",
+          "contractTypes": 108,
+          "callSiteAllowlisted": [
+            "CompositionSpecEntry",
+            "LangContribution",
+            "OutcomeStatus",
+            "PROMOTION_INVARIANT",
+            "PortErrorCode",
+            "ProvenanceTier",
+            "StorageDriverContract",
+            "StorageKey",
+            "StorageOp",
+            "StorageResult",
+            "StorageTable"
+          ]
+        }
+      },
+      "bun-surface": {
+        "ok": true,
+        "detail": {
+          "adapters": [
+            "plugins/vivim-vault/src/drivers/bun-sqlite.ts"
+          ],
+          "scan": "32 prod dirs (incl. every plugins/*/src)"
+        }
+      },
+      "os-surface": {
+        "ok": true,
+        "detail": {
+          "seam": [
+            "platform/src/platform.ts"
+          ],
+          "scan": "32 prod dirs (incl. every plugins/*/src)"
+        }
+      },
+      "import-surface": {
+        "ok": true,
+        "detail": {
+          "scanned": 128,
+          "rules": 5
+        }
+      },
+      "tests": {
+        "ok": true,
+        "detail": {
+          "pass": 787,
+          "fail": 0,
+          "maxConcurrency": 4
+        }
+      },
+      "attest": {
+        "ok": true,
+        "detail": {
+          "compileMs": 3,
+          "bootMs": 16,
+          "echo": true,
+          "counterBump": true,
+          "counterValue": {
+            "count": 1
+          },
+          "compartments": [
+            "vivim.law",
+            "omega.echo",
+            "omega.counter"
+          ],
+          "refusalRegister": "REFUSED",
+          "budgetRegister": "BUDGET",
+          "recovery": {
+            "midSwapCleaned": true,
+            "replayRefused": true
+          }
+        }
+      }
+    }
+  }
+}

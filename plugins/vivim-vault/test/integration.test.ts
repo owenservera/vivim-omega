@@ -26,7 +26,7 @@ async function shutdownCase(c: { host: BootedHost }): Promise<void> {
 }
 
 const VAULT_CONTRACTS = [
-  "vault.append@1", "vault.get@1", "vault.query@1", "vault.search@1",
+  "vault.append@1", "vault.get@1", "vault.getmany@1", "vault.query@1", "vault.search@1", // D-387: getmany routed
   "vault.verify@1", "vault.compact@1", "vault.roundtrip@1",
 ];
 

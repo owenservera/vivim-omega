@@ -4,7 +4,7 @@ import { describe, test, expect } from "bun:test";
 import { mintCap, attenuate, isSubset, parseScope, canonicalScope } from "../src/tokens.ts";
 import { ConsentTable, consentIdFor } from "../src/consent.ts";
 import { ForbiddenTable, FORBIDDEN_NS, FORBIDDEN_ID_PREFIX, forbiddenVaultId, toRecord, fromRecord } from "../src/forbidden.ts";
-import { LAW_POLICY_V1, evalPolicy, normalizeShadowSpec } from "../src/policy.ts";
+import { LAW_POLICY_V1, evalPolicy, classifyRisk, normalizeShadowSpec, type PolicyDoc } from "../src/policy.ts";
 import { ShadowAmendment } from "../src/amendment.ts";
 import { principalKind } from "@vivim/omega-contracts";
 
@@ -136,6 +136,25 @@ describe("Ω1 policy — the table decides (data, not switches)", () => {
     expect(evalPolicy(root, "root", "note.write@1").risk).toBe("MUTATION"); // D-351: prefix row repaired notes.* → note.* (the real op family)
     expect(evalPolicy(root, "root", "vault.get@1").risk).toBe("MUTATION");  // prefix mechanism, live row
     expect(evalPolicy(root, "root", "unknown.op@1").risk).toBe("EXTERNAL_MUTATION"); // defaultRisk
+  });
+
+  test("D-384: overlapping prefix rows resolve by specificity, not table order", () => {
+    const doc: PolicyDoc = {
+      ...JSON.parse(JSON.stringify(LAW_POLICY_V1)) as PolicyDoc,
+      riskTable: [
+        { op: "chat.*", risk: "READ" },
+        { op: "chat.append.*", risk: "EXTERNAL_MUTATION" }, // more specific, listed SECOND
+      ],
+    };
+    expect(classifyRisk(doc, "chat.append.v2@1")).toBe("EXTERNAL_MUTATION"); // longest pattern wins
+    expect(classifyRisk(doc, "chat.open@1")).toBe("READ");
+    // order-independence: flipping the table must not flip the verdict
+    const flipped: PolicyDoc = { ...doc, riskTable: [...doc.riskTable].reverse() };
+    expect(classifyRisk(flipped, "chat.append.v2@1")).toBe("EXTERNAL_MUTATION");
+    expect(classifyRisk(flipped, "chat.open@1")).toBe("READ");
+    // exact rows still outrank every prefix (D-351 semantics unchanged)
+    const withExact: PolicyDoc = { ...doc, riskTable: [{ op: "chat.append.v2@1", risk: "MUTATION" }, ...doc.riskTable] };
+    expect(classifyRisk(withExact, "chat.append.v2@1")).toBe("MUTATION");
   });
 
   test("risk → decision mapping: MUTATION allow+journal, EXTERNAL_MUTATION require-consent", () => {

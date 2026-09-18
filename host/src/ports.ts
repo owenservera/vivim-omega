@@ -12,7 +12,7 @@ import type { Worker } from "node:worker_threads";
 import { mintToken } from "./canon.ts";
 import { appendFileSync } from "node:fs";
 
-export interface TokenRecord { token: string; pluginId: string; cap: string; gen: number }
+export interface TokenRecord { token: string; pluginId: string; cap: string; gen: number; revoked?: boolean }
 
 export interface RouterOptions { vaultDir: string; journal: boolean }
 
@@ -116,12 +116,16 @@ export class PortRouter {
     return tokens;
   }
 
-  /** B3 structural check: token exists, belongs to sender, covers the op, and generation is current. */
+  /** B3 structural check: token exists, belongs to sender, covers the op, and is not revoked.
+   *  Ownership is checked BEFORE revocation state (D-384): a token belonging to a different
+   *  plugin reports REFUSED (what it is) — never REVOKED (what it used to be), so error
+   *  registers carry no stale-vs-foreign distinction to a caller holding a leaked token. */
   private checkToken(pluginId: string, token: string, op: string): PortResult | null {
     const rec = this.tokens.get(token);
     if (!rec) return { ok: false, error: "REFUSED", detail: "unknown capability token" };
-    if (rec.gen < this.generation) return { ok: false, error: "REVOKED", detail: `generation ${rec.gen} revoked (current ${this.generation})` };
     if (rec.pluginId !== pluginId) return { ok: false, error: "REFUSED", detail: "token not issued to this compartment" };
+    if (rec.revoked) return { ok: false, error: "REVOKED", detail: "token revoked" };
+    if (rec.gen < this.generation) return { ok: false, error: "REVOKED", detail: `generation ${rec.gen} revoked (current ${this.generation})` };
     if (this.isHostOp(op)) {
       if (rec.cap !== this.hostCapFor(op)) return { ok: false, error: "SCOPE", detail: `op ${op} requires ${this.hostCapFor(op)}` };
       return null;
@@ -280,13 +284,24 @@ export class PortRouter {
         return { ok: true, value: { appended: true } };
       }
       case HOST_OPS.tokensRevoke: {
+        // D-384: scoped revoke is SCOPED. The old unconditional generation bump turned
+        // "quarantine one plugin" into "revoke every token in the composition" (the
+        // pluginId argument only shaped the journal). The ConsentTable pattern — per-record
+        // revocation state — is the fix: matching records flip, everything else keeps
+        // working. The generation bump is reserved for the explicit revoke-all case.
         const { pluginId } = payload as { pluginId?: string };
-        // Revocation by generation bump: outstanding tokens stay in the table and now fail
-        // with the distinct REVOKED register (attributable), instead of vanishing (REFUSED).
-        this.generation++;
         let affected = 0;
-        for (const rec of this.tokens.values()) if (!pluginId || rec.pluginId === pluginId) affected++;
-        this.journal({ principal: callerId, op: "host.tokens.revoke", decision: "allow", reason: `generation bumped to ${this.generation}`, affected, scope: pluginId ?? "all" });
+        if (pluginId) {
+          for (const rec of this.tokens.values()) {
+            if (rec.pluginId === pluginId && !rec.revoked) { rec.revoked = true; affected++; }
+          }
+        } else {
+          // Revoke-all: outstanding tokens stay in the table and now fail with the
+          // distinct REVOKED register (attributable), instead of vanishing (REFUSED).
+          this.generation++;
+          for (const rec of this.tokens.values()) if (!rec.revoked) { rec.revoked = true; affected++; }
+        }
+        this.journal({ principal: callerId, op: "host.tokens.revoke", decision: "allow", reason: pluginId ? `scoped revoke: ${affected} token(s) of ${pluginId}` : `revoke-all: generation bumped to ${this.generation}`, affected, scope: pluginId ?? "all" });
         return { ok: true, value: { generation: this.generation, affectedTokens: affected } };
       }
       default: return { ok: false, error: "REFUSED", detail: `unknown host op ${op}` };

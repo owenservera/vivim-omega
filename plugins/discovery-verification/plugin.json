@@ -28,6 +28,24 @@
           "evidenceRequired": true
         },
         "doc": "discovery.promotion-policy@1 — promotion thresholds: score ≥ 0.95 across ≥ 3 probes, every probe citing resolvable vault evidence. Confidence is never an input."
+      },
+      {
+        "kind": "policy",
+        "id": "discovery.parser-registry",
+        "version": "1",
+        "policy": {
+          "policyId": "discovery.parser-registry",
+          "version": "1.0.0",
+          "description": "The governed parser-pin registry as DATA (D-355 fail-closed genealogy, W1): the ONLY parser contributions a discovery.verify@1 run may carry in provider.parserPins. Each row must mirror a parser-kind contribution declared in a signed plugin manifest (provider-browser / provider-llm / vivim-chat); a pin outside this set is a REFUSAL at the gate, never a silent fallback — a parser that is not signed governance data cannot be the verified genealogy of a realization. Amendable only by shipping the new parser contribution + this registry row together (one reviewed change, content-hash pinned).",
+          "governedParserPins": [
+            { "providerId": "browser", "archetypeSlug": "message.send", "version": "1" },
+            { "providerId": "llm", "archetypeSlug": "chat.complete", "version": "1" },
+            { "providerId": "chatgpt", "archetypeSlug": "history.import", "version": "1" },
+            { "providerId": "claude", "archetypeSlug": "history.import", "version": "1" },
+            { "providerId": "gemini", "archetypeSlug": "history.import", "version": "1" }
+          ]
+        },
+        "doc": "discovery.parser-registry@1 — the closed set of governed parser pins: parser:message.send:browser@1, parser:chat.complete:llm@1, parser:history.import:{chatgpt|claude|gemini}@1. An unpinned/unknown parser identity refuses discovery-derived re-verification (fail-closed genealogy)."
       }
     ]
   },

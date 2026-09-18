@@ -11,10 +11,10 @@
 // revisions out of `objects` but never out of `changelog`, so revisions can never
 // collide with compacted history.
 
-import type { Database, Ref, VaultDB } from "./db.ts";
+import type { Database, Ref, VaultDB } from "./sql.ts";
 import { casPut } from "./cas.ts";
 import { bodyText, entryHash, GENESIS_HASH } from "./canon.ts";
-import { envelopeOf, ftsUpsert } from "./db.ts";
+import { envelopeOf, ftsInsert } from "./sql.ts";
 
 export interface ChangelogRow {
   seq: number; causationId: string; ns: string; id: string; rev: number;
@@ -62,7 +62,7 @@ export function appendObject(v: VaultDB, input: AppendInput): AppendResult {
     const rev = (db.query("SELECT COALESCE(MAX(rev), 0) + 1 AS r FROM changelog WHERE ns = ? AND id = ?").get(input.ns, input.id) as { r: number }).r;
     db.query("INSERT INTO objects (ns, id, rev, cid, meta) VALUES (?, ?, ?, ?, ?)")
       .run(input.ns, input.id, rev, cid, envelopeOf(input.meta, input.refs ?? []));
-    ftsUpsert(db, input.ns, input.id, rev, bodyText(input.data));
+    ftsInsert(db, input.ns, input.id, rev, bodyText(input.data));
     const { seq } = appendChangelogEntry(db, { causationId: input.causationId, ns: input.ns, id: input.id, rev, cid });
     db.exec("COMMIT");
     return { rev, cid, seq };

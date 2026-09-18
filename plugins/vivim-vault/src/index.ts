@@ -3,6 +3,7 @@
 // Ops exposed (CONTRACT contributions, see plugin.json):
 //   vault.append@1    MUTATION         — new revision: CAS blob + objects row + FTS + Merkle link
 //   vault.get@1       READ             — latest or specific revision (hot, cold fallback)
+//   vault.getmany@1   READ             — bounded batch of latest-rev-per-id reads, ONE hop (D-387)
 //   vault.query@1     READ             — latest revision per id in a ns (idPrefix/minRev filters)
 //   vault.search@1    READ             — FTS5 MATCH with rank
 //   vault.verify@1    READ             — Merkle walk + CAS resolution proof
@@ -20,7 +21,8 @@ import { definePlugin, startPlugin } from "@vivim/omega-shim";
 import type { PluginContext } from "@vivim/omega-shim";
 import { appendObject } from "./changelog.ts";
 import { compact } from "./compaction.ts";
-import { openVault, queryObjects, readObject, searchObjects, type VaultDB } from "./db.ts";
+import "./db.ts"; // D-373: binds the Bun lane — a Node build swaps THIS ONE import to ./db.node.ts
+import { openVault, GET_MANY_BOUND, queryObjects, readObject, readObjects, searchObjects, type VaultDB } from "./sql.ts";
 import { roundtrip } from "./roundtrip.ts";
 import { verify } from "./verify.ts";
 import {
@@ -66,6 +68,24 @@ startPlugin(definePlugin({
       const id = requireName("vault.get@1", "id", p.id);
       const rev = optionalInt("vault.get@1", "rev", p.rev, 1);
       return readObject(mustOpen(), ns, id, rev);
+    },
+
+    // D-387 (perf review #1): one port round trip for a bounded batch of latest-rev
+    // reads — the mind's per-namespace window was 1 query + up to 200 sequential
+    // gets, every 500ms, on every console. Fail-closed payload validation:
+    // duplicates collapse to distinct ids; over-bound REFUSES (→ DEGRADED).
+    "vault.getmany@1": (payload) => {
+      const p = requireObject("vault.getmany@1", payload);
+      const ns = requireName("vault.getmany@1", "ns", p.ns);
+      if (!Array.isArray(p.ids) || p.ids.some((id: unknown) => typeof id !== "string" || id.length === 0)) {
+        throw new Error("vault.getmany@1: ids must be an array of non-empty strings");
+      }
+      const ids = p.ids as string[];
+      const distinct = new Set(ids);
+      if (distinct.size > GET_MANY_BOUND) {
+        throw new Error(`vault.getmany@1: ${distinct.size} distinct ids exceeds the ${GET_MANY_BOUND} bound — page through vault.query@1 + repeated batches`);
+      }
+      return readObjects(mustOpen(), ns, ids);
     },
 
     "vault.query@1": (payload) => {

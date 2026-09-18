@@ -19,6 +19,7 @@
         "contracts": [
           "vault.append@1",
           "vault.get@1",
+          "vault.getmany@1",
           "vault.query@1",
           "vault.search@1",
           "vault.verify@1",

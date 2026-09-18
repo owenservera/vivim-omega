@@ -1,0 +1,108 @@
+{
+  "manifestVersion": "1",
+  "id": "pack.domain-import",
+  "version": "0.1.0",
+  "description": "Ω5/W1 pack #2 — the import ontology as DECLARATIONS (GAP-M5 second pack: the W0 SCHEMA+CONTRACT+POLICY+TEST checklist, clean pass). Declares the shape of HARVESTED import data (T-05): where a recorded export came from (import.source), what an imported conversation is (import.conversation), what an imported message is (import.message), and the one boundary a parser family realizes (history.import@1, READ — a parser produces rows only; what is WRITTEN to ns chat is the writer's decision, W3). Passive v1: no ops, no capabilities, no dependencies. The implementing writer (a W3 chat-side harvest) carries the capabilities; this manifest only declares the domain. Retro-pass debt on pack #1 (domain-email) is filed beside it (packs/domain-email/DEBT.md).",
+  "entry": "src/index.ts",
+  "publisher": { "keyId": "", "signature": "" },
+  "contributions": {
+    "schema": [
+      {
+        "kind": "schema",
+        "id": "import.source",
+        "version": "1",
+        "fields": [
+          { "name": "id", "type": "string", "required": true, "doc": "source identity: chatgpt | claude | gemini (the harvested parsers' provider identities; an unknown source REFUSES — fail-closed genealogy)" },
+          { "name": "mine", "type": "string", "required": true, "doc": "the pinned mine the export shape was grounded on, <repo>@<sha> (W0-9a; e.g. vivim-final-program@4a5eb84)" },
+          { "name": "originPath", "type": "string", "required": true, "doc": "path in the pinned mine the algorithm/shape was harvested from" },
+          { "name": "recordedOnly", "type": "json", "required": true, "doc": "must be true — the fixture pipeline imports recorded sessions only, never live network (W1 non-goal)" }
+        ],
+        "doc": "import.Source@1 — provenance of an import source: which mine, which path, recorded-only."
+      },
+      {
+        "kind": "schema",
+        "id": "import.conversation",
+        "version": "1",
+        "fields": [
+          { "name": "externalId", "type": "string", "required": true, "doc": "source-native conversation id (legacy externalId grammar preserved per source)" },
+          { "name": "source", "type": "string", "required": true, "doc": "import.Source.id this row came from" },
+          { "name": "title", "type": "string", "required": true, "doc": "conversation title as recorded in the export (may be empty)" },
+          { "name": "createdAt", "type": "integer", "required": true, "doc": "epoch ms from the export; 0 when the export carried no usable timestamp" },
+          { "name": "updatedAt", "type": "integer", "required": true, "doc": "epoch ms from the export; 0 when absent" },
+          { "name": "messageCount", "type": "integer", "required": true, "doc": "number of import.message rows following this conversation row in the parse" }
+        ],
+        "doc": "import.Conversation@1 — one parsed conversation (the parser's import.conversation row, persisted verbatim by a writer)."
+      },
+      {
+        "kind": "schema",
+        "id": "import.message",
+        "version": "1",
+        "fields": [
+          { "name": "externalId", "type": "string", "required": true, "doc": "source-native message id (legacy grammar preserved: mapping id for chatgpt, uuid_index for claude/gemini)" },
+          { "name": "conversationExternalId", "type": "string", "required": true, "doc": "import.Conversation.externalId this message belongs to" },
+          { "name": "source", "type": "string", "required": true, "doc": "import.Source.id this row came from" },
+          { "name": "role", "type": "string", "required": true, "doc": "user | assistant | system (legacy sender/author mapping preserved; unknown → user)" },
+          { "name": "content", "type": "string", "required": true, "doc": "message text (chatgpt string parts joined with newline; claude text/content-block extraction; gemini content)" },
+          { "name": "model", "type": "string", "required": false, "doc": "source-native model slug when the export carries one (chatgpt only)" },
+          { "name": "ts", "type": "integer", "required": true, "doc": "epoch ms from the export; 0 when the export carried no usable timestamp — a parser never calls the clock (D-354 isolation, the one reviewed divergence from the legacy Date.now() fallback)" },
+          { "name": "tsEstimated", "type": "json", "required": true, "doc": "true when ts was absent/unusable in the export (ts=0) — attributable and byte-stable" }
+        ],
+        "doc": "import.Message@1 — one parsed message (the parser's import.message row, persisted verbatim by a writer)."
+      }
+    ],
+    "contract": [
+      { "kind": "contract", "id": "history.import", "version": "1", "risk": "READ", "doc": "import {source, exportText} → ordered ParsedChunk rows (import.conversation / import.message*n / import.done-final) through the version-pinned parser for the source (D-355 governance; the transform is pure, the transport off, recorded exports only). READ risk: the parse is vault-internal and writes nothing — the WRITER (W3 harvest) decides what lands in ns chat, carrying its own MUTATION bars. This contract names the boundary; v1 ships the parser family, the routable op lands with its writer." }
+    ],
+    "policy": [
+      {
+        "kind": "policy",
+        "id": "import.policy",
+        "version": "1",
+        "policy": {
+          "policyId": "import.policy",
+          "version": "1.0.0",
+          "description": "Domain policy for pack.domain-import: consent defaults and retention for imported conversation data — declarative data a law provider may consume (the parser itself is NOT routable and never gated; this policy binds the WRITER that materializes parsed rows).",
+          "consent": {
+            "default": "allow",
+            "ops": {
+              "history.import@1": "allow"
+            },
+            "rationale": "parsing recorded exports is vault-internal and writes nothing (READ); consent attaches to the WRITER's materialization ops (chat.* MUTATION rows), not to the parse."
+          },
+          "retention": {
+            "strategy": "keep-all",
+            "version": 1,
+            "coldRevisionsKept": true,
+            "notes": "imported rows persist as vault revisions (append-only Merkle chain); compaction may move superseded revisions cold but never deletes them; per-conversation retention follows the ns chat row (CHAT_HISTORY_CAP bounds reads, D-378)."
+          },
+          "stateMachine": {
+            "entity": "import.message@1",
+            "initial": "parsed",
+            "states": ["parsed", "materialized"],
+            "transitions": [
+              { "from": "parsed", "to": "materialized", "via": "chat.append@1", "doc": "a W3 writer materializes a parsed message into ns chat as a conv/msg row citing the parser provenance (realizationRef + parserPins); v1 ships the parse, the transition lands with the writer" }
+            ]
+          }
+        },
+        "doc": "import.policy@1 — the import domain policy as data."
+      }
+    ],
+    "test": [
+      {
+        "kind": "test",
+        "id": "import.pack-test",
+        "version": "1",
+        "dir": "test",
+        "runner": "bun test",
+        "doc": "pack conformance: ontology validation (schema field sets complete, contract risk class READ, namespace-clean ids, parsed→materialized state machine acyclic), plus the parser-family falsifiers living with the parser code (plugins/vivim-chat)."
+      }
+    ]
+  },
+  "dependencies": [],
+  "capabilities": {
+    "requested": [],
+    "justification": "A pack is passive declarations: no ops to route, no ports to call, no host capabilities. The parser family (plugins/vivim-chat, D-355 parser contributions) registers no routable op; the implementing writer (W3) carries the capabilities when it lands."
+  },
+  "runtime": { "tier": "worker-thread", "budget": { "cpuMs": 100, "memMB": 32 } },
+  "contentHash": ""
+}

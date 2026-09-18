@@ -1,8 +1,9 @@
 // vivim.mind — index.ts (Ω10), the self-knowledge plugin (wiring only).
 //
 // THE LENS, never an author: everything below READS through four ports
-// (law.registry@1, vault.query@1, vault.get@1, vault.verify@1 — exactly the
-// capabilities this manifest requests) and assembles the WorldModel / the
+// (law.registry@1, vault.query@1, vault.getmany@1, vault.verify@1 — exactly the
+// capabilities this manifest requests; D-387 swapped the per-row vault.get@1
+// loop for the batched vault.getmany@1) and assembles the WorldModel / the
 // portrait via the pure machinery in derive.ts. There is no write path
 // anywhere in this plugin.
 //
@@ -40,13 +41,24 @@ import {
 // ---- port plumbing (fail-closed, same discipline as the provider's vaultCall) ----
 
 interface VaultQueryRow { id: string; rev: number; cid: string }
-interface VaultGetResult { rev: number; cid: string; data: unknown; meta: unknown; refs: unknown }
+interface VaultGetManyRow { id: string; found: boolean; rev?: number; cid?: string; data?: unknown; meta?: unknown }
 
 /** Port call that fails closed: a non-ok result becomes a thrown error → DEGRADED. */
 async function portCall<T>(ctx: PluginContext, op: string, payload: unknown): Promise<T> {
   const r: PortResult = await ctx.port.call(op, payload);
   if (!r.ok) throw new Error(`mind: ${op} ${r.error}: ${r.detail ?? ""}`);
   return r.value as T;
+}
+
+/** D-387: Promise.all that observes EVERY rejection — when one evidence read fails
+ *  (or a test tears the compartment down mid-flight), the losing reads must not
+ *  surface as unhandled errors later. Fail-closed semantics are unchanged: the
+ *  first failure in ORDER throws, exactly as a single sequential read would. */
+async function allEvidence<T>(promises: Promise<T>[]): Promise<T[]> {
+  const settled = await Promise.all(promises.map((p) => p.then((v) => ({ ok: true as const, v }), (e) => ({ ok: false as const, e }))));
+  const failed = settled.find((s) => !s.ok);
+  if (failed) throw (failed as { e: unknown }).e;
+  return settled.map((s) => (s as { ok: true; v: T }).v);
 }
 
 function asObj(v: unknown): Record<string, unknown> {
@@ -94,26 +106,38 @@ async function fetchRegistry(ctx: PluginContext): Promise<RegistrySnapshotView> 
 }
 
 /** One namespace's rows (latest revision per id), bounded at QUERY_BOUND fetches —
- *  the lens reads a bounded window, never the whole warehouse. */
+ *  the lens reads a bounded window, never the whole warehouse.
+ *  D-387 (perf review #1): the window is fetched in ONE vault.getmany@1 hop —
+ *  the old per-row vault.get@1 loop cost 1 + min(rows, 200) sequential port
+ *  round trips per namespace, re-paid every poll tick. */
 async function fetchNamespaceRows(ctx: PluginContext, ns: string): Promise<Array<{ id: string; meta: unknown; data: unknown }>> {
   const rows = await portCall<VaultQueryRow[]>(ctx, "vault.query@1", { ns, filter: {} });
+  const ids = rows.slice(0, QUERY_BOUND).map((r) => r.id);
+  if (ids.length === 0) return [];
+  const got = await portCall<VaultGetManyRow[]>(ctx, "vault.getmany@1", { ns, ids });
   const out: Array<{ id: string; meta: unknown; data: unknown }> = [];
-  for (const row of rows.slice(0, QUERY_BOUND)) {
-    const got = await portCall<VaultGetResult>(ctx, "vault.get@1", { ns, id: row.id });
-    out.push({ id: row.id, meta: got.meta, data: got.data });
+  for (const row of got) {
+    if (!row.found) continue; // query/get race: the row vanished between the two reads
+    out.push({ id: row.id, meta: row.meta, data: row.data });
   }
   return out;
 }
 
-/** Assemble the full snapshot (the one machinery behind both ops). */
+/** Assemble the full snapshot (the one machinery behind both ops).
+ *  D-387: the four evidence reads are INDEPENDENT — they run in parallel
+ *  instead of back-to-back (wall time ≈ the slowest read, not the sum). */
 async function buildSnapshot(ctx: PluginContext, config: MindConfig, opts: { includeBodies: boolean; t: number }): Promise<WorldModel> {
-  const registry = await fetchRegistry(ctx);
-  const emailRows = await fetchNamespaceRows(ctx, EMAIL_NS);
+  const [registry, emailRows, automationRows, nlclRows] = await allEvidence([
+    fetchRegistry(ctx),
+    fetchNamespaceRows(ctx, EMAIL_NS),
+    fetchNamespaceRows(ctx, AUTOMATION_NS),
+    fetchNamespaceRows(ctx, NLCL_NS),
+  ]);
   const messageRows: EvidenceRow[] = emailRows
     .filter((r) => asObj(r.meta)["type"] === MESSAGE_META_TYPE) // threads/contacts may share the ns; the mind projects messages only
     .map((r) => ({ id: r.id, data: r.data }));
-  const ruleRows = (await fetchNamespaceRows(ctx, AUTOMATION_NS)).map((r) => ({ id: r.id, data: r.data }));
-  const lexiconRows = (await fetchNamespaceRows(ctx, NLCL_NS)).map((r) => ({ id: r.id, data: r.data }));
+  const ruleRows = automationRows.map((r) => ({ id: r.id, data: r.data }));
+  const lexiconRows = nlclRows.map((r) => ({ id: r.id, data: r.data }));
   const world = buildWorldModel(
     { registry, messageRows, ruleRows, lexiconRows },
     config,
@@ -326,16 +350,21 @@ startPlugin(definePlugin({
       }
       const config = parseMindConfig(ctx.config);
       const t = Date.now();
-      // evidence: one full registry read + the namespace rows + the Merkle walk
-      const registry = await fetchRegistryFull(ctx);
-      const emailRows = await fetchNamespaceRows(ctx, EMAIL_NS);
+      // evidence: one full registry read + the namespace rows + the Merkle walk —
+      // all INDEPENDENT reads, run in parallel (D-387)
+      const [registry, emailRows, automationRows, nlclRows, controlRows, verify] = await allEvidence([
+        fetchRegistryFull(ctx),
+        fetchNamespaceRows(ctx, EMAIL_NS),
+        fetchNamespaceRows(ctx, AUTOMATION_NS),
+        fetchNamespaceRows(ctx, NLCL_NS),
+        portCall<VaultQueryRow[]>(ctx, "vault.query@1", { ns: "control", filter: {} }),
+        portCall<Record<string, unknown>>(ctx, "vault.verify@1", {}),
+      ]);
       const messageRows: EvidenceRow[] = emailRows
         .filter((r) => asObj(r.meta)["type"] === MESSAGE_META_TYPE)
         .map((r) => ({ id: r.id, data: r.data }));
-      const ruleRows = (await fetchNamespaceRows(ctx, AUTOMATION_NS)).map((r) => ({ id: r.id, data: r.data }));
-      const lexiconRows = (await fetchNamespaceRows(ctx, NLCL_NS)).map((r) => ({ id: r.id, data: r.data }));
-      const controlRows = await portCall<VaultQueryRow[]>(ctx, "vault.query@1", { ns: "control", filter: {} });
-      const verify = await portCall<Record<string, unknown>>(ctx, "vault.verify@1", {});
+      const ruleRows = automationRows.map((r) => ({ id: r.id, data: r.data }));
+      const lexiconRows = nlclRows.map((r) => ({ id: r.id, data: r.data }));
       if (typeof verify["ok"] !== "boolean" || typeof verify["headHash"] !== "string" || typeof verify["entries"] !== "number") {
         throw new Error("mind.portrait@1: vault.verify@1 returned a malformed verdict");
       }

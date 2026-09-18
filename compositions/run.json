@@ -1,6 +1,6 @@
 {
-  "_note": "Ω3 GATE composition. vivim.run's grant lists the host-op aliases (port:host.compartment.spawn/terminate/stats@1) BEFORE the host.compartment.admin capability they alias: the µhost's token table keys a token by the LAST alias name it registers (register() overwrites cap per key), so the admin capability must land last for ctx.port.call('host.compartment.*@1') to pass the B3 SCOPE check from inside the compartment. Same authority set as [host.compartment.admin, port:echo.ping@1] — the aliases ARE that capability, per HOST_OP_TO_CAP.",
   "name": "run",
+  "_note": "Ω3 GATE composition. vivim.run's grant lists the host-op aliases (port:host.compartment.spawn/terminate/stats@1) BEFORE the host.compartment.admin capability they alias: the µhost's token table keys a token by the LAST alias name it registers (register() overwrites cap per key), so the admin capability must land last for ctx.port.call('host.compartment.*@1') to pass the B3 SCOPE check from inside the compartment. Same authority set as [host.compartment.admin, port:echo.ping@1] — the aliases ARE that capability, per HOST_OP_TO_CAP.",
   "entries": [
     {
       "id": "vivim.law",
@@ -35,9 +35,27 @@
           "host.compartment.admin",
           "port:echo.ping@1"
         ],
-        "contracts": ["run.submit@1", "run.stats@1", "run.health@1"]
+        "contracts": ["run.submit@1", "run.stats@1", "run.health@1", "run.process.call@1"]
       },
-      "config": { "capacity": 2 }
+      "config": {
+        "capacity": 2,
+        "processPools": [
+          {
+            "id": "python-echo",
+            "cmd": ["python3", "shims/polyglot/vivim_omega_shim.py"],
+            "stdio": "ndjson",
+            "poolSize": 1,
+            "ops": ["echo.say"]
+          },
+          {
+            "id": "node-echo",
+            "cmd": ["node", "shims/polyglot/shim.mjs"],
+            "stdio": "ndjson",
+            "poolSize": 1,
+            "ops": ["echo.say"]
+          }
+        ]
+      }
     }
   ]
 }

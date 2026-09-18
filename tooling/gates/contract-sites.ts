@@ -31,6 +31,18 @@ const CALL_SITE_ALLOWLIST: Record<string, string> = {
   PROMOTION_INVARIANT: "D-332 grandfathered: cross-track reference constant cited by docs and decision records, not imported by product code (yet — the DB-track conformance of D-314 is its future reader)",
   PortErrorCode: "D-332 grandfathered: error-code union matched as literals at call sites, never imported by name",
   ProvenanceTier: "D-332 grandfathered: lifecycle-tier tag reserved for a second provenance authority that was never built (non-goal held)",
+  // D-373 step-2 reservations: the storage.kv WIRE vocabulary (FOUNDATION-DRAFT-002
+  // §2) for cross-plugin drivers — the Postgres driver and the vault-as-spine
+  // routing land against these types with their own falsifier (byte-identical CAS
+  // hashes sqlite vs postgres). The sqlite driver lane consumes the driver-scoped
+  // subset (StorageDriverId/StorageDriverInfo/isValidStorageDriverId are wired);
+  // the op/result batch shapes stay reserved until the composition generator (W0-1)
+  // unblocks driver compositions under the D-370 freeze.
+  StorageOp: "D-373 step-2 reservation: storage.kv wire op batch (Postgres driver falsifier lands against it; generator-dependent)",
+  StorageResult: "D-373 step-2 reservation: storage.kv wire result batch (same landing as StorageOp)",
+  StorageDriverContract: "D-373 step-2 reservation: the cross-plugin driver contract (execute+health) for the broker-plugin driver step",
+  StorageKey: "D-373 step-2 reservation: storage.kv key alias (rides the StorageOp wire shape)",
+  StorageTable: "D-373 step-2 reservation: storage.kv table alias (rides the StorageOp wire shape)",
 };
 
 const SKIP_DIRS = new Set(["node_modules", ".git", "dev-vault", "build"]);

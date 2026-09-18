@@ -18,7 +18,7 @@
 import { describe, test, expect } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { loadPromotionPolicy } from "../src/policy.ts";
+import { loadPromotionPolicy, loadGovernedParserRegistry, isGovernedParserPin } from "../src/policy.ts";
 import { evaluatePromotion, isValidProbe, type Probe } from "../src/evaluate.ts";
 import { def } from "../src/index.ts";
 import type { PluginContext, CallMeta } from "@vivim/omega-shim";
@@ -215,6 +215,54 @@ describe("Ω8 discovery.verification — policy is DATA (loaded from the POLICY 
     const noDoc = JSON.parse(readFileSync(join(PLUGIN_DIR, "plugin.json"), "utf-8"));
     delete noDoc.contributions.policy[0].policy;
     expect(() => loadPromotionPolicy(noDoc)).toThrow(/carries no policy object/);
+  });
+});
+
+// ---- the governed parser-pin registry: DATA, fail-closed genealogy (D-355/W1) --
+
+describe("D-355 discovery.verification — the governed parser-pin registry is DATA (the genealogy fence)", () => {
+  const registryOf = (m: unknown) => loadGovernedParserRegistry(m as Parameters<typeof loadGovernedParserRegistry>[0]);
+  const base = () => JSON.parse(readFileSync(join(PLUGIN_DIR, "plugin.json"), "utf-8"));
+  const registryDoc = (m: Record<string, unknown>) =>
+    (m.contributions as { policy: Array<{ id: string; policy?: Record<string, unknown> }> }).policy
+      .find((c) => c.id === "discovery.parser-registry")!;
+
+  test("the SHIPPED registry is exactly the five governed parser pins (a closed, reviewed set)", () => {
+    const r = registryOf(realManifest);
+    expect([...r.pins.keys()].sort()).toEqual([
+      "parser:chat.complete:llm@1",
+      "parser:history.import:chatgpt@1",
+      "parser:history.import:claude@1",
+      "parser:history.import:gemini@1",
+      "parser:message.send:browser@1",
+    ]);
+  });
+
+  test("isGovernedParserPin: exact triple match — right identity at the wrong version refuses", () => {
+    const r = registryOf(realManifest);
+    expect(isGovernedParserPin(r, { providerId: "browser", archetypeSlug: "message.send", version: "1" })).toBe(true);
+    expect(isGovernedParserPin(r, { providerId: "llm", archetypeSlug: "chat.complete", version: "1" })).toBe(true);
+    expect(isGovernedParserPin(r, { providerId: "llm", archetypeSlug: "chat.complete", version: "2" })).toBe(false);
+    expect(isGovernedParserPin(r, { providerId: "generic", archetypeSlug: "history.import", version: "1" })).toBe(false);
+  });
+
+  test("fail-closed: missing / empty / duplicate / malformed registry refuses the gate", () => {
+    const none = base();
+    none.contributions.policy = none.contributions.policy.filter((c: { id: string }) => c.id !== "discovery.parser-registry");
+    expect(() => registryOf(none)).toThrow(/no POLICY contribution discovery.parser-registry/);
+
+    const empty = base();
+    registryDoc(empty).policy!.governedParserPins = [];
+    expect(() => registryOf(empty)).toThrow(/governedParserPins must be a non-empty array/);
+
+    const dup = base();
+    const doc = registryDoc(dup);
+    doc.policy!.governedParserPins = [...(doc.policy!.governedParserPins as unknown[]), { providerId: "llm", archetypeSlug: "chat.complete", version: "1" }];
+    expect(() => registryOf(dup)).toThrow(/lists parser:chat.complete:llm@1 twice/);
+
+    const malformed = base();
+    registryDoc(malformed).policy!.governedParserPins = [{ providerId: "llm", archetypeSlug: "chat.complete@1", version: "1" }];
+    expect(() => registryOf(malformed)).toThrow(/archetypeSlug must be the bare op name/);
   });
 });
 

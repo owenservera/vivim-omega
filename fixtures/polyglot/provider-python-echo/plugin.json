@@ -1,0 +1,25 @@
+{
+  "manifestVersion": "1",
+  "id": "omega.python.echo",
+  "version": "0.1.0",
+  "description": "D-374 polyglot falsifier fixture: a process-tier echo compartment served by the Python shim. NOT a shipped plugin — exercises the additive runtime.process manifest fields and provides the echo.say op the broker's falsifier calls. A process-tier entry joins a composition as a Recipe-verified entry whose child the vivim-run broker spawns; the W0-1 generator embeds this runtime.process into broker config when it lands.",
+  "entry": "src/index.ts",
+  "publisher": { "keyId": "", "signature": "" },
+  "contributions": {
+    "contract": [
+      { "kind": "contract", "id": "echo.say", "version": "1", "risk": "READ" }
+    ]
+  },
+  "dependencies": [],
+  "capabilities": { "requested": [], "justification": "pure echo — no capabilities requested" },
+  "runtime": {
+    "tier": "process",
+    "budget": { "cpuMs": 500, "memMB": 64 },
+    "process": {
+      "cmd": ["python3", "shims/polyglot/vivim_omega_shim.py"],
+      "stdio": "ndjson",
+      "poolSize": 1
+    }
+  },
+  "contentHash": ""
+}

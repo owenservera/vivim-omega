@@ -1,0 +1,1343 @@
+{
+  "_note": "SOURCE OF TRUTH for compositions/*.json — emitted by `bun run tooling/generate/generate.ts composition` (W0-1/D-377). Hand-edit THIS file, then regenerate; the gate's compositions stage fails on spec<->matrix drift. Entries carry the exact grant/config shapes the specs ship; `note` becomes the spec's _note field.",
+  "compositions": {
+    "agent": {
+      "entries": [
+        {
+          "id": "vivim.law",
+          "source": "../plugins/vivim-law",
+          "bootPhase": 0,
+          "grant": {
+            "capabilities": [
+              "host.journal.append",
+              "host.tokens.revoke",
+              "port:vault.append@1",
+              "port:vault.query@1",
+              "port:vault.get@1"
+            ],
+            "contracts": [
+              "law.check@1",
+              "law.registry@1",
+              "law.consent.grant@1",
+              "law.tokens.revoke@1",
+              "law.forbidden.set@1",
+              "law.forbidden.reload@1",
+              "law.amendment@1",
+              "law.describe@1"
+            ]
+          }
+        },
+        {
+          "id": "vivim.vault",
+          "source": "../plugins/vivim-vault",
+          "bootPhase": 1,
+          "grant": {
+            "capabilities": [],
+            "contracts": [
+              "vault.append@1",
+              "vault.get@1",
+              "vault.getmany@1",
+              "vault.query@1",
+              "vault.search@1",
+              "vault.verify@1",
+              "vault.compact@1",
+              "vault.roundtrip@1"
+            ]
+          },
+          "config": {
+            "dataDir": "${TMP}/omega-agent/vault-data"
+          }
+        },
+        {
+          "id": "vivim.agent",
+          "source": "../plugins/vivim-agent",
+          "bootPhase": 1,
+          "grant": {
+            "capabilities": [
+              "port:vault.append@1",
+              "port:vault.get@1",
+              "port:vault.query@1",
+              "port:law.forbidden.set@1",
+              "port:law.check@1"
+            ],
+            "contracts": [
+              "agent.spawn@1",
+              "agent.describe@1",
+              "agent.exec@1",
+              "behavior.propose@1",
+              "behavior.promote@1",
+              "behavior.rollback@1",
+              "decision.record@1"
+            ]
+          }
+        }
+      ]
+    },
+    "browser": {
+      "note": "M0 GATE composition (D-357) — the BROWSER_MEDIATED realization through the STANDARD discovery lifecycle: vault-durable law (D-325 shape: forbidden.set+reload routed; the day-one fence persists), vault, pack.domain-email (the message.* declarations the browser realizes), the perceive→infer→map→verify pipeline (the realization path — PROMOTED rows carry D-355 parser pins), vivim.credentials (XC-2/D-356: credential.put consent ceremony + credential.redact@1 — the redact-before-vault surface attach consumes), and provider.browser (four fail-closed bars). message.send@1 is EXTERNAL_MUTATION by pack declaration — sends require consent through law.check exactly like every other op.",
+      "entries": [
+        {
+          "id": "vivim.law",
+          "source": "../plugins/vivim-law",
+          "bootPhase": 0,
+          "grant": {
+            "capabilities": [
+              "host.journal.append",
+              "host.tokens.revoke",
+              "port:vault.append@1",
+              "port:vault.query@1",
+              "port:vault.get@1"
+            ],
+            "contracts": [
+              "law.check@1",
+              "law.registry@1",
+              "law.consent.grant@1",
+              "law.tokens.revoke@1",
+              "law.forbidden.set@1",
+              "law.forbidden.reload@1",
+              "law.amendment@1",
+              "law.describe@1"
+            ]
+          }
+        },
+        {
+          "id": "vivim.vault",
+          "source": "../plugins/vivim-vault",
+          "bootPhase": 1,
+          "grant": {
+            "capabilities": [],
+            "contracts": [
+              "vault.append@1",
+              "vault.get@1",
+              "vault.getmany@1",
+              "vault.query@1",
+              "vault.search@1",
+              "vault.verify@1",
+              "vault.compact@1",
+              "vault.roundtrip@1"
+            ]
+          },
+          "config": {
+            "dataDir": "${TMP}/omega-browser/vault-data"
+          }
+        },
+        {
+          "id": "pack.domain-email",
+          "source": "../packs/domain-email",
+          "bootPhase": 1,
+          "grant": {
+            "capabilities": [],
+            "contracts": []
+          }
+        },
+        {
+          "id": "discovery.perception",
+          "source": "../plugins/discovery-perception",
+          "bootPhase": 1,
+          "grant": {
+            "capabilities": [
+              "port:vault.append@1",
+              "port:vault.get@1"
+            ],
+            "contracts": [
+              "discovery.perceive@1"
+            ]
+          },
+          "config": {
+            "fixturesDir": "fixtures"
+          }
+        },
+        {
+          "id": "discovery.inference",
+          "source": "../plugins/discovery-inference",
+          "bootPhase": 1,
+          "grant": {
+            "capabilities": [
+              "port:vault.append@1",
+              "port:vault.get@1"
+            ],
+            "contracts": [
+              "discovery.infer@1"
+            ]
+          }
+        },
+        {
+          "id": "discovery.mapping",
+          "source": "../plugins/discovery-mapping",
+          "bootPhase": 1,
+          "grant": {
+            "capabilities": [
+              "port:vault.append@1"
+            ],
+            "contracts": [
+              "discovery.map@1",
+              "discovery.variations@1"
+            ]
+          },
+          "config": {
+            "blueprintPath": "packs/domain-email/plugin.json"
+          }
+        },
+        {
+          "id": "discovery.verification",
+          "source": "../plugins/discovery-verification",
+          "bootPhase": 1,
+          "grant": {
+            "capabilities": [
+              "port:vault.append@1",
+              "port:vault.get@1"
+            ],
+            "contracts": [
+              "discovery.verify@1"
+            ]
+          }
+        },
+        {
+          "id": "vivim.credentials",
+          "source": "../plugins/vivim-credentials",
+          "bootPhase": 1,
+          "grant": {
+            "capabilities": [
+              "port:vault.append@1",
+              "port:vault.get@1"
+            ],
+            "contracts": [
+              "credential.put@1",
+              "credential.use@1",
+              "credential.redact@1"
+            ]
+          }
+        },
+        {
+          "id": "provider.browser",
+          "source": "../plugins/provider-browser",
+          "bootPhase": 1,
+          "grant": {
+            "capabilities": [
+              "port:vault.append@1",
+              "port:vault.get@1",
+              "port:credential.redact@1",
+              "port:law.forbidden.set@1"
+            ],
+            "contracts": [
+              "browser.attach@1",
+              "browser.release@1",
+              "message.send@1"
+            ]
+          },
+          "config": {
+            "from": "pilot@omega.local",
+            "fencePrincipals": [
+              "agent:pilot"
+            ]
+          }
+        }
+      ]
+    },
+    "chat": {
+      "note": "CHAT PILOT composition (D-358/D-359) — M2 chat storage (vivim.chat, the first writer of vault ns 'chat') + M4 resolution wiring (deterministic half in vivim.chat; the ambiguous half through the SHARED classifier in vivim.director). The user principal comes from D-353 (user:<id>), storage from D-335 (vault as-is), streaming from D-352 (chat.complete@1's additive line-chunk emission). Both MUTATION chat ops carry exact LAW_POLICY_V1 rows (1.3.0) — the D-351 parity net covers them from the first boot.",
+      "entries": [
+        {
+          "id": "vivim.law",
+          "source": "../plugins/vivim-law",
+          "bootPhase": 0,
+          "grant": {
+            "capabilities": [
+              "host.journal.append",
+              "host.tokens.revoke"
+            ],
+            "contracts": [
+              "law.check@1",
+              "law.registry@1",
+              "law.consent.grant@1",
+              "law.tokens.revoke@1",
+              "law.amendment@1",
+              "law.describe@1"
+            ]
+          },
+          "config": {
+            "journalPath": ""
+          }
+        },
+        {
+          "id": "vivim.vault",
+          "source": "../plugins/vivim-vault",
+          "bootPhase": 1,
+          "grant": {
+            "capabilities": [],
+            "contracts": [
+              "vault.append@1",
+              "vault.get@1",
+              "vault.getmany@1",
+              "vault.query@1",
+              "vault.search@1",
+              "vault.verify@1",
+              "vault.compact@1",
+              "vault.roundtrip@1"
+            ]
+          },
+          "config": {
+            "dataDir": "${TMP}/omega-chat/vault-data"
+          }
+        },
+        {
+          "id": "vivim.director",
+          "source": "../plugins/vivim-director",
+          "bootPhase": 1,
+          "grant": {
+            "capabilities": [
+              "port:vault.append@1",
+              "port:vault.query@1",
+              "port:vault.get@1",
+              "port:vault.getmany@1"
+            ],
+            "contracts": [
+              "resolve.classify@1",
+              "resolve.report@1"
+            ]
+          },
+          "config": {
+            "intervalMs": 3600000
+          }
+        },
+        {
+          "id": "provider.llm",
+          "source": "../plugins/provider-llm",
+          "bootPhase": 1,
+          "grant": {
+            "capabilities": [],
+            "contracts": [
+              "chat.complete@1"
+            ]
+          }
+        },
+        {
+          "id": "vivim.chat",
+          "source": "../plugins/vivim-chat",
+          "bootPhase": 1,
+          "grant": {
+            "capabilities": [
+              "port:vault.append@1",
+              "port:vault.get@1",
+              "port:vault.query@1",
+              "port:resolve.classify@1"
+            ],
+            "contracts": [
+              "chat.open@1",
+              "chat.append@1",
+              "chat.history@1",
+              "chat.resolve@1"
+            ]
+          }
+        }
+      ]
+    },
+    "console": {
+      "entries": [
+        {
+          "id": "vivim.law",
+          "source": "../plugins/vivim-law",
+          "bootPhase": 0,
+          "grant": {
+            "capabilities": [
+              "host.journal.append",
+              "host.tokens.revoke"
+            ],
+            "contracts": [
+              "law.check@1",
+              "law.registry@1",
+              "law.consent.grant@1",
+              "law.tokens.revoke@1",
+              "law.amendment@1",
+              "law.describe@1"
+            ]
+          }
+        },
+        {
+          "id": "vivim.vault",
+          "source": "../plugins/vivim-vault",
+          "bootPhase": 1,
+          "grant": {
+            "capabilities": [],
+            "contracts": [
+              "vault.append@1",
+              "vault.get@1",
+              "vault.getmany@1",
+              "vault.query@1",
+              "vault.search@1",
+              "vault.verify@1",
+              "vault.compact@1",
+              "vault.roundtrip@1"
+            ]
+          },
+          "config": {
+            "dataDir": "dev-vault/console/vault-data"
+          }
+        },
+        {
+          "id": "pack.domain-email",
+          "source": "../packs/domain-email",
+          "bootPhase": 1,
+          "grant": {
+            "capabilities": [],
+            "contracts": []
+          }
+        },
+        {
+          "id": "provider.email.file",
+          "source": "../plugins/provider-email-file",
+          "bootPhase": 1,
+          "grant": {
+            "capabilities": [
+              "port:vault.append@1",
+              "port:vault.get@1",
+              "port:vault.query@1",
+              "port:vault.search@1"
+            ],
+            "contracts": [
+              "message.send@1",
+              "message.list@1",
+              "message.search@1",
+              "message.read@1",
+              "message.move@1",
+              "message.receive@1"
+            ]
+          },
+          "config": {
+            "from": "demo@omega.local"
+          }
+        },
+        {
+          "id": "vivim.mind",
+          "source": "../plugins/vivim-mind",
+          "bootPhase": 1,
+          "grant": {
+            "capabilities": [
+              "port:law.registry@1",
+              "port:vault.query@1",
+              "port:vault.getmany@1",
+              "port:vault.verify@1"
+            ],
+            "contracts": [
+              "mind.snapshot@1",
+              "mind.query@1",
+              "mind.portrait@1"
+            ]
+          },
+          "config": {
+            "composition": "console",
+            "nlclVersion": "0.1.0",
+            "selfAddresses": [
+              "me@omega.local",
+              "demo@omega.local"
+            ],
+            "entityCap": 200,
+            "ops": [
+              {
+                "op": "message.send@1",
+                "risk": "EXTERNAL_MUTATION",
+                "provider": "provider.email.file",
+                "title": "send a message"
+              },
+              {
+                "op": "message.receive@1",
+                "risk": "READ",
+                "provider": "provider.email.file",
+                "title": "simulate an incoming message"
+              },
+              {
+                "op": "message.list@1",
+                "risk": "READ",
+                "provider": "provider.email.file",
+                "title": "list messages"
+              },
+              {
+                "op": "message.search@1",
+                "risk": "READ",
+                "provider": "provider.email.file",
+                "title": "search messages"
+              },
+              {
+                "op": "message.read@1",
+                "risk": "READ",
+                "provider": "provider.email.file",
+                "title": "read a message"
+              },
+              {
+                "op": "message.move@1",
+                "risk": "MUTATION",
+                "provider": "provider.email.file",
+                "title": "move a message"
+              },
+              {
+                "op": "director.rule@1",
+                "risk": "ENGINE",
+                "provider": "vivim.director",
+                "title": "define a rule"
+              },
+              {
+                "op": "director.registry@1",
+                "risk": "ENGINE",
+                "provider": "vivim.director",
+                "title": "list rules"
+              },
+              {
+                "op": "director.teach@1",
+                "risk": "ENGINE",
+                "provider": "vivim.director",
+                "title": "teach a word"
+              }
+            ]
+          }
+        },
+        {
+          "id": "vivim.nlcl",
+          "source": "../plugins/vivim-nlcl",
+          "bootPhase": 1,
+          "grant": {
+            "capabilities": [
+              "port:mind.snapshot@1"
+            ],
+            "contracts": [
+              "nlcl.interpret@1"
+            ]
+          }
+        },
+        {
+          "id": "vivim.director",
+          "source": "../plugins/vivim-director",
+          "bootPhase": 1,
+          "grant": {
+            "capabilities": [
+              "port:vault.append@1",
+              "port:vault.query@1",
+              "port:vault.get@1",
+              "port:vault.getmany@1",
+              "port:message.send@1"
+            ],
+            "contracts": [
+              "director.rule@1",
+              "director.registry@1",
+              "director.teach@1",
+              "director.tick@1"
+            ]
+          },
+          "config": {
+            "intervalMs": 500
+          }
+        },
+        {
+          "id": "provider.llm",
+          "source": "../plugins/provider-llm",
+          "bootPhase": 1,
+          "grant": {
+            "capabilities": [],
+            "contracts": [
+              "chat.complete@1"
+            ]
+          }
+        }
+      ]
+    },
+    "credentials": {
+      "entries": [
+        {
+          "id": "vivim.law",
+          "source": "../plugins/vivim-law",
+          "bootPhase": 0,
+          "grant": {
+            "capabilities": [
+              "host.journal.append",
+              "host.tokens.revoke"
+            ],
+            "contracts": [
+              "law.check@1",
+              "law.registry@1",
+              "law.consent.grant@1",
+              "law.tokens.revoke@1",
+              "law.amendment@1",
+              "law.describe@1"
+            ]
+          },
+          "config": {
+            "journalPath": ""
+          }
+        },
+        {
+          "id": "vivim.vault",
+          "source": "../plugins/vivim-vault",
+          "bootPhase": 1,
+          "grant": {
+            "capabilities": [],
+            "contracts": [
+              "vault.append@1",
+              "vault.get@1",
+              "vault.getmany@1",
+              "vault.query@1",
+              "vault.search@1",
+              "vault.verify@1",
+              "vault.compact@1",
+              "vault.roundtrip@1"
+            ]
+          },
+          "config": {
+            "dataDir": "${TMP}/omega-credentials/vault-data"
+          }
+        },
+        {
+          "id": "vivim.credentials",
+          "source": "../plugins/vivim-credentials",
+          "bootPhase": 1,
+          "grant": {
+            "capabilities": [
+              "port:vault.append@1",
+              "port:vault.get@1"
+            ],
+            "contracts": [
+              "credential.put@1",
+              "credential.use@1",
+              "credential.redact@1"
+            ]
+          }
+        }
+      ]
+    },
+    "demo": {
+      "entries": [
+        {
+          "id": "vivim.law",
+          "source": "../plugins/law-stub",
+          "bootPhase": 0,
+          "grant": {
+            "capabilities": [
+              "host.journal.append"
+            ],
+            "contracts": [
+              "law.check@1",
+              "law.registry@1",
+              "law.consent.grant@1",
+              "law.describe@1"
+            ]
+          }
+        },
+        {
+          "id": "omega.echo",
+          "source": "../examples/plugin-echo",
+          "bootPhase": 1,
+          "grant": {
+            "capabilities": [],
+            "contracts": [
+              "echo.ping@1",
+              "echo.stream@1"
+            ]
+          }
+        },
+        {
+          "id": "omega.counter",
+          "source": "../examples/plugin-counter",
+          "bootPhase": 1,
+          "grant": {
+            "capabilities": [
+              "port:echo.ping@1"
+            ],
+            "contracts": [
+              "counter.bump@1",
+              "counter.value@1"
+            ]
+          }
+        }
+      ]
+    },
+    "discovery-mind": {
+      "note": "Ω8 GATE composition — the discovery mind pipeline: real vivim.law (phase 0) + vivim.vault + the three discovery engines (phase 1, ordinary plugins whose only outputs are candidates/mappings/promotions + evidence in the user's vault) + vivim.providers (D-319: realization registry over ns providers, fed by verification writes). discovery.mapping reads its blueprint from config.blueprintPath (cwd-relative from the host process; absolute paths pass through) — the pack's CONTRACT declarations consumed as DATA. Engine ops are ENGINE contributions: risk lives on contract-kind contributions only (pinned manifest grammar), so the ops route ungated and the semantic READ class is documented on the contributions. The engines' vault appends ARE gated (vault.append@1 = MUTATION → allow-and-journal under each engine's principal). W1: provider.llm + vivim.chat ride along as PARSER-contribution carriers (D-355) — signed manifests, empty grants (parsers register no op), never spawned.",
+      "entries": [
+        {
+          "id": "vivim.law",
+          "source": "../plugins/vivim-law",
+          "bootPhase": 0,
+          "grant": {
+            "capabilities": [
+              "host.journal.append",
+              "host.tokens.revoke"
+            ],
+            "contracts": [
+              "law.check@1",
+              "law.registry@1",
+              "law.consent.grant@1",
+              "law.tokens.revoke@1",
+              "law.forbidden.set@1",
+              "law.amendment@1",
+              "law.describe@1"
+            ]
+          }
+        },
+        {
+          "id": "vivim.vault",
+          "source": "../plugins/vivim-vault",
+          "bootPhase": 1,
+          "grant": {
+            "capabilities": [],
+            "contracts": [
+              "vault.append@1",
+              "vault.get@1",
+              "vault.getmany@1",
+              "vault.query@1",
+              "vault.search@1",
+              "vault.verify@1",
+              "vault.compact@1",
+              "vault.roundtrip@1"
+            ]
+          },
+          "config": {
+            "dataDir": "${TMP}/omega-discovery-mind/vault-data"
+          }
+        },
+        {
+          "id": "discovery.inference",
+          "source": "../plugins/discovery-inference",
+          "bootPhase": 1,
+          "grant": {
+            "capabilities": [
+              "port:vault.append@1",
+              "port:vault.get@1"
+            ],
+            "contracts": [
+              "discovery.infer@1"
+            ]
+          }
+        },
+        {
+          "id": "discovery.mapping",
+          "source": "../plugins/discovery-mapping",
+          "bootPhase": 1,
+          "grant": {
+            "capabilities": [
+              "port:vault.append@1"
+            ],
+            "contracts": [
+              "discovery.map@1",
+              "discovery.variations@1"
+            ]
+          },
+          "config": {
+            "blueprintPath": "packs/domain-email/plugin.json"
+          }
+        },
+        {
+          "id": "discovery.verification",
+          "source": "../plugins/discovery-verification",
+          "bootPhase": 1,
+          "grant": {
+            "capabilities": [
+              "port:vault.append@1",
+              "port:vault.get@1"
+            ],
+            "contracts": [
+              "discovery.verify@1"
+            ]
+          }
+        },
+        {
+          "id": "vivim.providers",
+          "source": "../plugins/vivim-providers",
+          "bootPhase": 1,
+          "grant": {
+            "capabilities": [
+              "port:vault.append@1",
+              "port:vault.get@1",
+              "port:vault.query@1",
+              "port:law.registry@1"
+            ],
+            "contracts": [
+              "providers.registry@1",
+              "providers.realization.get@1",
+              "providers.session.start@1"
+            ]
+          }
+        },
+        {
+          "id": "provider.llm",
+          "source": "../plugins/provider-llm",
+          "bootPhase": 1,
+          "grant": {
+            "capabilities": [],
+            "contracts": []
+          }
+        },
+        {
+          "id": "vivim.chat",
+          "source": "../plugins/vivim-chat",
+          "bootPhase": 1,
+          "grant": {
+            "capabilities": [],
+            "contracts": []
+          }
+        }
+      ]
+    },
+    "discovery": {
+      "entries": [
+        {
+          "id": "vivim.law",
+          "source": "../plugins/vivim-law",
+          "bootPhase": 0,
+          "grant": {
+            "capabilities": [
+              "host.journal.append",
+              "host.tokens.revoke"
+            ],
+            "contracts": [
+              "law.check@1",
+              "law.registry@1",
+              "law.consent.grant@1",
+              "law.tokens.revoke@1",
+              "law.amendment@1",
+              "law.describe@1"
+            ]
+          }
+        },
+        {
+          "id": "vivim.vault",
+          "source": "../plugins/vivim-vault",
+          "bootPhase": 1,
+          "grant": {
+            "capabilities": [],
+            "contracts": [
+              "vault.append@1",
+              "vault.get@1",
+              "vault.getmany@1",
+              "vault.query@1",
+              "vault.search@1",
+              "vault.verify@1",
+              "vault.compact@1",
+              "vault.roundtrip@1"
+            ]
+          },
+          "config": {
+            "dataDir": "${TMP}/omega-discovery-perception/vault-data"
+          }
+        },
+        {
+          "id": "discovery.perception",
+          "source": "../plugins/discovery-perception",
+          "bootPhase": 1,
+          "grant": {
+            "capabilities": [
+              "port:vault.append@1",
+              "port:vault.get@1"
+            ],
+            "contracts": [
+              "discovery.perceive@1"
+            ]
+          },
+          "config": {
+            "fixturesDir": "fixtures"
+          }
+        },
+        {
+          "id": "discovery.observation",
+          "source": "../plugins/discovery-observation",
+          "bootPhase": 1,
+          "grant": {
+            "capabilities": [
+              "port:vault.append@1",
+              "port:vault.get@1"
+            ],
+            "contracts": [
+              "discovery.observe@1"
+            ]
+          },
+          "config": {
+            "fixturesDir": "fixtures"
+          }
+        }
+      ]
+    },
+    "email": {
+      "entries": [
+        {
+          "id": "vivim.law",
+          "source": "../plugins/vivim-law",
+          "bootPhase": 0,
+          "grant": {
+            "capabilities": [
+              "host.journal.append",
+              "host.tokens.revoke"
+            ],
+            "contracts": [
+              "law.check@1",
+              "law.registry@1",
+              "law.consent.grant@1",
+              "law.tokens.revoke@1",
+              "law.amendment@1",
+              "law.describe@1"
+            ]
+          }
+        },
+        {
+          "id": "pack.domain-email",
+          "source": "../packs/domain-email",
+          "bootPhase": 1,
+          "grant": {
+            "capabilities": [],
+            "contracts": []
+          }
+        },
+        {
+          "id": "vivim.vault",
+          "source": "../plugins/vivim-vault",
+          "bootPhase": 1,
+          "grant": {
+            "capabilities": [],
+            "contracts": [
+              "vault.append@1",
+              "vault.get@1",
+              "vault.getmany@1",
+              "vault.query@1",
+              "vault.search@1",
+              "vault.verify@1",
+              "vault.compact@1",
+              "vault.roundtrip@1"
+            ]
+          },
+          "config": {
+            "dataDir": "${TMP}/omega-email-test/main/vault-data"
+          }
+        },
+        {
+          "id": "provider.email.file",
+          "source": "../plugins/provider-email-file",
+          "bootPhase": 1,
+          "grant": {
+            "capabilities": [
+              "port:vault.append@1",
+              "port:vault.get@1",
+              "port:vault.query@1",
+              "port:vault.search@1"
+            ],
+            "contracts": [
+              "message.send@1",
+              "message.list@1",
+              "message.search@1",
+              "message.read@1",
+              "message.move@1",
+              "message.receive@1"
+            ]
+          },
+          "config": {
+            "from": "demo@omega.local"
+          }
+        }
+      ]
+    },
+    "healing": {
+      "entries": [
+        {
+          "id": "vivim.law",
+          "source": "../plugins/vivim-law",
+          "bootPhase": 0,
+          "grant": {
+            "capabilities": [
+              "port:host.journal.append@1",
+              "host.journal.append",
+              "port:host.tokens.revoke@1",
+              "host.tokens.revoke"
+            ],
+            "contracts": [
+              "law.check@1",
+              "law.registry@1",
+              "law.consent.grant@1",
+              "law.tokens.revoke@1",
+              "law.amendment@1",
+              "law.describe@1"
+            ]
+          },
+          "config": {
+            "journalPath": ""
+          }
+        },
+        {
+          "id": "vivim.vault",
+          "source": "../plugins/vivim-vault",
+          "bootPhase": 1,
+          "grant": {
+            "capabilities": [],
+            "contracts": [
+              "vault.append@1",
+              "vault.get@1",
+              "vault.getmany@1",
+              "vault.query@1",
+              "vault.search@1",
+              "vault.verify@1",
+              "vault.compact@1",
+              "vault.roundtrip@1"
+            ]
+          },
+          "config": {
+            "dataDir": "${TMP}/omega-healing/vault-data"
+          }
+        },
+        {
+          "id": "discovery.healing",
+          "source": "../plugins/discovery-healing",
+          "bootPhase": 1,
+          "grant": {
+            "capabilities": [
+              "port:vault.append@1",
+              "port:vault.get@1"
+            ],
+            "contracts": [
+              "discovery.heal@1"
+            ]
+          }
+        }
+      ]
+    },
+    "law": {
+      "entries": [
+        {
+          "id": "vivim.law",
+          "source": "../plugins/vivim-law",
+          "bootPhase": 0,
+          "grant": {
+            "capabilities": [
+              "port:host.journal.append@1",
+              "host.journal.append",
+              "port:host.tokens.revoke@1",
+              "host.tokens.revoke"
+            ],
+            "contracts": [
+              "law.check@1",
+              "law.registry@1",
+              "law.consent.grant@1",
+              "law.tokens.revoke@1",
+              "law.forbidden.set@1",
+              "law.amendment@1",
+              "law.describe@1"
+            ]
+          },
+          "config": {
+            "journalPath": ""
+          }
+        },
+        {
+          "id": "omega.risky",
+          "source": "../examples/plugin-risky",
+          "bootPhase": 1,
+          "grant": {
+            "capabilities": [],
+            "contracts": [
+              "risky.op@1",
+              "risky.read@1"
+            ]
+          }
+        },
+        {
+          "id": "omega.echo",
+          "source": "../examples/plugin-echo",
+          "bootPhase": 1,
+          "grant": {
+            "capabilities": [],
+            "contracts": [
+              "echo.ping@1",
+              "echo.stream@1"
+            ]
+          }
+        }
+      ]
+    },
+    "llm": {
+      "entries": [
+        {
+          "id": "vivim.law",
+          "source": "../plugins/vivim-law",
+          "bootPhase": 0,
+          "grant": {
+            "capabilities": [
+              "host.journal.append",
+              "host.tokens.revoke"
+            ],
+            "contracts": [
+              "law.check@1",
+              "law.registry@1",
+              "law.consent.grant@1",
+              "law.tokens.revoke@1",
+              "law.amendment@1",
+              "law.describe@1"
+            ]
+          },
+          "config": {
+            "journalPath": ""
+          }
+        },
+        {
+          "id": "provider.llm",
+          "source": "../plugins/provider-llm",
+          "bootPhase": 1,
+          "grant": {
+            "capabilities": [],
+            "contracts": [
+              "chat.complete@1"
+            ]
+          }
+        }
+      ]
+    },
+    "notes": {
+      "entries": [
+        {
+          "id": "vivim.law",
+          "source": "../plugins/law-stub",
+          "bootPhase": 0,
+          "grant": {
+            "capabilities": [
+              "host.journal.append"
+            ],
+            "contracts": [
+              "law.check@1",
+              "law.registry@1",
+              "law.consent.grant@1",
+              "law.describe@1"
+            ]
+          }
+        },
+        {
+          "id": "omega.notes",
+          "source": "../examples/plugin-notes",
+          "bootPhase": 1,
+          "grant": {
+            "capabilities": [
+              "host.journal.append"
+            ],
+            "contracts": [
+              "note.write@1",
+              "note.list@1"
+            ]
+          }
+        }
+      ]
+    },
+    "run": {
+      "note": "Ω3 GATE composition. vivim.run's grant lists the host-op aliases (port:host.compartment.spawn/terminate/stats@1) BEFORE the host.compartment.admin capability they alias: the µhost's token table keys a token by the LAST alias name it registers (register() overwrites cap per key), so the admin capability must land last for ctx.port.call('host.compartment.*@1') to pass the B3 SCOPE check from inside the compartment. Same authority set as [host.compartment.admin, port:echo.ping@1] — the aliases ARE that capability, per HOST_OP_TO_CAP.",
+      "entries": [
+        {
+          "id": "vivim.law",
+          "source": "../plugins/law-stub",
+          "bootPhase": 0,
+          "grant": {
+            "capabilities": [
+              "host.journal.append"
+            ],
+            "contracts": [
+              "law.check@1",
+              "law.registry@1",
+              "law.consent.grant@1",
+              "law.describe@1"
+            ]
+          }
+        },
+        {
+          "id": "omega.echo",
+          "source": "../examples/plugin-echo",
+          "bootPhase": 1,
+          "grant": {
+            "capabilities": [],
+            "contracts": [
+              "echo.ping@1",
+              "echo.stream@1"
+            ]
+          }
+        },
+        {
+          "id": "omega.crashy",
+          "source": "../examples/plugin-crashy",
+          "bootPhase": 1,
+          "grant": {
+            "capabilities": [],
+            "contracts": [
+              "crashy.please@1",
+              "crashy.ping@1"
+            ]
+          }
+        },
+        {
+          "id": "vivim.run",
+          "source": "../plugins/vivim-run",
+          "bootPhase": 1,
+          "grant": {
+            "capabilities": [
+              "port:host.compartment.spawn@1",
+              "port:host.compartment.terminate@1",
+              "port:host.compartment.stats@1",
+              "host.compartment.admin",
+              "port:echo.ping@1"
+            ],
+            "contracts": [
+              "run.submit@1",
+              "run.stats@1",
+              "run.health@1",
+              "run.process.call@1"
+            ]
+          },
+          "config": {
+            "capacity": 2,
+            "processPools": [
+              {
+                "id": "python-echo",
+                "cmd": [
+                  "python3",
+                  "shims/polyglot/vivim_omega_shim.py"
+                ],
+                "stdio": "ndjson",
+                "poolSize": 1,
+                "ops": [
+                  "echo.say"
+                ]
+              },
+              {
+                "id": "node-echo",
+                "cmd": [
+                  "node",
+                  "shims/polyglot/shim.mjs"
+                ],
+                "stdio": "ndjson",
+                "poolSize": 1,
+                "ops": [
+                  "echo.say"
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "spine": {
+      "entries": [
+        {
+          "id": "vivim.law",
+          "source": "../plugins/vivim-law",
+          "bootPhase": 0,
+          "grant": {
+            "capabilities": [
+              "host.journal.append",
+              "host.tokens.revoke"
+            ],
+            "contracts": [
+              "law.check@1",
+              "law.registry@1",
+              "law.consent.grant@1",
+              "law.tokens.revoke@1",
+              "law.amendment@1",
+              "law.describe@1"
+            ]
+          }
+        },
+        {
+          "id": "vivim.vault",
+          "source": "../plugins/vivim-vault",
+          "bootPhase": 1,
+          "grant": {
+            "capabilities": [],
+            "contracts": [
+              "vault.append@1",
+              "vault.get@1",
+              "vault.getmany@1",
+              "vault.query@1",
+              "vault.search@1",
+              "vault.verify@1",
+              "vault.compact@1",
+              "vault.roundtrip@1"
+            ]
+          },
+          "config": {
+            "dataDir": "${TMP}/omega-spine/vault-data"
+          }
+        },
+        {
+          "id": "vivim.run",
+          "source": "../plugins/vivim-run",
+          "bootPhase": 1,
+          "grant": {
+            "capabilities": [
+              "host.compartment.admin",
+              "port:echo.ping@1"
+            ],
+            "contracts": [
+              "run.submit@1",
+              "run.stats@1",
+              "run.health@1"
+            ]
+          },
+          "config": {
+            "capacity": 2
+          }
+        },
+        {
+          "id": "omega.echo",
+          "source": "../examples/plugin-echo",
+          "bootPhase": 1,
+          "grant": {
+            "capabilities": [],
+            "contracts": [
+              "echo.ping@1",
+              "echo.stream@1"
+            ]
+          }
+        },
+        {
+          "id": "omega.risky",
+          "source": "../examples/plugin-risky",
+          "bootPhase": 1,
+          "grant": {
+            "capabilities": [],
+            "contracts": [
+              "risky.op@1",
+              "risky.read@1"
+            ]
+          }
+        }
+      ]
+    },
+    "vault": {
+      "entries": [
+        {
+          "id": "vivim.law",
+          "source": "../plugins/law-stub",
+          "bootPhase": 0,
+          "grant": {
+            "capabilities": [
+              "host.journal.append"
+            ],
+            "contracts": [
+              "law.check@1",
+              "law.registry@1",
+              "law.consent.grant@1",
+              "law.describe@1"
+            ]
+          }
+        },
+        {
+          "id": "vivim.vault",
+          "source": "../plugins/vivim-vault",
+          "bootPhase": 1,
+          "grant": {
+            "capabilities": [],
+            "contracts": [
+              "vault.append@1",
+              "vault.get@1",
+              "vault.getmany@1",
+              "vault.query@1",
+              "vault.search@1",
+              "vault.verify@1",
+              "vault.compact@1",
+              "vault.roundtrip@1"
+            ]
+          },
+          "config": {
+            "dataDir": "${TMP}/omega-vault/data"
+          }
+        }
+      ]
+    }
+  }
+}

@@ -3,14 +3,17 @@
 // DEAD CODE IN-SANDBOX, BY CONSTRUCTION (this is the honest way to ship it):
 //   * the path runs only when ctx.config.live is set by the composition AND the
 //     composition granted the `credential.use` capability — no in-sandbox
-//     composition grants it, and no credentials spine (the plugin that would
-//     route `credential.use@1`) exists yet;
-//   * even if a test composition granted `credential.use`, the port call below
-//     fails closed (the shim refuses locally: "no capability token for
-//     credential.use@1") because the grant grammar for the op is
-//     `port:credential.use@1` — a capability no recipe in this repo carries.
+//     composition grants it (the grant grammar is `port:credential.use@1`, a
+//     capability no recipe in this repo carries);
+//   * the in-tree credentials spine (plugins/vivim-credentials, D-356) DOES route
+//     credential.use@1 — but it stores sim-synthetic REFERENCE rows only, never
+//     secret material (SURFACES.md credential law: live secrets never enter the
+//     sandbox). Even with the capability granted, the check below refuses: the
+//     spine structurally cannot return {secret} (D-384 documents this shape —
+//     the mismatch is the designed fail-closed path, not a bug).
 //
-// The code is kept real and complete because the owner machine will run it as-is.
+// The code is kept real and complete because the owner machine will run it as-is
+// against a credentials spine that returns real material ({secret: string}).
 // CREDENTIAL LAW (docs/SURFACES.md):
 //   * the API key NEVER appears in the payload (config is data passthrough,
 //     never authority and never a secret store) and NEVER in the environment;
@@ -56,9 +59,18 @@ export async function liveComplete(ctx: PluginContext, cfg: LiveConfig, req: Cha
       "This leg is owner-machine only (docs/SURFACES.md credential law).",
     );
   }
-  const secret = (cred.value as { secret?: unknown } | null)?.secret;
+  const credVal = (cred.value ?? null) as Record<string, unknown> | null;
+  const secret = credVal?.["secret"];
   if (typeof secret !== "string" || !secret) {
-    throw new Error("chat.complete (live): credentials spine returned no usable secret (expected {secret: string}) — refusing");
+    // D-384: name the actual contract shape — the in-tree spine returns sim-synthetic
+    // reference rows ({credentialId, kind: "sim-synthetic", sim: true}), never {secret}.
+    const kind = credVal && "kind" in credVal ? String(credVal["kind"]) : "no record";
+    throw new Error(
+      `chat.complete (live): credentials spine returned no usable secret (kind: ${kind}; expected {secret: string}) — ` +
+      "the in-tree vivim-credentials spine stores sim-synthetic REFERENCE rows only " +
+      "(SURFACES.md credential law: live secrets never enter the sandbox); a live call " +
+      "requires an owner-machine credentials spine. Refusing (fail-closed).",
+    );
   }
 
   // 2. the openai-compatible chat completion call

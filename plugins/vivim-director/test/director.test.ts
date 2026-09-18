@@ -44,11 +44,11 @@ async function shutdownCase(h: BootedHost): Promise<void> {
 }
 
 const LAW_CONTRACTS = ["law.check@1", "law.registry@1", "law.consent.grant@1", "law.tokens.revoke@1", "law.amendment@1"];
-const VAULT_CONTRACTS = ["vault.append@1", "vault.get@1", "vault.query@1", "vault.search@1", "vault.verify@1", "vault.compact@1", "vault.roundtrip@1"];
+const VAULT_CONTRACTS = ["vault.append@1", "vault.get@1", "vault.getmany@1", "vault.query@1", "vault.search@1", "vault.verify@1", "vault.compact@1", "vault.roundtrip@1"]; // D-388: getmany routed
 const MESSAGE_CONTRACTS = ["message.send@1", "message.list@1", "message.search@1", "message.read@1", "message.move@1", "message.receive@1"];
 const PROVIDER_CAPS = ["port:vault.append@1", "port:vault.get@1", "port:vault.query@1", "port:vault.search@1"];
 const DIRECTOR_CONTRACTS = ["director.rule@1", "director.registry@1", "director.teach@1", "director.tick@1"];
-const DIRECTOR_CAPS = ["port:vault.append@1", "port:vault.query@1", "port:vault.get@1", "port:message.send@1"];
+const DIRECTOR_CAPS = ["port:vault.append@1", "port:vault.query@1", "port:vault.get@1", "port:vault.getmany@1", "port:message.send@1"]; // D-388: batched tick read phase
 
 /** Spec built from compositions/email.json + the director entry (live loop OFF for determinism). */
 function makeDirectorSpec(name: string, dataDir: string): CompositionSpec {

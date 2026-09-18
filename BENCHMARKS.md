@@ -53,3 +53,19 @@
 - Host: 999 LOC now gated against 1100 (frozen — no new surface without removal).
 - Watchdog D-366: unresponsive→fast kill path added (`terminateFast` 500ms cap vs 2500ms graceful); memory→graceful unchanged. Fresh walls to be measured on the ratification run.
 - Quick lane: `bun run omega:quick` (structural stages only) for inner loop; merge gate unchanged (733/733 baseline carried).
+## 2026-09-16T17:00:48.439Z — daemon warm path (D-322)
+- daemon call RTT p50: 0.53 ms over 50 protocol calls (TCP loopback + op, same demo composition)
+- cold CLI wall for one echo call: 67 ms (full child process, warm vault, --no-daemon — the spawn floor the warm path removes)
+## 2026-09-16T22:03Z — W0-3 vault index probe (D-378, `omega:probe`)
+- indexed chat.history p50: 11.35 / 11.78 / 11.95 ms at ns sizes 1K / 11K / 111K messages (flat across 111× growth — the bounded-read falsifier; limit 50, ≤ CAP gets)
+- solo chat.append p50: 3.59 / 3.72 / 4.65 ms at the same scales (flat)
+- 100K corpus root-seed: 0.556 ms/op (writer-shaped rows at the vault layer); cap refusal fail-closed on the indexed path; vault.verify green over the corpus
+- methodology note: three earlier runs showed progressive slowdown attributed to disk exhaustion (orphaned scratch, ENOSPC) — see 40-EVIDENCE/W0/w0-close-vault-index-probe.md
+## 2026-09-18T10:16:28.925Z — daemon warm path (D-322)
+- daemon call RTT p50: 0.66 ms over 50 protocol calls (TCP loopback + op, same demo composition)
+- cold CLI wall for one echo call: 149 ms (full child process, warm vault, --no-daemon — the spawn floor the warm path removes)
+- pool burst (D-388): 8 concurrent checkouts vs poolSize 2 → 8 hit / 0 cold fallbacks (0% fallback rate) in 105.5 ms wall — the burst-degradation signal is measured, not invisible
+## 2026-09-18T10:16:48.896Z — daemon warm path (D-322)
+- daemon call RTT p50: 0.52 ms over 50 protocol calls (TCP loopback + op, same demo composition)
+- cold CLI wall for one echo call: 88 ms (full child process, warm vault, --no-daemon — the spawn floor the warm path removes)
+- pool burst (D-388): 8 concurrent checkouts vs poolSize 2 → 8 hit / 0 cold fallbacks (0% fallback rate) in 87.5 ms wall — the burst-degradation signal is measured, not invisible

@@ -6,7 +6,10 @@
   "entry": "src/index.ts",
   "publisher": { "keyId": "", "signature": "" },
   "contributions": {
-    "contract": [{ "kind": "contract", "id": "chat.complete", "version": "1", "risk": "READ" }]
+    "contract": [{ "kind": "contract", "id": "chat.complete", "version": "1", "risk": "READ" }],
+    "parser": [
+      { "kind": "parser", "id": "chat.complete", "version": "1", "doc": "W1/T-04 harvest (D-355): the version-pinned SSE framing parser parser:chat.complete:llm — NOT routable (parser kind registers no op). The transform is pure and deterministic: recorded SSE stream text in, ordered ParsedChunk rows out (sse.frame / sse.delta*n / sse.done-final). Algorithm harvested from vivim-final-program@4a5eb84 src/engines/parsers/sse-parser.ts (73 lines, pure) with I/O re-expressed to M1 chunk rows; transport off, recorded fixtures only (fixtures/sse/), fail-closed on unterminated streams. Discovery-derived evidence trail: the fixture pipeline's recorded stream + the pin the realization carries." }
+    ]
   },
   "dependencies": [],
   "capabilities": {

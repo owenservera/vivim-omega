@@ -22,7 +22,7 @@ afterAll(async () => { await Promise.all(hosts.map((h) => h.shutdown().catch(() 
 const LAW_CONTRACTS = ["law.check@1", "law.registry@1", "law.consent.grant@1", "law.tokens.revoke@1", "law.forbidden.set@1", "law.amendment@1"];
 const VAULT_CONTRACTS = ["vault.append@1", "vault.get@1", "vault.query@1", "vault.search@1", "vault.verify@1", "vault.compact@1", "vault.roundtrip@1"];
 const DIRECTOR_CONTRACTS = ["director.rule@1", "director.registry@1", "director.teach@1", "director.tick@1", "resolve.classify@1", "resolve.report@1", "strategy.scorecard@1"];
-const DIRECTOR_CAPS = ["port:vault.append@1", "port:vault.query@1", "port:vault.get@1"];
+const DIRECTOR_CAPS = ["port:vault.append@1", "port:vault.query@1", "port:vault.get@1", "port:vault.getmany@1"]; // D-388: batched tick read phase
 const VERIFY_CONTRACTS = ["discovery.verify@1"];
 const VERIFY_CAPS = ["port:vault.append@1", "port:vault.get@1"];
 

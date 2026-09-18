@@ -3,7 +3,7 @@
 // staleness reboot via use(), idle shutdown, snapshot purity. CLI-via-daemon
 // parity lives in surfaces/cli/test/cli.test.ts (same stdout, warm vs cold).
 import { describe, test, expect, afterAll } from "bun:test";
-import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, rmSync, writeFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { startDaemon, type DaemonHandle } from "../src/daemon.ts";
 import {
@@ -41,6 +41,10 @@ async function start(spec: string = ECHO_SPEC, idleMs = 300_000): Promise<{ hand
   const info = readDaemonInfo(vaultDir);
   expect(info).not.toBeNull();
   expect(info!.port).toBe(handle.port);
+  // D-384: daemon.json carries the 32-byte bearer secret — owner-only, same
+  // treatment as the vault's root signing key (mode 0o600 + ownerOnly seam).
+  const st = statSync(join(vaultDir, "daemon.json"));
+  expect(st.mode & 0o777).toBe(0o600);
   return { handle, info: info! };
 }
 

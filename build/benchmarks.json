@@ -1,15 +1,15 @@
 {
-  "at": "2026-09-15T19:59:53.866Z",
-  "bootMs": 10,
+  "at": "2026-09-18T10:16:48.896Z",
+  "bootMs": 11,
   "portRtt": {
     "n": 200,
     "p50": 0.03,
-    "p99": 0.78,
+    "p99": 2.49,
     "unit": "ms"
   },
   "interCompartmentRtt": {
     "n": 50,
-    "p50": 0.1,
+    "p50": 0.12,
     "unit": "ms"
   },
   "envelope": {
@@ -19,8 +19,18 @@
   },
   "daemonCallRtt": {
     "n": 50,
-    "p50": 0.51,
+    "p50": 0.52,
     "unit": "ms"
   },
-  "coldCliCallMs": 68
+  "poolBurst": {
+    "n": 8,
+    "poolSize": 2,
+    "wallMs": 87.5,
+    "hits": 8,
+    "coldFallbacks": 0,
+    "fallbackRate": 0,
+    "unit": "ms",
+    "note": "MEASURED: sync refill serves every burst checkout from parked stock (0 fallbacks) — the burst cost is the inline thread spawn per checkout; size the pool ≥ peak concurrent boots (D-388)"
+  },
+  "coldCliCallMs": 88
 }

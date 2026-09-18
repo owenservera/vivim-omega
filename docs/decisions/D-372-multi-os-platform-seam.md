@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -63,3 +63,4 @@ which is the build instruction for the follow-up phases.
   hardening + Windows-serial/macOS-informational CI lanes. D-372 stays
   PROPOSED pending the acceptance list (same-commit green matrix + refreshed
   status.json carrying `os-surface`).
+- Acceptance list met and ratified 2026-09-16: os-surface green and carried in build/status.json (mechanical zero-literals proof), Phases 1–3 landed on the line, Windows-serial + macOS informational lanes green on the landing lineage (2d5b7f7, CI-observed), Linux full gate green at 377c4ed (776/776, host 999/1100). The soak-flake retirement-by-observation note stays honest in docs/WINDOWS.md; D-374's platformSpawn extends the seam without adding a second OS-aware file.
