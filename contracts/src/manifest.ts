@@ -22,6 +22,9 @@ export interface Contribution {
   id: string;          // namespace-scoped: "message.send" in pack domain-email
   version: string;     // contract version, semver-ish "1"
   risk?: RiskClass;    // CONTRACT kind only — declared data, not code switches
+  idempotent?: boolean;       // D-389: optional
+  cancellable?: boolean;      // D-389: optional
+  estimatedCostMs?: number;   // D-389: optional
 }
 
 export interface DependencyRef {
