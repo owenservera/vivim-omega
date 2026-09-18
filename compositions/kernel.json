@@ -1,0 +1,35 @@
+{
+  "name": "kernel",
+  "entries": [
+    {
+      "id": "vivim.law",
+      "source": "../plugins/law-stub",
+      "bootPhase": 0,
+      "grant": {
+        "capabilities": ["host.journal.append"],
+        "contracts": ["law.check@1", "law.registry@1", "law.consent.grant@1"]
+      }
+    },
+    {
+      "id": "omega.echo",
+      "source": "../examples/plugin-echo",
+      "bootPhase": 1,
+      "grant": { "capabilities": [], "contracts": ["echo.ping@1"] }
+    },
+    {
+      "id": "omega.counter",
+      "source": "../examples/plugin-counter",
+      "bootPhase": 2,
+      "grant": { "capabilities": ["port:echo.ping@1"], "contracts": ["counter.bump@1", "counter.value@1"] }
+    },
+    {
+      "id": "vivim.kernel-lens",
+      "source": "../plugins/vivim-kernel-lens",
+      "bootPhase": 2,
+      "grant": {
+        "capabilities": ["host.kernel.lens"],
+        "contracts": ["kernel.centrality@1", "kernel.audit.verify@1"]
+      }
+    }
+  ]
+}

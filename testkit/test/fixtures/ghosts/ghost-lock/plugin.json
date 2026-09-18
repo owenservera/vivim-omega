@@ -1,0 +1,15 @@
+{
+  "manifestVersion": "1",
+  "id": "ghost.lock",
+  "version": "0.1.0",
+  "description": "D-340 pressure fixture — state-arbitration contender (cloned to ghost.lock-1/2 by the suite). lock.zone@1 acquires a shared state key EXCLUSIVELY through host.state.acquire@1 (the one non-plugin arbiter, requirement #3), holds the critical section briefly, releases. Two clones contending on the same key from two different compartments is the exact race the arbiter exists to prevent — the loser must be REFUSED with the holder named, never silently queued.",
+  "entry": "src/index.ts",
+  "publisher": { "keyId": "", "signature": "" },
+  "contributions": {
+    "contract": [{ "kind": "contract", "id": "lock.zone", "version": "1", "risk": "READ" }]
+  },
+  "dependencies": [],
+  "capabilities": { "requested": ["host.state.arbitration"], "justification": "Exercises the host's state arbitrator across compartments: the one capability every stateful plugin should arbitrate through instead of rolling its own lock." },
+  "runtime": { "tier": "worker-thread", "budget": { "cpuMs": 100, "memMB": 64 } },
+  "contentHash": ""
+}

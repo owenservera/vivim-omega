@@ -53,8 +53,9 @@ export class PortRouter {
   private dormant = new Map<string, DormantEntry>(); // verified, never started (D-331)
   private spawning = new Map<string, Promise<void>>(); // singleflight per dormant id
   /** D-340: the kernel this router carries (graph/chain/arbiter/tools). Attached at
-   *  boot via RouterOptions — dispatch consults it when present. */
-  private kernel: Kernel | null;
+   *  boot via RouterOptions — dispatch consults it when present. Public read-only
+   *  surface for tests/operators; the lens consumes snapshots via host ops. */
+  readonly kernel: Kernel | null;
   /** Injected by boot.ts: spawn + register + init-post one dormant id. */
   onDemandSpawn: ((id: string) => Promise<void>) | null = null;
   journalPath: string;
@@ -124,14 +125,20 @@ export class PortRouter {
     await p;
   }
 
+  /** D-340: entries whose grants already landed in the graph — dormant registration
+   *  and the later lazy-spawn register() must be IDEMPOTENT, or every first touch
+   *  mints duplicate chain entries and edges. */
+  private graphSeen = new Set<string>();
+
   /** D-340: every registration lands in the kernel graph with signed provenance —
-   *  OFFER edges for routed contracts (this entry answers the op), HOLD edges for
-   *  granted capabilities (this entry was granted the op/host-cap). The graph is
-   *  compiled FROM the Recipe — the Recipe stays the grant source of truth; the
-   *  graph is the queryable form (kernel requirements #1, #6, #7, #8). */
+   *  OFFER edges for routed contracts, HOLD edges for granted capabilities. The
+   *  graph is compiled FROM the Recipe (grant source of truth stays the Recipe);
+   *  it is the queryable form (requirements #1, #6, #7, #8). Idempotent per id. */
   private registerGraph(entry: CompositionEntry, manifest: PluginManifest): void {
     const k = this.kernel;
     if (!k) return; // kernel-less router (bare test rigs): v1 behavior, no graph
+    if (this.graphSeen.has(entry.id)) return;
+    this.graphSeen.add(entry.id);
     k.graph.upsertNode({
       id: entry.id, kind: "principal",
       granularity: manifest.granularity ?? "atomic",
@@ -176,21 +183,30 @@ export class PortRouter {
    *  when several offerors hold the exact op, the caller's declared range picks the
    *  generation; when NO offeror holds the exact op, generation resolution by name +
    *  DECLARED range — the seam that makes live upgrades and atomization additive
-   *  instead of a breaking edit. The returned target is held by the dispatch frame
-   *  for the full call — that held reference IS the per-execution generation pin
-   *  (kernel requirement #9): a generation published mid-flight never yanks it. */
-  private resolveTarget(principal: string, op: string): string | undefined {
-    if (!this.kernel) return this.opRoute.get(op);
+   *  instead of a breaking edit. Returns the target compartment AND the effective
+   *  op string (the offeror's handler key when a generation fallback happened —
+   *  the caller asked for a vanished version; the compatible generation answers).
+   *  The returned pair is held by the dispatch frame for the full call — that held
+   *  reference IS the per-execution generation pin (kernel requirement #9): a
+   *  generation published mid-flight never yanks it. */
+  private resolveTarget(principal: string, op: string): { impl: string; op: string } | undefined {
+    if (!this.kernel) {
+      const t = this.opRoute.get(op);
+      return t ? { impl: t, op } : undefined;
+    }
     const k = this.kernel;
     const offerors = k.graph.whoOffers(op);
     if (offerors.length > 0) {
-      if (offerors.length === 1) return offerors[0];
+      if (offerors.length === 1) return { impl: offerors[0], op };
       const pin = k.tools.resolve(this.opName(op), this.callerRange(principal, op) ?? "*");
-      return pin && offerors.includes(pin.impl) ? pin.impl : offerors[offerors.length - 1];
+      if (pin && offerors.includes(pin.impl)) return { impl: pin.impl, op: `${this.opName(op)}@${pin.version}` };
+      return { impl: offerors[offerors.length - 1], op };
     }
     const range = this.callerRange(principal, op);
-    if (range === undefined) return undefined;
-    return k.tools.resolve(this.opName(op), range)?.impl;
+    if (range === undefined) return undefined; // undeclared caller: v1 REFUSED semantics, fail-closed
+    const pin = k.tools.resolve(this.opName(op), range);
+    if (!pin) return undefined;
+    return { impl: pin.impl, op: `${this.opName(op)}@${pin.version}` };
   }
 
   mintTokensFor(entry: CompositionEntry): Record<string, string> {
@@ -253,35 +269,36 @@ export class PortRouter {
     fail(result);
   }
 
-  /** The Gate → Resolve → Execute step for a structurally-valid call. Risk gating is data-driven. */
+  /** The Gate → Resolve → Execute step for a structurally-valid call. Risk gating is
+   *  data-driven and gates the EFFECTIVE op (a generation fallback resolves to the
+   *  offeror's actual op — the risk of the work actually being done governs). */
   private async dispatch(principal: string, op: string, payload: unknown, deadlineMs: number, causationId: string, token: string): Promise<PortResult> {
-    const target = this.resolveTarget(principal, op);
-    if (!target) return { ok: false, error: "REFUSED", detail: `no routed implementation for ${op}` };
-    const risk = this.opRisk.get(op);
+    const resolved = this.resolveTarget(principal, op);
+    if (!resolved) return { ok: false, error: "REFUSED", detail: `no routed implementation for ${op}` };
+    const risk = this.opRisk.get(resolved.op);
     if (risk) {
-      const gate = await this.callLaw(principal, op, payload, causationId);
+      const gate = await this.callLaw(principal, resolved.op, payload, causationId);
       if (!gate.ok) return gate;
       const decision = gate.value as LawDecision;
-      if (decision.decision === "deny") { this.journal({ principal, op, decision: "deny", reason: decision.reason, causationId }); return { ok: false, error: "REFUSED", detail: `denied by law: ${decision.reason ?? ""}` }; }
-      if (decision.decision === "require-consent") { this.journal({ principal, op, decision: "require-consent", reason: decision.reason, consentId: decision.consentId, causationId }); return { ok: false, error: "REFUSED", detail: `consent required${decision.consentId ? `: ${decision.consentId}` : ""}` }; }
-      this.journal({ principal, op, decision: "allow", reason: decision.reason, causationId });
+      if (decision.decision === "deny") { this.journal({ principal, op: resolved.op, decision: "deny", reason: decision.reason, causationId }); return { ok: false, error: "REFUSED", detail: `denied by law: ${decision.reason ?? ""}` }; }
+      if (decision.decision === "require-consent") { this.journal({ principal, op: resolved.op, decision: "require-consent", reason: decision.reason, consentId: decision.consentId, causationId }); return { ok: false, error: "REFUSED", detail: `consent required${decision.consentId ? `: ${decision.consentId}` : ""}` }; }
+      this.journal({ principal, op: resolved.op, decision: "allow", reason: decision.reason, causationId });
     }
     // D-331: a dormant target spawns on first touch — AFTER the gate, so a
     // refused call never pays a spawn. Transparent thereafter: the caller
     // cannot tell a just-spawned compartment from an eager one.
-    if (!this.compartments.has(target) && this.dormant.has(target)) {
+    if (!this.compartments.has(resolved.impl) && this.dormant.has(resolved.impl)) {
       try {
-        await this.spawnDormant(target);
+        await this.spawnDormant(resolved.impl);
       } catch (e) {
-        return { ok: false, error: "DEGRADED", detail: `dormant ${target} failed to spawn on first touch: ${String(e)}` };
+        return { ok: false, error: "DEGRADED", detail: `dormant ${resolved.impl} failed to spawn on first touch: ${String(e)}` };
       }
     }
-    const targetHandle = this.compartments.get(target);
+    const targetHandle = this.compartments.get(resolved.impl);
     if (!targetHandle || targetHandle.state === "stopped" || targetHandle.state === "degraded") {
-      return { ok: false, error: "DEGRADED", detail: `implementation ${target} is ${targetHandle?.state ?? "absent"}` };
+      return { ok: false, error: "DEGRADED", detail: `implementation ${resolved.impl} is ${targetHandle?.state ?? "absent"}` };
     }
-    const deadlineAbs = deadlineMs > 0 ? Date.now() + deadlineMs : 0;
-    return this.deliver(target, { type: "deliver", causationId, op, payload, deadlineMs, from: principal });
+    return this.deliver(resolved.impl, { type: "deliver", causationId, op: resolved.op, payload, deadlineMs, from: principal });
   }
 
   /** law.check is itself never gated (it IS the gate) — the one loop exception, by construction. */

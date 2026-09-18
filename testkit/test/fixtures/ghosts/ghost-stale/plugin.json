@@ -1,0 +1,15 @@
+{
+  "manifestVersion": "1",
+  "id": "ghost.stale",
+  "version": "0.1.0",
+  "description": "D-340 pressure fixture — the atomization-transparency caller. Declares a dependency on echo.ping range 1.x but CALLS echo.ping@3, a version no offeror in the composition answers. Dispatch must resolve by name + declared range to the compatible v1 generation — the caller never learns the exact version it asked for is gone (the seam that makes live upgrades and atomization additive). Undeclared callers keep v1 REFUSED semantics; only DECLARED dependencies earn the fallback.",
+  "entry": "src/index.ts",
+  "publisher": { "keyId": "", "signature": "" },
+  "contributions": {
+    "contract": [{ "kind": "contract", "id": "stale.run", "version": "1", "risk": "READ" }]
+  },
+  "dependencies": [{ "ref": "contract:echo.ping@1", "range": "1.x" }],
+  "capabilities": { "requested": ["port:echo.ping@3"], "justification": "Requests the (nonexistent) exact version it calls, while declaring the 1.x range — the permission is for the TOOL, resolution picks the generation." },
+  "runtime": { "tier": "worker-thread", "budget": { "cpuMs": 100, "memMB": 64 } },
+  "contentHash": ""
+}

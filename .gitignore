@@ -2,3 +2,5 @@ node_modules/
 dev-vault/
 *.log
 .DS_Store
+.test-tmp/
+testkit/test/fixtures/ghosts/.gen/
