@@ -60,6 +60,7 @@ bootPhase order → mint capability tokens → wire the router).
 ## Documents
 
 - `docs/BUILD-DECISIONS.md` — the build-track decision register (D-210…D-222)
+- `docs/parity/` — the D-340 evidence chain: nine-requirement gap map, scalability ceilings, LOC fork, and the `vivim_omega_core` Rust reference kernel
 - `docs/NCLL-AND-SELF-KNOWLEDGE.md` — Ω10–Ω13: the language waves (self-knowledge, the deterministic NCLL, NL reprogramming, the web console)
 - `BENCHMARKS.md` — append-only measured numbers per wave
 - `build/status.json` — machine-readable build state (feeds the review console)
