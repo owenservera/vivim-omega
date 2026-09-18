@@ -2,11 +2,11 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 Includes the first-ever amendment of one of the ten laws (B5's number, 1,000 → 1,400).
-Ratification follows the D-339 precedent: landed PROPOSED, ratified on a green full
-gate with the landed SHA in Evidence.
+Ratified on the D-339 precedent: landed PROPOSED, ratified on a green full gate with
+the landed SHAs in Evidence.
 
 ## Context
 
@@ -53,9 +53,12 @@ Host-side (`host/src/`, competes for the moved B5 budget): `graph.ts`
 split mid-module. Plugin-side: a new `vivim.kernel-lens` plugin — a read/derived-data
 lens in the `vivim.mind` tradition, NOT a second gate — carries `centrality.ts` (pure
 function over a graph snapshot) and the audit-chain verify query surface. B5 moves
-1,000 → 1,400 — the honest number: the host-critical modules landed at 1,383 gate
-math, leaving 17 LOC of slack; a smaller, better-argued movement than Option A's full
-version, with the justification written down here for whoever owns law amendments.
+1,000 → 1,400 — the honest number: the host-critical modules landed at 1,400 gate
+math EXACTLY (1,383 at first landing; the dormant-registration idempotence fix and
+effective-op resolution closed the slack to zero) — zero slack is deliberate: the
+next host-side byte must evict one; a smaller, better-argued movement than Option
+A's full version, with the justification written down here for whoever owns law
+amendments.
 
 ## Consequences
 
@@ -94,6 +97,12 @@ version, with the justification written down here for whoever owns law amendment
   conversation with the `vivim_omega_core` Rust crate as reference implementation.
 - `host/src/ports.ts` — dispatch's `Map.get` routing (what `whoOffers`/`resolve`
   replace) and the "no policy lives in the host" comment this decision extends.
-- Landed: host 1,383/1,400 gate math; full `bun run omega:gate` + `bun test` green on
-  the landed tree (numbers recorded at ratification time).
+- Landed in c45602b (kernel + B5 amendment + this record, PROPOSED) and 5c8d27b
+  (kernel-lens + kernel.json + the six Rust scenario ports + the ghost pressure
+  suite): host 1,400/1,400 gate math, `bun test` 650/650, full `bun run omega:gate`
+  GREEN on 5c8d27b — ratified on that evidence.
+- Sustained-load ceilings measured post-landing (D-341 wave, 7883922): law gate
+  4,331 ops/s, vault 1,777 writes/s, graph-routed dispatch Δp50 ~9µs vs the v1
+  Map.get — the latency axis this decision scored by estimate, now on record as
+  measurement in `BENCHMARKS.md`.
 - Owner directive 2026-09-18: "you are the omega agent and own everything."

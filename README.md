@@ -26,9 +26,9 @@ they become backfill sources after the core exists.
 
 ```
 contracts/   @vivim/omega-contracts — the pinned wire types (zero runtime)
-host/        @vivim/omega-host     — the µhost (LOC-gated, no manifest: it verifies them)
+host/        @vivim/omega-host     — the µhost (LOC-gated, no manifest: it verifies them) + the D-340 genesis kernel (graph/chain/arbiter/generations)
 shim/        @vivim/omega-shim     — compartment runtime (definePlugin + port client)
-plugins/     vivim-law · vivim-vault · vivim-run · vivim-mind (self-knowledge) · vivim-nlcl (deterministic NLP) · vivim-director (NL reprogramming) · providers · discovery engines · law-stub (Ω0 stand-in)
+plugins/     vivim-law · vivim-vault · vivim-run · vivim-mind (self-knowledge) · vivim-kernel-lens (D-340 read-only kernel lens) · vivim-nlcl (deterministic NLP) · vivim-director (NL reprogramming) · providers · discovery engines · law-stub (Ω0 stand-in)
 packs/       domain packs (SCHEMA+CONTRACT+POLICY+TEST bundles)
 surfaces/    cli · mcp · web (the Ω console service)
 examples/    plugin-echo · plugin-counter (Ω0) · plugin-notes (Ω4)
