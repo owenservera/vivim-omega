@@ -1,0 +1,31 @@
+{
+  "manifestVersion": "1",
+  "id": "vivim.intent",
+  "version": "0.1.0",
+  "description": "D-389 Phase 1 — the Intent spine. Durable vault objects (ns 'intent'), delegated step execution, no ambient authority.",
+  "entry": "src/index.ts",
+  "publisher": { "keyId": "", "signature": "" },
+  "contributions": {
+    "contract": [
+      { "kind": "contract", "id": "intent.submit", "version": "1", "risk": "MUTATION" },
+      { "kind": "contract", "id": "intent.resolve", "version": "1", "risk": "MUTATION" },
+      { "kind": "contract", "id": "intent.step.execute", "version": "1", "risk": "MUTATION" },
+      { "kind": "contract", "id": "intent.cancel", "version": "1", "risk": "MUTATION" },
+      { "kind": "contract", "id": "intent.status", "version": "1", "risk": "READ" }
+    ]
+  },
+  "dependencies": [
+    { "ref": "contract:resolve.classify@1", "range": "1.x" },
+    { "ref": "contract:law.check@1", "range": "1.x" },
+    { "ref": "contract:law.attenuate@1", "range": "1.x" }
+  ],
+  "capabilities": {
+    "requested": [
+      "port:vault.append@1", "port:vault.get@1", "port:vault.query@1",
+      "port:resolve.classify@1", "port:law.check@1", "port:law.attenuate@1"
+    ],
+    "justification": "Phase 1: vault persistence for intent/intent-plan, resolution delegated to director, every step gated by law + single-use attenuated delegation (§3.2)."
+  },
+  "runtime": { "tier": "worker-thread", "budget": { "cpuMs": 750, "memMB": 96 } },
+  "contentHash": "sha256:PROPOSED"
+}
