@@ -35,9 +35,13 @@ const pass = (name: string, detail: unknown) => { checks[name] = { ok: true, det
 const skip = (name: string, detail: unknown) => { checks[name] = { ok: true, skipped: true, detail }; console.log(`○ ${name}: skipped`); };
 
 // 1 · host-loc (B5 — the boredom budget is law)
+// 1,400 since D-340 (the one, loudly-argued amendment: the genesis kernel's
+// host-critical subset — graph/genesis/state/audit/contract — landed at 1,383;
+// the gate moved in the same commit as the first kernel byte, never after).
+const HOST_LOC_BUDGET = 1400;
 const hostLoc = countLoc(join(ROOT, "host/src"));
-if (hostLoc <= 1000) pass("host-loc", { loc: hostLoc, budget: 1000 });
-else fail("host-loc", `µhost is ${hostLoc} LOC (budget 1000) — move the creep into a plugin`);
+if (hostLoc <= HOST_LOC_BUDGET) pass("host-loc", { loc: hostLoc, budget: HOST_LOC_BUDGET });
+else fail("host-loc", `µhost is ${hostLoc} LOC (budget ${HOST_LOC_BUDGET}) — move the creep into a plugin`);
 
 // 2 · fresh-tree: legacy repos untouched + no legacy imports anywhere in the fresh tree
 // Clean-clone/CI honesty (D-320): with NO sibling repos present there is nothing to

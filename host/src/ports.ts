@@ -1,10 +1,13 @@
 // µhost — ports.ts: the Port Router. B3: capability tokens are verified HERE, in the host
 // process, outside every compartment. Risk gating is data-driven (manifest CONTRACT risk
 // declarations) — no policy lives in the host; law.check is a plugin call.
+// D-340: the router carries the kernel (graph + chain + arbiter + tool registry) when
+// boot attaches one; a kernel-less router (bare test rigs) keeps v1 Map routing.
 import type { LawDecision, PortResult, PluginManifest, CompositionEntry, Recipe } from "@vivim/omega-contracts";
 import { routableOps, riskyOps, HOST_OPS, HOST_CAPS } from "@vivim/omega-contracts";
 export { HOST_OPS, HOST_CAPS };
 import type { CompartmentHandle, FromWorker, CallMsg } from "./worker.ts";
+import type { Kernel } from "./genesis.ts";
 import { mintToken } from "./canon.ts";
 import { appendFileSync } from "node:fs";
 
@@ -15,11 +18,15 @@ export const HOST_OP_TO_CAP: Record<string, string> = {
   [HOST_OPS.compartmentStats]: HOST_CAPS.compartmentAdmin,
   [HOST_OPS.journalAppend]: HOST_CAPS.journal,
   [HOST_OPS.tokensRevoke]: HOST_CAPS.tokensRevoke,
+  [HOST_OPS.stateAcquire]: HOST_CAPS.stateArbitration, // D-340: the one non-plugin arbiter
+  [HOST_OPS.stateRelease]: HOST_CAPS.stateArbitration,
+  [HOST_OPS.graphSnapshot]: HOST_CAPS.kernelLens,       // D-340: the lens reads; it never authors
+  [HOST_OPS.auditChain]: HOST_CAPS.kernelLens,
 };
 
 export interface TokenRecord { token: string; pluginId: string; cap: string; gen: number }
 
-export interface RouterOptions { vaultDir: string; journal: boolean }
+export interface RouterOptions { vaultDir: string; journal: boolean; kernel?: Kernel }
 
 /** A verified-but-unspawned entry (D-331 lazy activation): everything needed
  *  for spawn-on-first-routed-call, minted at boot. Dormant is "never started"
@@ -45,12 +52,16 @@ export class PortRouter {
   private inflightByCompartment = new Map<string, Set<string>>();
   private dormant = new Map<string, DormantEntry>(); // verified, never started (D-331)
   private spawning = new Map<string, Promise<void>>(); // singleflight per dormant id
+  /** D-340: the kernel this router carries (graph/chain/arbiter/tools). Attached at
+   *  boot via RouterOptions — dispatch consults it when present. */
+  private kernel: Kernel | null;
   /** Injected by boot.ts: spawn + register + init-post one dormant id. */
   onDemandSpawn: ((id: string) => Promise<void>) | null = null;
   journalPath: string;
 
   constructor(private opts: RouterOptions) {
     this.journalPath = `${opts.vaultDir}/law-journal.jsonl`;
+    this.kernel = opts.kernel ?? null;
   }
 
   register(entry: CompositionEntry, manifest: PluginManifest, handle: CompartmentHandle, tokens: Record<string, string>): void {
@@ -58,6 +69,7 @@ export class PortRouter {
     this.manifests.set(entry.id, manifest);
     for (const op of entry.grant.contracts) this.opRoute.set(op, entry.id);
     for (const [op, risk] of riskyOps(manifest)) this.opRisk.set(op, risk);
+    this.registerGraph(entry, manifest);
     // One record per token. Alias keys ("port:host.compartment.stats@1") and their guarding
     // capability ("host.compartment.admin") resolve to the SAME effective cap, so insertion
     // order can never change what a token authorizes (order-independence is a B3 invariant).
@@ -78,6 +90,7 @@ export class PortRouter {
     this.manifests.set(entry.id, manifest);
     for (const op of entry.grant.contracts) this.opRoute.set(op, entry.id);
     for (const [op, risk] of riskyOps(manifest)) this.opRisk.set(op, risk);
+    this.registerGraph(entry, manifest);
     for (const [key, token] of Object.entries(tokens)) {
       if (this.tokens.has(token)) continue;
       const aliasedOp = key.startsWith("port:") ? key.slice("port:".length) : null;
@@ -109,6 +122,75 @@ export class PortRouter {
       this.spawning.set(id, p);
     }
     await p;
+  }
+
+  /** D-340: every registration lands in the kernel graph with signed provenance —
+   *  OFFER edges for routed contracts (this entry answers the op), HOLD edges for
+   *  granted capabilities (this entry was granted the op/host-cap). The graph is
+   *  compiled FROM the Recipe — the Recipe stays the grant source of truth; the
+   *  graph is the queryable form (kernel requirements #1, #6, #7, #8). */
+  private registerGraph(entry: CompositionEntry, manifest: PluginManifest): void {
+    const k = this.kernel;
+    if (!k) return; // kernel-less router (bare test rigs): v1 behavior, no graph
+    k.graph.upsertNode({
+      id: entry.id, kind: "principal",
+      granularity: manifest.granularity ?? "atomic",
+      extractionCandidate: manifest.extractionCandidate,
+    });
+    for (const op of entry.grant.contracts) {
+      k.graph.upsertNode({ id: op, kind: "capability" });
+      k.graph.grant(entry.id, entry.id, op, k.audit.record(entry.id, entry.id, op), "offer");
+      const at = op.lastIndexOf("@");
+      k.tools.publish(at > 0 ? op.slice(0, at) : op, at > 0 ? op.slice(at + 1) : "1", entry.id);
+    }
+    for (const cap of entry.grant.capabilities) {
+      const held = cap.startsWith("port:") ? cap.slice("port:".length) : cap;
+      if (!k.graph.node(held)) k.graph.upsertNode({ id: held, kind: "capability" });
+      k.graph.grant(entry.id, entry.id, held, k.audit.record(entry.id, entry.id, held), "hold");
+    }
+  }
+
+  /** The op's tool name: "echo.ping@1" → "echo.ping" (generations key by name). */
+  private opName(op: string): string {
+    const at = op.lastIndexOf("@");
+    return at > 0 ? op.slice(0, at) : op;
+  }
+
+  /** The caller's DECLARED range for a tool name, from its manifest dependencies —
+   *  undefined when the caller declared nothing (fail-closed: no fallback for
+   *  undeclared callers, v1 REFUSED semantics preserved — D-340 impl note b). */
+  private callerRange(principal: string, op: string): string | undefined {
+    const deps = this.manifests.get(principal)?.dependencies;
+    if (!deps || deps.length === 0) return undefined;
+    const name = this.opName(op);
+    for (const d of deps) {
+      if (d.ref === `contract:${op}` || d.ref === `contract:${name}` || this.opName(d.ref.replace(/^contract:/, "")) === name) {
+        return d.range || "*";
+      }
+    }
+    return undefined;
+  }
+
+  /** Resolution by query (D-340, kernel requirement #6): the graph answers routing.
+   *  Exact routed op first (byte-identical with v1 for every existing composition);
+   *  when several offerors hold the exact op, the caller's declared range picks the
+   *  generation; when NO offeror holds the exact op, generation resolution by name +
+   *  DECLARED range — the seam that makes live upgrades and atomization additive
+   *  instead of a breaking edit. The returned target is held by the dispatch frame
+   *  for the full call — that held reference IS the per-execution generation pin
+   *  (kernel requirement #9): a generation published mid-flight never yanks it. */
+  private resolveTarget(principal: string, op: string): string | undefined {
+    if (!this.kernel) return this.opRoute.get(op);
+    const k = this.kernel;
+    const offerors = k.graph.whoOffers(op);
+    if (offerors.length > 0) {
+      if (offerors.length === 1) return offerors[0];
+      const pin = k.tools.resolve(this.opName(op), this.callerRange(principal, op) ?? "*");
+      return pin && offerors.includes(pin.impl) ? pin.impl : offerors[offerors.length - 1];
+    }
+    const range = this.callerRange(principal, op);
+    if (range === undefined) return undefined;
+    return k.tools.resolve(this.opName(op), range)?.impl;
   }
 
   mintTokensFor(entry: CompositionEntry): Record<string, string> {
@@ -173,7 +255,7 @@ export class PortRouter {
 
   /** The Gate → Resolve → Execute step for a structurally-valid call. Risk gating is data-driven. */
   private async dispatch(principal: string, op: string, payload: unknown, deadlineMs: number, causationId: string, token: string): Promise<PortResult> {
-    const target = this.opRoute.get(op);
+    const target = this.resolveTarget(principal, op);
     if (!target) return { ok: false, error: "REFUSED", detail: `no routed implementation for ${op}` };
     const risk = this.opRisk.get(op);
     if (risk) {
@@ -266,6 +348,36 @@ export class PortRouter {
         for (const rec of this.tokens.values()) if (!pluginId || rec.pluginId === pluginId) affected++;
         this.journal({ principal: callerId, op: "host.tokens.revoke", decision: "allow", reason: `generation bumped to ${this.generation}`, affected, scope: pluginId ?? "all" });
         return { ok: true, value: { generation: this.generation, affectedTokens: affected } };
+      }
+      case HOST_OPS.stateAcquire: {
+        // D-340 (kernel requirement #3): the one non-plugin arbiter. Fail-closed: a
+        // conflicting acquisition is REFUSED naming the holders — policy (retry,
+        // backpressure) stays outside the host.
+        if (!this.kernel) return { ok: false, error: "DEGRADED", detail: "no kernel attached" };
+        const { key, mode } = payload as { key?: string; mode?: string };
+        if (typeof key !== "string" || !key) return { ok: false, error: "SCOPE", detail: "state.acquire requires a key" };
+        const m: "shared" | "exclusive" = mode === "shared" ? "shared" : "exclusive";
+        const r = this.kernel.state.tryAcquire(key, callerId, m);
+        return r.ok ? { ok: true, value: { key, mode: m, holder: callerId } } : { ok: false, error: "REFUSED", detail: r.error };
+      }
+      case HOST_OPS.stateRelease: {
+        if (!this.kernel) return { ok: false, error: "DEGRADED", detail: "no kernel attached" };
+        const { key } = payload as { key?: string };
+        if (typeof key !== "string" || !key) return { ok: false, error: "SCOPE", detail: "state.release requires a key" };
+        this.kernel.state.release(key, callerId);
+        return { ok: true, value: { released: key, by: callerId } };
+      }
+      case HOST_OPS.graphSnapshot: {
+        // D-340: READ surface for the kernel-lens — a copy-out snapshot, never a
+        // live handle into host state (the lens reports, it never authors).
+        if (!this.kernel) return { ok: false, error: "DEGRADED", detail: "no kernel attached" };
+        return { ok: true, value: this.kernel.graph.snapshot() };
+      }
+      case HOST_OPS.auditChain: {
+        // D-340: the chain copy-out WITH the host-computed verdict — one canonical
+        // verifyJson, never duplicated into a compartment (impl note c).
+        if (!this.kernel) return { ok: false, error: "DEGRADED", detail: "no kernel attached" };
+        return { ok: true, value: this.kernel.audit.export() };
       }
       default: return { ok: false, error: "REFUSED", detail: `unknown host op ${op}` };
     }

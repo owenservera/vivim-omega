@@ -1,6 +1,7 @@
 // µhost — recipe.ts: the Recipe is the only grantor. Verify signature (B4), pin atomically,
 // and compile composition specs into signed recipes at first boot.
 import type { CompositionEntry, CompositionSpec, PluginManifest, Recipe } from "@vivim/omega-contracts";
+import { validateManifestHonesty } from "@vivim/omega-contracts";
 import { readFileSync, existsSync, mkdirSync, rmSync } from "node:fs";
 import { join, resolve, relative } from "node:path";
 import { canonicalJson, contentHashDir, sha256Hex, signJson, verifyJson, atomicWrite } from "./canon.ts";
@@ -80,6 +81,7 @@ function parseManifest(text: string): PluginManifest {
   m.publisher ??= { keyId: "", signature: "" };
   m.contributions ??= {}; m.dependencies ??= []; m.capabilities ??= { requested: [] };
   m.runtime ??= { tier: "worker-thread", budget: {} };
+  m.granularity ??= "atomic"; // D-340: granularity is data; absent = atomic (the already-extracted default)
   return m as PluginManifest;
 }
 
@@ -98,6 +100,8 @@ export function compileComposition(
     const manifestPath = join(srcDir, "plugin.json");
     const m = parseManifest(readFileSync(manifestPath, "utf-8"));
     if (m.id !== se.id) throw new Error(`spec entry id ${se.id} does not match manifest id ${m.id}`);
+    const honesty = validateManifestHonesty(m); // D-340: dishonest self-reporting refuses the compile (fail-closed)
+    if (honesty.length > 0) throw new Error(`manifest honesty: ${honesty.join("; ")}`);
     const contentHash = contentHashDir(srcDir);
     m.contentHash = contentHash;
     const unsigned = { ...m, publisher: { keyId: rootKey.keyId, signature: "" } };

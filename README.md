@@ -11,7 +11,7 @@ they become backfill sources after the core exists.
 
 ## The Ω laws in ten lines
 
-1. The µhost is boring and may not grow: `host/src` ≤ **1,000 LOC**, hard gate (B5).
+1. The µhost is boring and may not grow: `host/src` ≤ **1,400 LOC**, hard gate (B5 — amended once by D-340: the genesis kernel graph/chain/arbiter/generations are host-critical per B3/latency and cost exactly 1,383; everything else stayed a plugin).
 2. No code executes unless a signed manifest entry in the Recipe references its content hash (B1).
 3. Compartments never share a heap — every message traverses the Port Protocol (B2).
 4. Capability tokens are verified **host-side**, outside every compartment (B3).
