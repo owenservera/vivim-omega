@@ -63,7 +63,8 @@ export const ContributionSchema = z.looseObject({
    kind: z.enum(CONTRIBUTION_KINDS),
    id: z.string().regex(ID_PATTERN, { error: "contribution id must match ^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$" }),
    version: z.string().regex(VERSION_PATTERN, { error: 'version must be "1" | "1.0" | "1.0.0" style' }),
-   risk: z.enum(RISK_CLASSES).optional(),
+    risk: z.enum(RISK_CLASSES).optional(),
+    priority: z.enum(["gate", "normal"]).optional(), // D-392: per-CONTRACT admission tier, default normal
    // Ω13.5 — language data rides on `lang`-kind contributions (validated semantically
    // by validateManifest; carried here so the shared contributions record parses them).
    frames: z.array(LangOpFrameSchema).optional(),
@@ -105,7 +106,7 @@ export const PluginManifestSchema = z.strictObject({
     // the interim L-1 measure: latency-sensitive compositions declare a tighter
     // detection window without changing the global default. Policy data for the
     // out-of-tree watchdog (tooling/watchdog), never host plumbing.
-    budget: z.strictObject({ cpuMs: z.number().optional(), memMB: z.number().optional(), intervalMs: z.number().optional() }),
+    budget: z.strictObject({ cpuMs: z.number().optional(), memMB: z.number().optional(), intervalMs: z.number().optional(), maxConcurrentCalls: z.number().int().positive().optional() }), // D-392: admission cap, default 4
     process: z.strictObject({
       cmd: z.array(z.string().min(1)).min(1),
       stdio: z.literal("ndjson"),
