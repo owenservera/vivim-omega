@@ -1,0 +1,9 @@
+{
+  "name": "vivim-steward",
+  "version": "0.1.0",
+  "type": "module",
+  "dependencies": {
+    "@vivim/omega-contracts": "workspace:*",
+    "@vivim/omega-shim": "workspace:*"
+  }
+}

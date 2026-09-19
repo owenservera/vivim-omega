@@ -1,0 +1,22 @@
+{
+  "manifestVersion": "1",
+  "id": "vivim.steward",
+  "version": "0.1.0",
+  "description": "D-399 narrow steward: ordinary plugin acting on D-398 signals through existing capability-gated ops only. Re-sweeps on crossed, idempotent-confirms breach quarantine, escalates chain-break loudly. Every action audited in the host chain; never self-grants.",
+  "entry": "src/index.ts",
+  "publisher": { "keyId": "", "signature": "" },
+  "contributions": {
+    "contract": [
+      { "kind": "contract", "id": "steward.sweep", "version": "1", "risk": "READ" },
+      { "kind": "contract", "id": "steward.confirm", "version": "1", "risk": "READ" },
+      { "kind": "contract", "id": "steward.escalate", "version": "1", "risk": "READ" }
+    ]
+  },
+  "dependencies": [],
+  "capabilities": {
+    "requested": ["host.kernel.lens", "host.compartment.admin", "host.journal.append"],
+    "justification": "Steward reads centrality plus audit via lens, confirms quarantine via compartment admin only if watchdog missed, journals every action. No recompose, no token minting."
+  },
+  "runtime": { "tier": "worker-thread", "budget": { "cpuMs": 200, "memMB": 64 } },
+  "contentHash": ""
+}

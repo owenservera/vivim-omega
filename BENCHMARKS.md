@@ -88,3 +88,12 @@
 - After cap4+queue-deadline: fast survivors p50 22ms p99 36ms, 30 BUDGET timeouts (fail-fast, queue wait counts)
 - Pre-fix queue ignored deadline (p99 3002ms, 0 timeouts) — the gap this lands; sync-busy still HOL-blocks execution, cap bounds backlog not preemption.
 
+
+## 2026-09-19 - Part1 saturation (tooling/bench/law-saturation.ts, spine)
+- Law: 10-wide 179 ops/s p50 192ms, 20-wide 295 ops/s p50 337ms, 40-wide 403 ops/s p50 626ms, 0 timeouts at 2s; unrelated echo p50 1-2ms flat (no blast radius)
+- Vault: 10-wide 301 w/s, 20-wide 526 w/s peak, 40-wide 422 w/s; read-after 1-10ms flat (reads not queued behind writes)
+
+
+## 2026-09-19 - Part2 soak smoke (tooling/bench/soak.ts --seconds=15)
+- 374 ops, 13 faults, 0 errors, mem +0.66MB, chain 27; sweep p50 1.17ms (20 nodes), verify p50 4.78ms (15 entries) justifies 5s bus interval
+
