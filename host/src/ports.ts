@@ -1,9 +1,5 @@
-// µhost — ports.ts: the Port Router. B3: capability tokens are verified HERE, in the host
-// process, outside every compartment. Risk gating is data-driven (manifest CONTRACT risk
-// declarations) — no policy lives in the host; law.check is a plugin call.
-// D-340: the router carries the kernel (graph + chain + arbiter + tool registry) when
-// boot attaches one; a kernel-less router (bare test rigs) keeps v1 Map routing.
-import type { LawDecision, PortResult, PluginManifest, CompositionEntry, Recipe, StreamChunk, RefusalReport } from "@vivim/omega-contracts";
+// µhost ports.ts: Port Router (B3 tokens verified here; risk data-driven; D-340 kernel when attached).
+import type { LawDecision, PortResult, PluginManifest, CompositionEntry, Recipe, StreamChunk, RefusalReport, PortPriority } from "@vivim/omega-contracts";
 import { routableOps, riskyOps, HOST_OPS, HOST_CAPS } from "@vivim/omega-contracts";
 export { HOST_OPS, HOST_CAPS };
 // Single definition (contracts/src/lifecycle.ts): the router owns enforcement, never the mapping.
@@ -41,6 +37,8 @@ export class PortRouter {
   private callSeq = 0;
   private pending = new Map<string, { resolve: (r: PortResult) => void; timer: ReturnType<typeof setTimeout>; onChunk?: (c: StreamChunk) => void }>();
   private inflightByCompartment = new Map<string, Set<string>>();
+  private waiting = new Map<string, Array<{ targetId: string; msg: { type: "deliver"; causationId: string; op: string; payload: unknown; deadlineMs: number; from: string }; onChunk?: (c: StreamChunk) => void; resolve: (r: PortResult) => void; priority: PortPriority; at: number }>>();
+  private opPriority = new Map<string, PortPriority>();
   private dormant = new Map<string, DormantEntry>(); // verified, never started (D-331)
   private spawning = new Map<string, Promise<void>>(); // singleflight per dormant id
   /** D-363: pending ready-waiters per compartment id — the `ready` message resolves them directly (no polling). */
@@ -67,6 +65,7 @@ export class PortRouter {
     this.manifests.set(entry.id, manifest);
     for (const op of entry.grant.contracts) this.opRoute.set(op, entry.id);
     for (const [op, risk] of riskyOps(manifest)) this.opRisk.set(op, risk);
+    for (const c of manifest.contributions.contract ?? []) this.opPriority.set(`${c.id}@${c.version}`, c.priority ?? "normal");
     this.registerGraph(entry, manifest);
     this.installTokens(entry.id, tokens);
     handle.onMessage((m) => this.onWorkerMessage(entry.id, m));
@@ -91,6 +90,7 @@ export class PortRouter {
     this.manifests.set(entry.id, manifest);
     for (const op of entry.grant.contracts) this.opRoute.set(op, entry.id);
     for (const [op, risk] of riskyOps(manifest)) this.opRisk.set(op, risk);
+    for (const c of manifest.contributions.contract ?? []) this.opPriority.set(`${c.id}@${c.version}`, c.priority ?? "normal");
     this.registerGraph(entry, manifest);
     this.installTokens(entry.id, tokens);
     this.dormant.set(entry.id, { entry, manifest, tokens, ...spawn });
@@ -120,10 +120,7 @@ export class PortRouter {
     await p;
   }
 
-  /** D-340: every registration lands in the kernel graph with signed provenance —
-   *  OFFER edges for routed contracts, HOLD edges for granted capabilities. The
-   *  graph is compiled FROM the Recipe (grant source of truth stays the Recipe);
-   *  it is the queryable form (requirements #1, #6, #7, #8). Idempotent per id. */
+  /** D-340 graph registration (see record): OFFER+HOLD, idempotent per id. */
   private registerGraph(entry: CompositionEntry, manifest: PluginManifest): void {
     const k = this.kernel;
     if (!k) return; // kernel-less router (bare test rigs): v1 behavior, no graph
@@ -153,9 +150,7 @@ export class PortRouter {
     return at > 0 ? op.slice(0, at) : op;
   }
 
-  /** The caller's DECLARED range for a tool name, from its manifest dependencies —
-   *  undefined when the caller declared nothing (fail-closed: no fallback for
-   *  undeclared callers, v1 REFUSED semantics preserved — D-340 impl note b). */
+  /** Declared range or undefined fail-closed (D-340 impl note b, see record). */
   private callerRange(principal: string, op: string): string | undefined {
     const deps = this.manifests.get(principal)?.dependencies;
     if (!deps || deps.length === 0) return undefined;
@@ -168,17 +163,7 @@ export class PortRouter {
     return undefined;
   }
 
-  /** Resolution by query (D-340, kernel requirement #6): the graph answers routing.
-   *  Exact routed op first (byte-identical with v1 for every existing composition);
-   *  when several offerors hold the exact op, the caller's declared range picks the
-   *  generation; when NO offeror holds the exact op, generation resolution by name +
-   *  DECLARED range — the seam that makes live upgrades and atomization additive
-   *  instead of a breaking edit. Returns the target compartment AND the effective
-   *  op string (the offeror's handler key when a generation fallback happened —
-   *  the caller asked for a vanished version; the compatible generation answers).
-   *  The returned pair is held by the dispatch frame for the full call — that held
-   *  reference IS the per-execution generation pin (kernel requirement #9): a
-   *  generation published mid-flight never yanks it. */
+  /** D-340 query resolution + generation pin (see record). */
   private resolveTarget(principal: string, op: string): { impl: string; op: string } | undefined {
     if (!this.kernel) {
       const t = this.opRoute.get(op);
@@ -241,7 +226,7 @@ export class PortRouter {
       if (p) {
         clearTimeout(p.timer);
         this.pending.delete(m.causationId);
-        this.decInflight(pluginId, m.causationId);
+        this.release(pluginId, m.causationId);
         p.resolve(m.result);
       }
       return;
@@ -255,8 +240,7 @@ export class PortRouter {
     }
   }
 
-  /** D-363: resolves when `id` reports active — immediately if already there, else via the
-   *  `ready` message (event path; a crash or the timeout rejects). The old pollers' bounds. */
+  /** D-363 ready event (see record): immediate if active, else via ready message. */
   waitActive(id: string, timeoutMs = 10_000): Promise<void> {
     const h = this.compartments.get(id);
     if (h?.state === "active") return Promise.resolve();
@@ -276,7 +260,7 @@ export class PortRouter {
     for (const w of set) { clearTimeout(w.timer); err ? w.reject(err) : w.resolve(); }
   }
 
-  /** D-360: the raw worker behind a compartment — out-of-tree instrumentation only (the watchdog probes it; the host never does). */
+  /** D-360 raw worker for out-of-tree watchdog (see record). */
   compartmentWorker(id: string): Worker | undefined { return this.compartments.get(id)?.worker; }
 
   private async compartmentCall(callerId: string, m: CallMsg): Promise<void> {
@@ -328,19 +312,37 @@ export class PortRouter {
     return this.deliver(lawId, { type: "deliver", causationId, op: "law.check@1", payload: { principal, op, payload, causationId }, deadlineMs: 500, from: "µhost-gate" });
   }
 
+  private maxInflight(targetId: string): number { return this.manifests.get(targetId)?.runtime?.budget?.maxConcurrentCalls ?? 4; }
   deliver(targetId: string, msg: { type: "deliver"; causationId: string; op: string; payload: unknown; deadlineMs: number; from: string }, onChunk?: (c: StreamChunk) => void): Promise<PortResult> {
-    const handle = this.compartments.get(targetId);
-    if (!handle) return Promise.resolve({ ok: false, error: "REFUSED", detail: `no compartment ${targetId}` });
+    if (!this.compartments.get(targetId)) return Promise.resolve({ ok: false, error: "REFUSED", detail: `no compartment ${targetId}` });
+    const priority = this.opPriority.get(msg.op) ?? (msg.op === "law.check@1" ? "gate" : "normal");
+    return new Promise<PortResult>((resolve) => this.enqueue({ targetId, msg, onChunk, resolve, priority, at: Date.now() }));
+  }
+  private enqueue(item: { targetId: string; msg: { type: "deliver"; causationId: string; op: string; payload: unknown; deadlineMs: number; from: string }; onChunk?: (c: StreamChunk) => void; resolve: (r: PortResult) => void; priority: PortPriority; at: number }): void {
+    if ((this.inflightByCompartment.get(item.targetId)?.size ?? 0) < this.maxInflight(item.targetId)) { this.admit(item); return; }
+    const q = this.waiting.get(item.targetId) ?? [];
+    const idx = q.findIndex((w) => w.priority === "normal" && item.priority === "gate");
+    q.splice(idx === -1 ? q.length : idx, 0, item);
+    this.waiting.set(item.targetId, q);
+  }
+  private admit(item: { targetId: string; msg: { type: "deliver"; causationId: string; op: string; payload: unknown; deadlineMs: number; from: string }; onChunk?: (c: StreamChunk) => void; resolve: (r: PortResult) => void; priority: PortPriority; at: number }): void {
+    const waited = Date.now() - item.at;
+    if (item.msg.deadlineMs > 0 && waited >= item.msg.deadlineMs) { item.resolve({ ok: false, error: "BUDGET", detail: `deadline ${item.msg.deadlineMs}ms exceeded in queue (op ${item.msg.op})` }); this.release(item.targetId, ""); return; }
+    const handle = this.compartments.get(item.targetId)!;
     handle.stats.delivered++;
-    return new Promise<PortResult>((resolve) => {
-      const key = msg.causationId;
-      const timer = msg.deadlineMs > 0 ? setTimeout(() => {
-        if (this.pending.delete(key)) { this.decInflight(targetId, key); resolve({ ok: false, error: "BUDGET", detail: `deadline ${msg.deadlineMs}ms exceeded (op ${msg.op})` }); }
-      }, msg.deadlineMs) : null;
-      this.pending.set(key, { resolve, timer, ...(onChunk ? { onChunk } : {}) });
-      this.incInflight(targetId, key);
-      handle.post(msg);
-    });
+    const key = item.msg.causationId;
+    const remain = item.msg.deadlineMs > 0 ? item.msg.deadlineMs - waited : 0;
+    const timer = item.msg.deadlineMs > 0 ? setTimeout(() => {
+      if (this.pending.delete(key)) { this.release(item.targetId, key); item.resolve({ ok: false, error: "BUDGET", detail: `deadline ${item.msg.deadlineMs}ms exceeded (op ${item.msg.op})` }); }
+    }, remain) : null;
+    this.pending.set(key, { resolve: item.resolve, timer: timer!, ...(item.onChunk ? { onChunk: item.onChunk } : {}) });
+    this.incInflight(item.targetId, key);
+    handle.post(item.msg);
+  }
+  private release(targetId: string, key: string): void {
+    this.decInflight(targetId, key);
+    const next = this.waiting.get(targetId)?.shift();
+    if (next) this.admit(next);
   }
 
   /** Host-internal transport ops (spawn/terminate/stats/journal/revoke/state/graph/audit) — capability-gated above. */
@@ -460,6 +462,8 @@ export class PortRouter {
 
   private failInflight(pluginId: string, reason: string): void {
     this.wakeReady(pluginId, new Error(reason)); // D-363: a crash rejects boot waiters too
+    for (const q of this.waiting.get(pluginId) ?? []) q.resolve({ ok: false, error: "DEGRADED", detail: reason });
+    this.waiting.delete(pluginId);
     const keys = this.inflightByCompartment.get(pluginId);
     if (!keys) return;
     for (const key of [...keys]) {

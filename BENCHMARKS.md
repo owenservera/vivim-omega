@@ -83,3 +83,8 @@
 - 300 plugins: sync warm p50 625ms (cold 707ms) vs async warm p50 321ms — 1.9x wall cut, per-entry ~2.1ms sync / ~1.1ms async
 - Mechanism confirmed linear sync on boot path; async halves wall at same trust (same bytes, same order, fail-closed symlinks); 300-plugin wall still 321ms — ceiling documented, revisit workers past 300.
 
+
+## 2026-09-19 - D-392 admission falsifier (tooling/bench/priority-bench.ts, 20x150ms busy flood + 50 fast 500ms)
+- After cap4+queue-deadline: fast survivors p50 22ms p99 36ms, 30 BUDGET timeouts (fail-fast, queue wait counts)
+- Pre-fix queue ignored deadline (p99 3002ms, 0 timeouts) — the gap this lands; sync-busy still HOL-blocks execution, cap bounds backlog not preemption.
+

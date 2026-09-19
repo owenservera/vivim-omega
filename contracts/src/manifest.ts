@@ -17,11 +17,13 @@ export type RiskClass = "EXTERNAL_MUTATION" | "MUTATION" | "READ";
 export type ProviderClass = "SIMULATOR" | "API_NATIVE" | "BROWSER_MEDIATED";
 // Note: Structured to admit a future 4th member (e.g. "INTELLIGENCE_HARNESS") without a breaking change.
 
+export type PortPriority = "gate" | "normal";
 export interface Contribution {
   kind: ContributionKind;
   id: string;          // namespace-scoped: "message.send" in pack domain-email
   version: string;     // contract version, semver-ish "1"
   risk?: RiskClass;    // CONTRACT kind only — declared data, not code switches
+  priority?: PortPriority; // D-392: additive per-CONTRACT tier, default normal
   idempotent?: boolean;       // D-389: optional
   cancellable?: boolean;      // D-389: optional
   estimatedCostMs?: number;   // D-389: optional
@@ -63,7 +65,7 @@ export interface PluginManifest {
   capabilities: { requested: string[]; justification?: string };
   runtime: {
     tier: RuntimeTier;
-    budget: { cpuMs?: number; memMB?: number };
+    budget: { cpuMs?: number; memMB?: number; maxConcurrentCalls?: number }; // D-392: additive cap, default 4
     process?: ProcessRuntime; // D-374: additive — manifests without it validate unchanged
   };
   contentHash: string; // "sha256:<hex>" over the plugin content dir (excl. plugin.json, node_modules)
