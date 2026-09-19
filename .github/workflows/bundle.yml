@@ -1,0 +1,38 @@
+name: bundle
+
+on:
+  push:
+    branches: ["**"]
+    tags: ["**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  full-bundle:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create full git bundle
+        run: |
+          SHORT_SHA="$(git rev-parse --short HEAD)"
+          mkdir -p dist
+          BUNDLE="dist/vivim-omega-${SHORT_SHA}.bundle"
+          git bundle create "${BUNDLE}" --all
+          (cd dist && sha256sum "vivim-omega-${SHORT_SHA}.bundle" > "vivim-omega-${SHORT_SHA}.bundle.sha256")
+          git bundle verify "${BUNDLE}"
+          git bundle list-heads "${BUNDLE}"
+          ls -la dist
+
+      - name: Upload full git bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: vivim-omega-full-bundle
+          path: dist/
+          retention-days: 90
+          if-no-files-found: error
