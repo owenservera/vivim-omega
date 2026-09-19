@@ -77,14 +77,29 @@ falsifier proving the gap is even bounded today.
 - **`maxConcurrentCalls` default of 4 is a placeholder, not a measurement** — the
   falsifier's before/after run is what should set it, not this record; expect
   the number in the landed version to differ from what's sketched below.
+- **Per-compartment caps interact with downstream saturation laws (measured).**
+  The default 4 throttled `run.submit@1` burst-through and made the pool's own
+  saturation signal invisible (20 concurrent at capacity 2: 0 rejected, 18
+  timeouts, wall 1224ms — pool law silently bypassed, not violated). `vivim.run`
+  declares 32: its submit handler yields immediately, so the pool, not the
+  router, is run's backpressure; with 32 the law is restored (12 rejected, 8
+  timeouts, wall 304ms, matching pre-wave baseline). Default 4 stands for all
+  other compartments; caps are data for exactly this tuning.
 
 ## Evidence
 
-**Status: PROPOSED, no falsifier landed yet.** Nothing below has been run
-against this repository's own toolchain (`bun test`, `omega:gate`, or
-`omega:bench`). What follows is (1) the external prior art this record draws
-on, (2) this repo's own precedents that shaped the design, and (3) the
-falsifier and implementation sketch this record commits to landing before
+**Status: PROPOSED, falsifier landed this wave.** Landed: admission cap plus
+priority queue in `host/src/ports.ts` (waiting queue with gate-before-normal
+insertion, per-manifest cap default 4, queue wait counts toward deadline,
+`failInflight` drains waiting DEGRADED), additive manifest fields
+(`Contribution.priority`, `budget.maxConcurrentCalls`), `echo.busyMs` flood
+op. `tooling/bench/priority-bench.ts` (20x150ms busy flood plus 50 fast 500ms):
+survivors p50 22ms p99 36ms with 30 explicit BUDGET timeouts — pre-fix queue
+ignored deadlines entirely (p99 3002ms, 0 timeouts). Host 1497 to 1500 gate
+math via comment-trim (no B5 raise). Pool interaction measured and tuned
+(see Consequences). What follows is (1) the external prior art this record
+draws on, (2) this repo's own precedents that shaped the design, and (3) the
+falsifier and implementation sketch this record committed to landing before
 ratification.
 
 **External prior art**

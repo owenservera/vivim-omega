@@ -18,6 +18,6 @@
     "requested": ["host.compartment.admin", "port:echo.ping@1"],
     "justification": "scheduled task execution: run executes granted ops on behalf of submitters under their deadlines (port:echo.ping@1), and observes compartment health + quarantines crash loops via host.compartment.admin"
   },
-  "runtime": { "tier": "worker-thread", "budget": { "cpuMs": 500, "memMB": 128 } },
+  "runtime": { "tier": "worker-thread", "budget": { "cpuMs": 500, "memMB": 128, "maxConcurrentCalls": 32 } },
   "contentHash": ""
 }
