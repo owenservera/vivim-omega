@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -70,3 +70,9 @@ before bootPhase 0 can even start.
 - Landed (a) as `contentHashDirAsync` plus `verifyEntryWithRootAsync` plus
   `verifyCompositionAsync` with boot cutover; host 1450 to 1496 gate math
   with 4-line D-340 slash D-331 comment trim to pointer, no B5 raise.
+- Ratified on landing commit `d6e5f78`: bench halves wall at 50 slash 100 slash
+  300 plugins with identical hashes; `omega:quick` structural green plus host,
+  ghost-deep, steward, watchdog, and run-integration lanes green; full-gate
+  reds on this Windows box are pre-existing environmental failures proven
+  identical on the pre-wave baseline — symlink EPERM, chmod best-effort,
+  node lane, sibling layout drift.
