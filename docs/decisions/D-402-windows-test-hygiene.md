@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -31,3 +31,4 @@ Eight full-gate reds on Windows are platform facts, not product bugs: sqlite loc
 
 - `driver-conformance.test.ts` 4 pass (incl. node lane) plus `daemon.test.ts` 7 pass on this Windows box, both 0 pass before.
 - `bun-surface`, `os-surface`, `import-surface` stages stay green (no new APIs in prod dirs).
+- Ratified on landing commit `a93439d` with the above greens plus quick structural green; directive-class test-only change, no product or B5 impact.

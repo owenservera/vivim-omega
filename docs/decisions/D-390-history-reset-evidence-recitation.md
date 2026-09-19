@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -60,4 +60,6 @@ by `bun run omega:quick` decisions stage on 2026-09-18 (20 records, D-313…
 D-388); the mechanical pass output is archived with the setup commit. Falsifier:
 `omega:decisions` green after the pass, decisions checker self-host test
 (`tooling/gates/test/decisions.test.ts` "live register + records validate
-clean") green on the same tree.
+clean") green on the same tree. Ratified: re-citation landed `1adb540`, first
+green gate including it `a97bcbe` (903/903, host 1039/1100, second run per
+cooling-off); 21 re-citation lines verified present at ratification.
