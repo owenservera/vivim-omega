@@ -1,0 +1,14 @@
+[Unit]
+Description=vivim-omega host (D-397 supervisor target)
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/env bun run host/src/main.ts compose --vault /var/lib/omega/vault --composition /opt/omega/compositions/demo.json
+Restart=on-failure
+RestartSec=2
+StartLimitBurst=5
+StartLimitIntervalSec=300
+
+[Install]
+WantedBy=multi-user.target
