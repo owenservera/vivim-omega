@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -29,3 +29,4 @@ When describe reports a requested op with no offeror, the gap is visible but not
 ## Evidence
 
 - `tooling/propose.ts` plus `tooling/propose/test/propose.test.ts` green.
+- Ratified: falsifier plus boot proof plus two consecutive full greens (962/0, host 1500/1500, attest green, Linux). Landing: 786006c.

@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-09-18T23:29:33.888Z",
+  "generatedAt": "2026-09-19T19:44:02.857Z",
   "repo": "vivim-omega",
   "branch": "omega",
-  "head": "1d32a0d",
+  "head": "cafeebd",
   "waves": [
     {
       "id": "Ω0",
@@ -90,12 +90,12 @@
     }
   ],
   "gate": {
-    "startedAt": "2026-09-18T23:28:11.031Z",
+    "startedAt": "2026-09-19T19:41:44.117Z",
     "checks": {
       "host-loc": {
         "ok": true,
         "detail": {
-          "loc": 1450,
+          "loc": 1500,
           "budget": 1500
         }
       },
@@ -110,17 +110,24 @@
       "decisions": {
         "ok": true,
         "detail": {
-          "rows": 97,
-          "records": 71,
-          "ratified": 67,
+          "rows": 108,
+          "records": 82,
+          "ratified": 71,
           "grandfatherBelow": 313,
           "openQuestions": {
-            "count": 4,
+            "count": 11,
             "ids": [
-              341,
               389,
-              390,
-              391
+              392,
+              393,
+              394,
+              395,
+              396,
+              397,
+              398,
+              399,
+              400,
+              401
             ],
             "board": "stale"
           }
@@ -187,7 +194,7 @@
           },
           "riskParityOps": 42,
           "matrixConformance": "green",
-          "contractTypes": 126,
+          "contractTypes": 127,
           "callSiteAllowlisted": [
             "CompositionSpecEntry",
             "LangContribution",
@@ -213,7 +220,7 @@
           "adapters": [
             "plugins/vivim-vault/src/drivers/bun-sqlite.ts"
           ],
-          "scan": "34 prod dirs (incl. every plugins/*/src)"
+          "scan": "35 prod dirs (incl. every plugins/*/src)"
         }
       },
       "os-surface": {
@@ -222,20 +229,20 @@
           "seam": [
             "platform/src/platform.ts"
           ],
-          "scan": "34 prod dirs (incl. every plugins/*/src)"
+          "scan": "35 prod dirs (incl. every plugins/*/src)"
         }
       },
       "import-surface": {
         "ok": true,
         "detail": {
-          "scanned": 143,
+          "scanned": 145,
           "rules": 5
         }
       },
       "tests": {
         "ok": true,
         "detail": {
-          "pass": 941,
+          "pass": 962,
           "fail": 0,
           "maxConcurrency": 4
         }
@@ -243,8 +250,8 @@
       "attest": {
         "ok": true,
         "detail": {
-          "compileMs": 3,
-          "bootMs": 19,
+          "compileMs": 8,
+          "bootMs": 66,
           "echo": true,
           "counterBump": true,
           "counterValue": {
@@ -265,9 +272,9 @@
       }
     }
   },
-  "hostLoc": 1450,
+  "hostLoc": 1500,
   "tests": {
-    "pass": 941,
+    "pass": 962,
     "fail": 0
   },
   "benchmarks": {

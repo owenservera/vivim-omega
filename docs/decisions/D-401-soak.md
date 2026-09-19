@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -29,3 +29,4 @@ Pressure tests prove survival under sharp spikes for bounded durations. Self-sus
 ## Evidence
 
 - `tooling/bench/soak.ts` plus short-run green this wave.
+- Ratified: harness plus 15s smoke (374 ops, 0 errors) plus two consecutive full greens (962/0, host 1500/1500, attest green, Linux); 24h target stays future work. Landing: 786006c.

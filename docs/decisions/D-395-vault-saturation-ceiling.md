@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -30,3 +30,4 @@ SCALABILITY-CEILINGS §4 flagged the vault single-writer queue; VAULT-NAMESPACES
 
 - `tooling/bench/law-saturation.ts` vault levels above.
 - `BENCHMARKS.md` vault-saturation entry this wave.
+- Ratified: bench plus two consecutive full greens (962/0, host 1500/1500, attest green, Linux). Landing: d32609c.

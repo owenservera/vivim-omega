@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -64,4 +64,5 @@ compensation consent gate). Landing commits on `main`: `6975c4c`, `094a3e6`,
 Workspace wiring repaired during setup: plugin `package.json` added (the
 D-377 checklist `bun install` step had been skipped, breaking module
 resolution) and the manifest `contentHash` set to the honest pre-compile empty
-value per the sdk schema law.
+value per the sdk schema law. Ratified: falsifiers 17/17 green at tip plus two
+consecutive full greens (962/0, host 1500/1500, attest green, Linux).

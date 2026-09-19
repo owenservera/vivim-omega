@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -30,3 +30,4 @@ Recovery handles crashes within the process; nothing brings the Bun process itse
 ## Evidence
 
 - `tooling/supervise.ts` plus `tooling/supervise.service` plus `tooling/supervise/test/supervise.test.ts` green.
+- Ratified: falsifier plus two consecutive full greens (962/0, host 1500/1500, attest green, Linux). Landing: 50e5dcb.

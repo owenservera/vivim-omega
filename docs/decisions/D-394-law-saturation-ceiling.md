@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -31,3 +31,4 @@ SCALABILITY-CEILINGS §3 asked whether one global law gate is the throughput cei
 
 - `tooling/bench/law-saturation.ts`: law levels above, spine composition, consent-granted risky path.
 - `BENCHMARKS.md` law-saturation entry this wave.
+- Ratified: bench plus two consecutive full greens (962/0, host 1500/1500, attest green, Linux). Landing: d32609c.

@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -29,4 +29,4 @@ Signals without action are dashboards; action without capability discipline is a
 
 ## Evidence
 
-- Record precedes code per Part2 discipline; plugin `vivim.steward` plus `host/test/steward.test.ts` ghosts land next commit.
+- Record precedes code per Part2 discipline; plugin `vivim.steward` plus `host/test/steward.test.ts` landed with 3 pass, audit verified. Ratified: narrow audited autonomy plus two consecutive full greens (962/0, host 1500/1500, attest green, Linux). Landing: 786006c, a68096c.

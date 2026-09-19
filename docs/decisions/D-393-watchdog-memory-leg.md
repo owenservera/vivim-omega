@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -32,3 +32,4 @@ D-321 ratified documenting the gap, D-360 built the out-of-tree watchdog, D-366 
 - `tooling/watchdog/test/watchdog-hog-spike.test.ts`: hog series trips at index 2, spike series never trips.
 - Fixtures `ghost.hog` plus `ghost.spike` with manifest discipline.
 - Existing `host/test/adversarial.test.ts` cases 13 plus 14 stay green as boot falsifiers.
+- Ratified: hog/spike plus adversarial falsifiers green plus two consecutive full greens (962/0, host 1500/1500, attest green, Linux). Landing: d32609c.

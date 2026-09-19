@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -33,3 +33,4 @@ Part1 produced real distributions for every placeholder constant: 50-swarm fan-i
 - `tooling/watchdog/test/watchdog-hog-spike.test.ts` plus D-393.
 - `tooling/bench/law-saturation.ts` plus D-394 slash D-395.
 - `tooling/bench/priority-bench.ts` plus D-392.
+- Ratified: analysis plus two consecutive full greens (962/0, host 1500/1500, attest green, Linux). Landing: 50e5dcb.

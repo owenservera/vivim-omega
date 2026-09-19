@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -30,3 +30,4 @@ Portrait plus centrality sweep are pull-only; the steward needs push events with
 ## Evidence
 
 - `plugins/vivim-kernel-lens/src/signals.ts` plus test green; sweep p50 1.17ms, verify p50 4.78ms measured this wave.
+- Ratified: falsifier plus two consecutive full greens (962/0, host 1500/1500, attest green, Linux). Landing: 50e5dcb.

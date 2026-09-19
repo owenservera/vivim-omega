@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -99,7 +99,9 @@ ignored deadlines entirely (p99 3002ms, 0 timeouts). Host 1497 to 1500 gate
 math via comment-trim (no B5 raise). Pool interaction measured and tuned
 (see Consequences). SDK schema updated same wave (`budget.maxConcurrentCalls`,
 `Contribution.priority`) after the sdk manifest-parity falsifier caught the
-strictObject gap — additive fields parse green. What follows is (1) the external prior art this record
+strictObject gap — additive fields parse green. Ratified: falsifier plus
+saturation restoration plus sdk parity greens plus two consecutive full greens
+(962/0, host 1500/1500, attest green, Linux); B2 cooling-off satisfied. Landing: 30c89b3, 0a3108d, add515c. What follows is (1) the external prior art this record
 draws on, (2) this repo's own precedents that shaped the design, and (3) the
 falsifier and implementation sketch this record committed to landing before
 ratification.
