@@ -1,0 +1,15 @@
+{
+  "manifestVersion": "1",
+  "id": "ghost.deep-c",
+  "version": "0.1.0",
+  "description": "Part1 §4.1 pressure fixture - hop 3 of the 5-hop chain (deep-a → deep-b → deep-c → ghost.load → echo.ping). Terminal relay into the existing shared algorithm; audit must record all four intermediate grants.",
+  "entry": "src/index.ts",
+  "publisher": { "keyId": "", "signature": "" },
+  "contributions": {
+    "contract": [{ "kind": "contract", "id": "deep.middle-c", "version": "1", "risk": "READ" }]
+  },
+  "dependencies": [{ "ref": "contract:ghost.load@1", "range": "*" }],
+  "capabilities": { "requested": ["port:ghost.load@1"], "justification": "Chain hop 3: bridges the new deep chain into the existing ghost.load shared algorithm." },
+  "runtime": { "tier": "worker-thread", "budget": { "cpuMs": 100, "memMB": 64 } },
+  "contentHash": ""
+}

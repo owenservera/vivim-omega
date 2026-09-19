@@ -1,0 +1,15 @@
+{
+  "manifestVersion": "1",
+  "id": "ghost.liar",
+  "version": "0.1.0",
+  "description": "Part1 §4.2 adversarial manifest fixture - requests port:ghost.load@1 but never calls it (unused grant must still count toward fanIn), and declares range * while only calling echo.ping@1. Tests ToolRegistry.resolve safety on over-broad ranges and manifest-honesty coverage beyond internalSeams lies.",
+  "entry": "src/index.ts",
+  "publisher": { "keyId": "", "signature": "" },
+  "contributions": {
+    "contract": [{ "kind": "contract", "id": "liar.probe", "version": "1", "risk": "READ" }]
+  },
+  "dependencies": [{ "ref": "contract:echo.ping@1", "range": "*" }],
+  "capabilities": { "requested": ["port:ghost.load@1", "port:echo.ping@1"], "justification": "Adversarial: holds an unused grant (fanIn signal) plus a used grant with an over-broad declared range." },
+  "runtime": { "tier": "worker-thread", "budget": { "cpuMs": 100, "memMB": 64 } },
+  "contentHash": ""
+}

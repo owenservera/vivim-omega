@@ -1,0 +1,15 @@
+{
+  "manifestVersion": "1",
+  "id": "ghost.deep-a",
+  "version": "0.1.0",
+  "description": "Part1 §4.1 pressure fixture - hop 1 of the 5-hop plugin-of-plugins chain (deep-a → deep-b → deep-c → ghost.load → echo.ping). Tests generation-pinning, DEGRADED propagation, and audit chain length at depths naive code assumes never happen.",
+  "entry": "src/index.ts",
+  "publisher": { "keyId": "", "signature": "" },
+  "contributions": {
+    "contract": [{ "kind": "contract", "id": "deep.entry", "version": "1", "risk": "READ" }]
+  },
+  "dependencies": [{ "ref": "contract:deep.middle-b@1", "range": "*" }],
+  "capabilities": { "requested": ["port:deep.middle-b@1"], "justification": "Chain hop 1: forwards into the deeper chain, exercising cross-compartment latency and error propagation." },
+  "runtime": { "tier": "worker-thread", "budget": { "cpuMs": 100, "memMB": 64 } },
+  "contentHash": ""
+}

@@ -1,0 +1,15 @@
+{
+  "manifestVersion": "1",
+  "id": "ghost.spike",
+  "version": "0.1.0",
+  "description": "D-393 pressure fixture (D-321 child) - well-behaved plugin that briefly spikes near its 64MB budget during a legitimate large batch read, then releases. Must NOT be quarantined: proves the watchdog has no false positives on transient pressure.",
+  "entry": "src/index.ts",
+  "publisher": { "keyId": "", "signature": "" },
+  "contributions": {
+    "contract": [{ "kind": "contract", "id": "spike.burst", "version": "1", "risk": "READ" }]
+  },
+  "dependencies": [],
+  "capabilities": { "requested": [], "justification": "Self-contained spiker: no cross-compartment calls, only transient local allocation." },
+  "runtime": { "tier": "worker-thread", "budget": { "cpuMs": 500, "memMB": 64 } },
+  "contentHash": ""
+}

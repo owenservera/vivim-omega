@@ -1,0 +1,15 @@
+{
+  "manifestVersion": "1",
+  "id": "ghost.deep-b",
+  "version": "0.1.0",
+  "description": "Part1 §4.1 pressure fixture - hop 2 of the 5-hop chain (deep-a → deep-b → deep-c → ghost.load → echo.ping). Fault-injection point: crashy-style DEGRADED here must surface unchanged at hop 1.",
+  "entry": "src/index.ts",
+  "publisher": { "keyId": "", "signature": "" },
+  "contributions": {
+    "contract": [{ "kind": "contract", "id": "deep.middle-b", "version": "1", "risk": "READ" }]
+  },
+  "dependencies": [{ "ref": "contract:deep.middle-c@1", "range": "*" }],
+  "capabilities": { "requested": ["port:deep.middle-c@1"], "justification": "Chain hop 2: middle relay with fault-injection surface for DEGRADED propagation tests." },
+  "runtime": { "tier": "worker-thread", "budget": { "cpuMs": 100, "memMB": 64 } },
+  "contentHash": ""
+}

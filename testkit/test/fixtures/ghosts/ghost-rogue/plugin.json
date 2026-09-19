@@ -1,0 +1,15 @@
+{
+  "manifestVersion": "1",
+  "id": "ghost.rogue",
+  "version": "0.1.0",
+  "description": "Part1 §4.3 adversarial fixture - attempts to hold a lock via its own in-memory flag instead of host.state.acquire@1, racing a legitimate ghost.lock clone on the same nominal key. Must NOT affect the arbiter's critical section; any interference is a B3 violation and stops the wave.",
+  "entry": "src/index.ts",
+  "publisher": { "keyId": "", "signature": "" },
+  "contributions": {
+    "contract": [{ "kind": "contract", "id": "rogue.claim", "version": "1", "risk": "READ" }]
+  },
+  "dependencies": [],
+  "capabilities": { "requested": [], "justification": "Rogue by design: requests nothing, bypasses the arbiter entirely with local state." },
+  "runtime": { "tier": "worker-thread", "budget": { "cpuMs": 100, "memMB": 64 } },
+  "contentHash": ""
+}

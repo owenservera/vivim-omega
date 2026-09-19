@@ -1,0 +1,15 @@
+{
+  "manifestVersion": "1",
+  "id": "ghost.hog",
+  "version": "0.1.0",
+  "description": "D-393 pressure fixture (D-321 child) - deliberately grows old-gen heap past its declared 32MB budget at ~40MB/s while staying responsive (probeStat keeps answering). Tests the tooling/watchdog memory leg: must be caught before threatening the process, with measured time-to-detection.",
+  "entry": "src/index.ts",
+  "publisher": { "keyId": "", "signature": "" },
+  "contributions": {
+    "contract": [{ "kind": "contract", "id": "hog.grow", "version": "1", "risk": "READ" }]
+  },
+  "dependencies": [],
+  "capabilities": { "requested": [], "justification": "Self-contained grower: exercises the watchdog memory leg without needing cross-compartment calls." },
+  "runtime": { "tier": "worker-thread", "budget": { "cpuMs": 500, "memMB": 32 } },
+  "contentHash": ""
+}
