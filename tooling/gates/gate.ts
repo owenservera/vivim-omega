@@ -18,7 +18,10 @@ function countLoc(dir: string): number {
 }
 
 async function sh(cmd: string[]): Promise<{ code: number; out: string }> {
-  const p = Bun.spawn(cmd, { cwd: ROOT, stdout: "pipe", stderr: "pipe" });
+  // Hermetic runtime: exercise the running Bun, never whatever PATH resolves —
+  // same version by construction, no lookup involved.
+  const argv = cmd[0] === "bun" ? [process.execPath, ...cmd.slice(1)] : cmd;
+  const p = Bun.spawn(argv, { cwd: ROOT, stdout: "pipe", stderr: "pipe" });
   const out = await new Response(p.stdout).text() + await new Response(p.stderr).text();
   const code = await p.exited;
   return { code, out };

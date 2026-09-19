@@ -135,9 +135,31 @@ export async function runWorkload(runId: string): Promise<ConformanceDigest> {
     refsSurvive: citedStillReadable === true,
   };
   v.close();
-  rmSync(dataDir, { recursive: true, force: true });
-  rmSync(targetDir, { recursive: true, force: true });
+  rmRetry(dataDir);
+  rmRetry(targetDir);
   return digest;
+}
+
+/** Scratch cleanup is best-effort (the ownerOnly doctrine: never throw). Windows
+ *  holds sqlite locks past close (EBUSY — AV/indexer scans, not our handles),
+ *  so retry bounded (~5s, same precedent as retryOsLock on the rename
+ *  boundary), then leave the unique scratch dir for the OS temp sweeper rather
+ *  than red-ing a green workload digest. Sync sleep via Atomics.wait keeps this
+ *  runtime-neutral (no timers, works under Node). */
+function rmRetry(dir: string): void {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      rmSync(dir, { recursive: true, force: true });
+      return;
+    } catch (e) {
+      const code = (e as { code?: string })?.code;
+      if (attempt >= 19) {
+        if (code === "EBUSY" || code === "EPERM") return;
+        throw e;
+      }
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 25 * (attempt + 1));
+    }
+  }
 }
 
 function dbRowsSafe(v: VaultDB): string[] {

@@ -43,8 +43,11 @@ async function start(spec: string = ECHO_SPEC, idleMs = 300_000): Promise<{ hand
   expect(info!.port).toBe(handle.port);
   // D-384: daemon.json carries the 32-byte bearer secret — owner-only, same
   // treatment as the vault's root signing key (mode 0o600 + ownerOnly seam).
+  // Windows: chmod is best-effort over ACLs (proven platform fact) — POSIX bits
+  // are asserted where they exist, existence where they cannot.
   const st = statSync(join(vaultDir, "daemon.json"));
-  expect(st.mode & 0o777).toBe(0o600);
+  if (process.platform === "win32") expect(st.isFile()).toBe(true);
+  else expect(st.mode & 0o777).toBe(0o600);
   return { handle, info: info! };
 }
 
