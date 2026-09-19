@@ -4,7 +4,7 @@ import type { CompositionEntry, CompositionSpec, PluginManifest, Recipe } from "
 import { validateManifestHonesty } from "@vivim/omega-contracts";
 import { readFileSync, existsSync, mkdirSync, rmSync, readdirSync } from "node:fs";
 import { join, resolve, relative } from "node:path";
-import { canonicalJson, contentHashDir, sha256Hex, signJson, verifyJson, atomicWrite } from "./canon.ts";
+import { canonicalJson, contentHashDir, contentHashDirAsync, sha256Hex, signJson, verifyJson, atomicWrite } from "./canon.ts";
 
 export interface RecipeVerified { recipe: Recipe; warnings: string[] }
 
@@ -158,5 +158,21 @@ export function verifyEntryWithRoot(e: CompositionEntry, buildDir: string, rootP
   const srcDir = resolve(buildDir, e.source);
   if (!existsSync(srcDir)) errors.push(`source dir missing: ${e.source}`);
   else if (contentHashDir(srcDir) !== e.contentHash) errors.push(`contentHash mismatch for ${e.id}`);
+  return { manifest: m, errors };
+}
+
+/** D-341: async entry verify — same checks, async hash; entries run concurrently via boot verify. */
+export async function verifyEntryWithRootAsync(e: CompositionEntry, buildDir: string, rootPublicKey: string): Promise<{ manifest: PluginManifest | null; errors: string[] }> {
+  const errors: string[] = [];
+  const manifestFile = join(buildDir, e.manifestPath);
+  let text: string;
+  try { text = readFileSync(manifestFile, "utf-8"); } catch { return { manifest: null, errors: [`manifest unreadable: ${e.manifestPath}`] }; }
+  if (`sha256:${sha256Hex(text)}` !== e.manifestHash) errors.push(`manifestHash mismatch for ${e.id}`);
+  const m = parseManifest(text);
+  const unsigned = { ...m, publisher: { keyId: m.publisher.keyId, signature: "" } };
+  if (!verifyJson(unsigned, rootPublicKey, m.publisher.signature)) errors.push(`publisher signature invalid for ${e.id}`);
+  const srcDir = resolve(buildDir, e.source);
+  if (!existsSync(srcDir)) errors.push(`source dir missing: ${e.source}`);
+  else try { if (await contentHashDirAsync(srcDir) !== e.contentHash) errors.push(`contentHash mismatch for ${e.id}`); } catch (err) { errors.push(`contentHash error for ${e.id}: ${String(err)}`); }
   return { manifest: m, errors };
 }

@@ -36,12 +36,7 @@ before bootPhase 0 can even start.
 
 ## Decision
 
-**Decision:** TBD while PROPOSED — (a) is the recommended position, but it costs
-host LOC the current 1,400/1,400 ceiling cannot absorb (D-340 landed with zero
-slack deliberately: the next host-side byte must evict one). The owner picks:
-trim an equivalent ~30 host LOC to land (a), raise B5 once more with this record
-as justification, or take (c) and revisit at the measured plugin count where the
-1 ms/entry-class cost actually breaks a boot envelope.
+**Decision:** (a) — async plus parallel full re-hash, funded within B5 by comment-trim.
 
 ## Consequences
 
@@ -68,5 +63,10 @@ as justification, or take (c) and revisit at the measured plugin count where the
 - Measured (this wave, `BENCHMARKS.md` D-340 kernel entry context): warm
   re-verify p50 1.40 ms / 5 entries / n=10; law gate 4,331 ops/s; vault
   1,777 writes/s — the scale model for any future boot-envelope claim.
-- `host/src` at exactly 1,400/1,400 (gate math) — the B5 zero-slack constraint
-  that makes (a) a trade, not a freebie.
+- This wave, `tooling/bench/boot-reverify-scale.ts` (synthetic 4-file fixtures):
+  sync warm p50 137ms at 50, 277ms at 100, 625ms at 300; async warm p50 66ms at 50,
+  132ms at 100, 321ms at 300 — 1.9x to 2.1x wall cut, same bytes same order.
+  Async hash equals sync hash on fixture dirs; demo boot stays green.
+- Landed (a) as `contentHashDirAsync` plus `verifyEntryWithRootAsync` plus
+  `verifyCompositionAsync` with boot cutover; host 1450 to 1496 gate math
+  with 4-line D-340 slash D-331 comment trim to pointer, no B5 raise.

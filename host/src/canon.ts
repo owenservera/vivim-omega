@@ -2,6 +2,7 @@
 // One implementation; the SDK/tooling import it from here so digests can never diverge.
 import { createHash, generateKeyPairSync, createPrivateKey, createPublicKey, sign as edSign, verify as edVerify, randomBytes } from "node:crypto";
 import { readdirSync, readFileSync, lstatSync, writeFileSync, renameSync, unlinkSync } from "node:fs";
+import { readdir, readFile, lstat } from "node:fs/promises";
 import { join, relative, sep } from "node:path";
 import { retryOsLock } from "@vivim/omega-platform"; // E-1: one backoff discipline for the rename boundary
 
@@ -46,6 +47,27 @@ export function contentHashDir(dir: string): string {
     h.update(relative(dir, f).split(sep).join("/"));
     h.update(sha256Hex(readFileSync(f)));
   }
+  return `sha256:${h.digest("hex")}`;
+}
+
+/** D-341: async twin of contentHashDir — same bytes, same order, same fail-closed symlink rule. */
+export async function contentHashDirAsync(dir: string): Promise<string> {
+  const files: string[] = [];
+  const walk = async (d: string): Promise<void> => {
+    const names = await readdir(d);
+    await Promise.all(names.filter((n) => !EXCLUDE_CONTENT.has(n)).map(async (name) => {
+      const p = join(d, name);
+      const st = await lstat(p);
+      if (st.isSymbolicLink()) throw new Error(`contentHashDir: symlink (fail-closed, D-384): ${relative(dir, p)}`);
+      if (st.isDirectory()) await walk(p);
+      else files.push(p);
+    }));
+  };
+  await walk(dir);
+  files.sort();
+  const parts = await Promise.all(files.map(async (f) => ({ rel: relative(dir, f).split(sep).join("/"), hex: sha256Hex(await readFile(f)) })));
+  const h = createHash("sha256");
+  for (const { rel, hex } of parts) { h.update(rel); h.update(hex); }
   return `sha256:${h.digest("hex")}`;
 }
 

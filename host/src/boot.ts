@@ -9,7 +9,7 @@ import { mkdirSync, existsSync, writeFileSync } from "node:fs";
 import { ownerOnly } from "@vivim/omega-platform"; // D-372: the seam owns permissions (never throws, Windows-safe)
 import { join, resolve } from "node:path";
 import { generateRootKey, loadRootKeyPem } from "./canon.ts";
-import { verifyRecipeSignature, verifyCompositionInvariants, verifyEntryWithRoot } from "./recipe.ts";
+import { verifyRecipeSignature, verifyCompositionInvariants, verifyEntryWithRoot, verifyEntryWithRootAsync } from "./recipe.ts";
 import { buildRoutingTable, PortRouter } from "./ports.ts";
 import { bootstrapKernel } from "./genesis.ts";
 import { checkoutCompartment } from "./worker.ts";
@@ -54,18 +54,26 @@ export function verifyComposition(recipe: Recipe, buildDir: string, vaultPublicK
   return { manifests, errors };
 }
 
+/** D-341: async twin — entries hash concurrently; same errors, O(largest) wall not O(total). */
+export async function verifyCompositionAsync(recipe: Recipe, buildDir: string, vaultPublicKey: string): Promise<{ manifests: Map<string, PluginManifest>; errors: string[] }> {
+  const errors: string[] = [];
+  if (!verifyRecipeSignature(recipe)) errors.push("recipe signature invalid");
+  if (recipe.rootOfTrust.publicKey !== vaultPublicKey) errors.push("recipe root-of-trust does not match the vault key");
+  errors.push(...verifyCompositionInvariants(recipe));
+  const manifests = new Map<string, PluginManifest>();
+  const resolved = resolve(buildDir);
+  const outs = await Promise.all(recipe.composition.map((e) => verifyEntryWithRootAsync(e, resolved, recipe.rootOfTrust.publicKey)));
+  outs.forEach(({ manifest, errors: ee }, i) => { errors.push(...ee); if (manifest) manifests.set(recipe.composition[i].id, manifest); });
+  if (errors.length === 0) errors.push(...buildRoutingTable(recipe, manifests).errors);
+  return { manifests, errors };
+}
+
 export async function bootComposition(recipe: Recipe, buildDir: string, vaultDir: string): Promise<BootedHost> {
   const { rootKey } = ensureVault(vaultDir);
-  const { manifests, errors } = verifyComposition(recipe, resolve(buildDir), rootKey.publicKey);
+  const { manifests, errors } = await verifyCompositionAsync(recipe, resolve(buildDir), rootKey.publicKey);
   if (errors.length > 0) throw new Error(`fail-closed boot: ${errors.join("; ")}`);
-  // D-340: the genesis kernel — closed bootstrap BEFORE any Recipe entry registers.
-  // The vault's root-of-trust key signs the chain: every later graph edge traces back
-  // to the same root that signed the Recipe itself (one root of trust, two surfaces).
+  // D-340 genesis (see record): closed bootstrap before entries; D-331 lazy (see record).
   const router = new PortRouter({ vaultDir, journal: true, kernel: bootstrapKernel(rootKey.keyId, rootKey.privateKeyPem, rootKey.publicKey) });
-  // D-331 lazy activation: bootPhase 0 spawns eager (the law must gate from
-  // the first tick); everything else registers dormant with minted tokens and
-  // spawns on first routed call. The spawner is injected (ports stay
-  // transport-only; boot owns lifecycle).
   router.onDemandSpawn = async (id: string): Promise<void> => {
     const d = router.peekDormant(id);
     if (!d) return;

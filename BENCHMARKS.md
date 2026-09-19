@@ -76,3 +76,10 @@
 - graph-routed dispatch (echo.ping@1 via whoOffers, n=200): p50 0.039 ms vs v1 recorded 0.03 ms (Map.get) — the Option C latency axis, measured: Δp50 0.039 ms, p99 6.641 ms
 - kernel-lens sweep (kernel.centrality@1, n=20, graph 35 nodes / 27 edges): p50 0.47 ms per query
 - audit-chain verify (kernel.audit.verify@1, n=20, chain 27 entries): p50 2.51 ms — tamper-evidence's price
+
+## 2026-09-19 - D-341 boot re-verify at scale (tooling/bench/boot-reverify-scale.ts, synthetic 4-file fixtures)
+- 50 plugins: sync warm p50 137ms (cold 177ms) vs async warm p50 66ms — 2.1x wall cut
+- 100 plugins: sync warm p50 277ms (cold 218ms) vs async warm p50 132ms — 2.1x wall cut
+- 300 plugins: sync warm p50 625ms (cold 707ms) vs async warm p50 321ms — 1.9x wall cut, per-entry ~2.1ms sync / ~1.1ms async
+- Mechanism confirmed linear sync on boot path; async halves wall at same trust (same bytes, same order, fail-closed symlinks); 300-plugin wall still 321ms — ceiling documented, revisit workers past 300.
+
