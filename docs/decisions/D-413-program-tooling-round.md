@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -47,7 +47,8 @@ Blocks: none
 - **F-4 (blocks vocabulary + board order):** illegal `Blocks:` values fail with the vocabulary named; `computeOpenQuestions` sorts blocking-first then D-number; the board renders the Blocks column.
 - **F-5 (cross-track lint):** a bare citation of the colliding id in a generated-era record warns; the qualified spellings (`akb:D-389` / `omega:D-389`) stay silent; hand-era records are grandfathered silent; the registry page ↔ `KNOWN_TRACK_COLLISIONS` lock test goes red on drift.
 - Standing directives: the review's grant ("you get to choose") + D-410's post-core sequence (A1/A4 "wants to land before parallel work") + the owner's "continue as far as you can".
-- Ratification evidence (gate greens on this tree) lands below at the flip, per D-364.
+- Landed in `085f79a`: falsifiers F-0..F-5 green in the record's tree BEFORE the flip (D-364); full gate green 1089/0 ×2 on the PROPOSED tree (2026-09-20T06:02:29Z and 06:04:18Z, host flat 1500/1500, anvil untouched); this row flipped by `omega:questions --write` — the generated-row era's first ratification is its own proof.
+- Post-ratification green re-run recorded in `build/status.json` (the D-364 cooling-off bar, held beyond the B1–B4 minimum: this round touches no boot security, zero host LOC).
 
 ## Index
 
