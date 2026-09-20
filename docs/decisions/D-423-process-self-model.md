@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -165,6 +165,8 @@ In substance:
   index rows (127 at this tip); the checker's own `ratified` figure counts
   record files (102). Both are correct measures of different things and F-4
   pins which one this tool reports.
+
+- Ratified on greens (evidence-class, falsifiers F-1..F-5 green in this record's tree BEFORE the flip per D-364): landing commit cf7a8d5; full gate green 1190/0 ×2 on the PROPOSED tree (2026-09-20T15:30:11Z and the run directly after, 15:31:56Z–15:33:37Z); the checker clean, docscan 0 findings; the self-host line held (the record was checked by the very tooling it describes, and its own first index draft was caught by the D-410 status-word trap and repaired pre-flip); post-ratification full gate re-run follows at this commit; zero host LOC; anvil untouched. The vault-durable follow-on is `D-424`, ratified as a design commitment only.
 
 ## Index
 

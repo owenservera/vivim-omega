@@ -1,6 +1,6 @@
 # Current Invariants — the one-page law snapshot
 
-<!-- invariants: pass 4 · as-of D-422 · regenerated 2026-09-20 (D-422 ratified; the process gate stage added under the still-open D-423; pass 3 was as-of D-421) · stages: anvil-loc anvil-surface attest bun-surface compositions decisions forge-surface fresh-tree host-loc import-surface invariants-freshness os-surface process tests -->
+<!-- invariants: pass 4 · as-of D-424 · regenerated 2026-09-20 (D-422..D-424 ratified; the process gate stage added under D-423; pass 3 was as-of D-421) · stages: anvil-loc anvil-surface attest bun-surface compositions decisions forge-surface fresh-tree host-loc import-surface invariants-freshness os-surface process tests -->
 
 **Pass #4 (2026-09-20, the process self-model).** Refreshed on the D-415
 stage-drift trigger — a gate stage was added: `process` (report-only, placed
@@ -8,9 +8,10 @@ right after `invariants-freshness`), the process self-model of `D-423`
 (`tooling/gates/process.ts`, `omega:process`). The stage reports gate
 color/staleness, board open/blocking, docscan findings and the ledger home from
 the existing readers and never fails on their content; only a derivation throw
-fails. `D-423` is still open on the board at this pass, so this page states the
-stage as landed tooling, not as ratified law; the runtime-visible follow-on is
-the open `D-424`. Pass #3 below stands unchanged.
+fails. `D-423` is ratified law for this stage (evidence-class, falsifiers green
+before the flip); `D-424`, the runtime-visible follow-on, is ratified as a
+directive (a design commitment only, nothing built: the build needs its own
+evidence-class record). Pass #3 below stands unchanged.
 
 **Pass #3 (2026-09-20, the course-correction round).** Refreshed on its own
 D-415 trigger — a wave closed (the Core Phase: D-416), the identification

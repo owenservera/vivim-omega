@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -34,23 +34,25 @@ Blocks: none
 
 ## Decision
 
-**Decision:** TBD — (a) `process.publish@1` invoked at round-close, with the snapshot carrying its tip sha and generation time; still the owner's call while TBD. Questions the ratifying record must answer before any code lands:
+**Decision:** (a) — `process.publish@1`, a signed write op that publishes a bounded summary of the `D-423` model into a reserved vault namespace, invoked on demand at round-close, each snapshot carrying its tip sha and generation time. Adopted as the DIRECTION and its constraints, as an owner call (directive-class, same-day, honestly labeled); no code lands under this record. In substance:
 
-- **Who publishes:** one named plugin with a write capability, or a step in the round-close tool acting through a granted op; never a compartment writing on its own initiative.
-- **How often:** on demand at round-close (recommended) versus on every gate green; the cadence decides what a stale snapshot means.
-- **What a stale snapshot means:** a reader must be able to tell that the snapshot's tip differs from the live tip, and `mind.portrait@1` must surface that rather than present old data as current.
 - **What is published:** the `D-423` model's summary fields only (gate color, board counts, docscan count, program-size count), bounded, never raw record bodies.
+- **Cadence:** on demand at round-close, not on every gate green and not from an always-on watcher (option (b) is declined).
+- **Stale snapshots:** a reader compares the snapshot's tip sha with the live tip; `mind.portrait@1` surfaces a mismatch as stale, never as current.
+- **Publisher:** exactly one narrow write capability. WHICH one (a named plugin, or a round-close step acting through a granted op) is left to the implementation record; it is deliberately not decided here.
+- **The mind stays read-only:** `vivim.mind` gains no write or veto power; enforcement stays in the gate.
+- **Implementation is separate:** the record that builds this is evidence-class, touches composition grants, and needs F-1..F-5 below built and green BEFORE its own flip (D-364). This record does not satisfy that bar and does not claim to.
 
 ## Consequences
 
-- If ratified, the development genome becomes vault-durable, journaled and hash-chained the moment it is published; a wrong publish is a permanent, auditable entry, so the publisher must be narrow and its inputs the same pure derivation `D-423` already tests.
+- The development genome becomes vault-durable, journaled and hash-chained the moment it is published; a wrong publish is a permanent, auditable entry, so the publisher must be narrow and its inputs the same pure derivation `D-423` already tests.
 - `vivim.mind` stays read-only; the gate stays the only enforcer. Nothing here gives the mind veto power over ratification.
 - Composition grants change for exactly one publisher; that diff is the review surface.
-- If declined, `D-423` remains the complete answer and the seam stays documented for the next person instead of being rediscovered.
+- Until the implementation record lands, `D-423` remains the complete working answer; this record fixes the direction and its constraints so the next person does not rediscover the seam.
 
 ## Evidence
 
-- Falsifiers named BEFORE ratification (per `D-364`), none built by this record:
+- Falsifiers named for the implementation record (per `D-364`), none built by this record, which is why it ratifies as a directive and not as evidence:
   - F-1 the published summary is a pure function of the `D-423` model (same model in, byte-identical summary out).
   - F-2 a snapshot whose tip differs from the live tip is reported stale by the reader, never as current.
   - F-3 a compartment without the publish grant cannot write the reserved namespace (fail-closed).
@@ -58,8 +60,10 @@ Blocks: none
   - F-5 the round-close path publishes exactly once per close and is idempotent on retry.
 - Precedent for the boundary argument: `D-423` (the host-side half) and `D-215` (the falsifiability guarantee that depends on port-only evidence).
 
+- Ratified as an owner directive (2026-09-20, same-day, directive-class per D-364, labeled honestly: a design commitment with no code and no falsifier evidence): landing commit cf7a8d5 (this record's PROPOSED landing, gate green 1190/0 ×2 with `D-423`); zero host LOC; no grant changed; the implementation record will be evidence-class with F-1..F-5 built first.
+
 ## Index
 
 summary: Design-only follow-on to D-423: a signed process.publish@1 write op that would publish a summary of the process self-model into a reserved vault namespace so mind.query and mind.portrait can see the development genome as real vault evidence, with the staleness and cadence questions answered before any code
-rationale: D-423 stayed on the host side of the compartment evidence boundary; making the development genome runtime-visible needs a new write path, composition-grant changes and its own falsifiers, so it gets its own record and stays open until the owner decides
-class: evidence
+rationale: The owner adopted the design direction and its constraints the same day as a directive; the build needs its own evidence-class record with the falsifiers green first, because it adds a write path and changes composition grants
+class: directive
