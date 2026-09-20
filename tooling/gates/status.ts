@@ -2,8 +2,34 @@
 import { writeFileSync, readFileSync, existsSync } from "node:fs";
 import { spawnSync } from "node:child_process"; // D-361: runtime-neutral
 import { join } from "node:path";
+import { release } from "node:os";
 
 const ROOT = join(import.meta.dir, "../..");
+
+/** D-414 (A12): the toolchain pin — what produced the numbers, recorded next to
+ *  the run shape. Pure (reads process only) so tests and verify-status share it. */
+export interface ToolchainPin { bun: string | null; node: string; os: string; arch: string }
+export function toolchainPin(): ToolchainPin {
+  return {
+    bun: (process.versions as Record<string, string | undefined>).bun ?? null,
+    node: process.versions.node,
+    os: `${process.platform} ${release()}`,
+    arch: process.arch,
+  };
+}
+
+/** D-414 (A12): report-only compare — runner-shape fields are recorded, never
+ *  compared-to-fail (D-362's two-machines rule extended one notch). */
+export function compareToolchain(a: ToolchainPin | undefined, b: ToolchainPin | undefined): { same: boolean; line: string } {
+  const fmt = (t?: ToolchainPin) => t ? `bun ${t.bun ?? "(non-bun)"} · node ${t.node} · ${t.os} · ${t.arch}` : "(absent)";
+  const same = JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
+  return {
+    same,
+    line: same
+      ? `toolchain pinned (A12, D-414): ${fmt(b)}`
+      : `toolchain drift — recorded, not failing (runner-shape, D-362/D-414): committed ${fmt(a)} vs fresh ${fmt(b)}`,
+  };
+}
 
 /** Wave registry: status is set by evidence, not ambition (D2 §9: claims carry no weight). */
 const WAVES: Array<{ id: string; title: string; deliverable: string; status: string }> = [
@@ -32,6 +58,7 @@ export async function emitStatus(extra: { gate?: unknown; hostLoc?: number; test
     repo: "vivim-omega",
     branch: "omega",
     head: headOut || "uncommitted",
+    toolchain: toolchainPin(), // D-414 (A12): the run's shape, recorded not trusted
     waves: WAVES,
     ...(extra as Record<string, unknown>),
     benchmarks,

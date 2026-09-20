@@ -59,4 +59,10 @@ if (a !== b) {
   console.error("--- fresh:   ", b);
   process.exit(1);
 }
+// D-414 (A12): the toolchain pin is recorded in status.json and REPORTED here.
+// Runner-shape by definition — never part of the failing structural compare
+// (two machines can never agree on it; D-362), but drift is surfaced loudly.
+const { compareToolchain } = await import("../gates/status.ts");
+const tc = compareToolchain(committed.toolchain, fresh.toolchain);
+console.log(`${tc.same ? "✓" : "○"} verify-status: ${tc.line}`);
 console.log(`✓ verify-status: committed status.json reproduces (stamped @ ${committed.head}, carrying HEAD ${fresh.head}; tests ${fresh.tests?.pass}/${(fresh.tests?.pass ?? 0) + (fresh.tests?.fail ?? 0)}, host ${structural(fresh).hostLoc}/1100)`);

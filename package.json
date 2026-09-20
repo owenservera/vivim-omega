@@ -27,6 +27,7 @@
     "omega:decisions": "bun run tooling/gates/decisions.ts",
     "omega:questions": "bun run tooling/gates/decisions.ts --write",
     "omega:new-decision": "bun run tooling/gates/new-decision.ts",
+    "omega:round-close": "bun run tooling/gates/round-close.ts",
     "omega:bench": "bun run tooling/bench/bench.ts",
     "omega:probe": "bun run tooling/bench/vault-probe.ts",
     "omega:containment": "bun run platform/src/containment.ts",

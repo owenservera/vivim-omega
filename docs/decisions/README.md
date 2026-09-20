@@ -1,4 +1,4 @@
-# The Decision Contract (v2 — D-413)
+# The Decision Contract (v3 — D-414)
 
 Decisions with clear eyes: every consequential choice in this repo is recorded as a
 **decision record** — options, criteria, evidence, verdict — and the gate enforces the
@@ -19,6 +19,9 @@ A `RATIFIED` without evidence is not ratified.
   (and standalone via `bun run omega:decisions`).
 - `tooling/gates/new-decision.ts` — the **scaffold** (`bun run omega:new-decision`, D-413):
   emits a record that passes the contract by construction, plus its generated row.
+- `tooling/gates/round-close.ts` — the **round-close automator**
+  (`bun run omega:round-close`, D-414): the bundle/sha256/ledger-row ceremony as
+  one fail-closed command (see §“Round close” below).
 
 ## Record format
 
@@ -177,6 +180,27 @@ bun run omega:decisions           # validates index ↔ record contract (gate st
 The file carries a `<!-- base: <sha> -->` marker; the gate's `decisions` stage reports
 board freshness (`fresh`/`stale`/`missing`) in its detail output — informational only,
 never failing. A stale board means someone changed records without regenerating.
+
+## Round close (D-414 — A2)
+
+The bundle protocol's ceremony runs as one command, fail-closed:
+
+```bash
+bun run omega:round-close --note "<round description>" --evidence "<gate evidence>" [--dry-run]
+```
+
+Preflight refuses (named, nothing written) unless: the tree is clean, the quick gate
+is green, the decisions contract is green, the board is fresh, the committed
+`build/status.json` is green and its head is an ancestor of HEAD, the ledger's bundle
+numbering is contiguous, and HEAD advanced since the last bundle (double-run guard).
+On green it cuts `git bundle create --all`, verifies it, computes sha256, and appends
+the ledger README's table row **generated from git data** (tip, tree hash, sha256 —
+`8…8` truncation; `--note`/`--evidence` are one-line cells without `|`). It then
+prints the next-round entry block, derived from BACKLOG + the open board. The close
+**verifies** board/status freshness — it never rewrites them; the regen steps belong
+to the ratify step. `--dry-run` rehearses the preflight and renders the row without
+writing. The toolchain pin (A12) rides in `build/status.json` (`toolchain` field);
+`verify-status` reports committed-vs-fresh drift, never failing on it.
 
 ## How to propose (team workflow)
 
