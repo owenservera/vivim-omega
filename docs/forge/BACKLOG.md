@@ -20,6 +20,21 @@ implementation.
 - ~~**C · the compaction invariant**~~ — **DONE (D-410's item C, stated 2026-09-20)**: "compaction never deletes a revision, period" is explicit namespace law in `docs/VAULT-NAMESPACES.md` (the stronger F9 prerequisite).
 - ~~**At core-omega-ready (NOW REACHED — the next round's work)**~~ — **DONE (D-417, ratified 2026-09-20)**: the plugin-identification pass landed — the core needs ZERO new plugins (the seams all landed on existing machinery); the parallel-work lanes are enumerated (8 forge plugins covering the 23 unimplemented frozen-catalog ops + the Wave-2 assembly plugin; ids, op coverage, decided facts only — identify, never design; F-1's set-equality holds against the frozen 24 mechanically). **The register below is UN-PARKED; parallel work is OPEN.**
 
+## Round 12 — the course correction + the efficiency tooling round (CLOSED 2026-09-20)
+
+- ~~**The course correction (OMEGA-COURSE-CORRECTION-001, items 1–6)**~~ —
+  **DONE (D-418..D-421, ratified 2026-09-20)**: the v1 substrate call
+  (Chrome master/slave ships, no AI-API realization in v1, the Ollama-first
+  framing superseded at every law-bearing passage); the CDP substrate lane
+  named alongside the forge lanes; the shippable composition fence made
+  mechanical (the compositions stage's shippableFence); the governor
+  host-budget scoping on file before Wave 4.
+- ~~**The efficiency tooling round (the audit's A13–A17)**~~ — **DONE
+  (D-422, ratified 2026-09-20)**: the program tools its own reading layer —
+  `omega:brief`, gate `--failures-only`/`--stage`, `omega:docscan`
+  (report-only), `omega:entry`, the ledger home (`resolveLedgerDir` + the
+  README table as the ledger of record); zero host LOC; falsifiers F-1..F-8.
+
 ## UN-PARKED by D-417 (the historical D-410 register — parallel work is open; each lane's design lands as its own records)
 
 ### Wave 1 (the mine wave) — OPEN (first lane pair: forge-mine-capture + forge-mine, the decided D-409 shapes)
