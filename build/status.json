@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-09-20T04:39:38.360Z",
+  "generatedAt": "2026-09-20T04:41:35.166Z",
   "repo": "vivim-omega",
   "branch": "omega",
-  "head": "5cbd629",
+  "head": "9304c30",
   "waves": [
     {
       "id": "Ω0",
@@ -90,7 +90,7 @@
     }
   ],
   "gate": {
-    "startedAt": "2026-09-20T04:38:13.678Z",
+    "startedAt": "2026-09-20T04:40:10.152Z",
     "checks": {
       "host-loc": {
         "ok": true,
@@ -127,15 +127,11 @@
         "detail": {
           "rows": 116,
           "records": 90,
-          "ratified": 87,
+          "ratified": 90,
           "grandfatherBelow": 313,
           "openQuestions": {
-            "count": 3,
-            "ids": [
-              408,
-              409,
-              410
-            ],
+            "count": 0,
+            "ids": [],
             "board": "stale"
           }
         }
@@ -267,7 +263,7 @@
         "ok": true,
         "detail": {
           "compileMs": 3,
-          "bootMs": 19,
+          "bootMs": 18,
           "echo": true,
           "counterBump": true,
           "counterValue": {
