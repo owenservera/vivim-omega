@@ -265,6 +265,7 @@
       "dependencies": {
         "@vivim/omega-contracts": "workspace:*",
         "@vivim/omega-shim": "workspace:*",
+        "@vivim/omega-testkit": "workspace:*",
       },
     },
     "plugins/vivim-kernel-lens": {
@@ -283,6 +284,9 @@
         "@vivim/omega-host": "workspace:*",
         "@vivim/omega-platform": "workspace:*",
         "@vivim/omega-shim": "workspace:*",
+      },
+      "devDependencies": {
+        "@vivim/omega-testkit": "workspace:*",
       },
     },
     "plugins/vivim-mind": {

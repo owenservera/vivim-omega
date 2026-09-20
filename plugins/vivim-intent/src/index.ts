@@ -6,10 +6,11 @@
 import { definePlugin, startPlugin } from "@vivim/omega-shim";
 import type { PluginContext, CallMeta, Outcome } from "@vivim/omega-shim";
 import {
-  intentId, Intent, IntentStep, IntentState,
+  intentId, Intent, IntentStep, IntentState, IntentResolution,
   type IntentState as IST,
 } from "@vivim/omega-contracts";
 import { consentIdFor } from "@vivim/omega-contracts"; // for consent tracking references
+import { createHash } from "node:crypto"; // D-411: real payloadHash (the forge-author/provider pattern)
 
 const NS_INTENT = "intent";
 const NS_PLAN = "intent-plan";
@@ -57,6 +58,22 @@ async function writeCompensationEvidence(ctx: PluginContext, parentIntentId: str
   }
 }
 
+// D-411 (S1): real sha256 of the canonical payload JSON — deterministic for
+// identical inputs (F7's byte-identical red line, mechanical form). The
+// pre-D-411 "sha256:" + rawJSON spelling is dead.
+function sha256Hex(s: string): string {
+  return createHash("sha256").update(s, "utf-8").digest("hex");
+}
+
+const SHA256_RE = /^sha256:[0-9a-f]{64}$/;
+
+function asObj(v: unknown): Record<string, unknown> {
+  return typeof v === "object" && v !== null ? (v as Record<string, unknown>) : {};
+}
+function str(v: unknown): string {
+  return typeof v === "string" ? v : "";
+}
+
 // Phase 3 (§3.6 extended): input mapping application before step execution.
 function applyInputMapping(stepPayload: unknown, mappings: any[]): unknown {
   if (!Array.isArray(mappings) || mappings.length === 0) return stepPayload;
@@ -78,7 +95,7 @@ function declareArtifacts(artifacts: any[]): string[] {
   return artifacts.map((a: any) => a.artifactName ?? "unnamed");
 }
 
-startPlugin(definePlugin({
+export const def = definePlugin({
   onInit: (ctx) => {
     ctx.log(`vivim-intent Phase 1 (D-389) — authority/delegation model active (§3.2); resolution delegated to resolve.classify@1 (§3.4); cancellation non-rollback (§3.9)`);
   },
@@ -104,7 +121,21 @@ startPlugin(definePlugin({
 
       const payloadData = (p["payload"] ?? p) as Record<string, unknown>;
       const payloadStr = JSON.stringify(payloadData);
-      const payloadHash = "sha256:" + payloadStr; // deterministic canonical hash reference (§3.10)
+      // D-411 (S1): real sha256 — "sha256:" + 64 lowercase hex, deterministic
+      // for identical payloads (falsifier F-2). The old "sha256:" + raw JSON
+      // spelling was not a hash.
+      const payloadHash = "sha256:" + sha256Hex(payloadStr);
+
+      // D-411 (S1): the interpretation summary rides the intent row (the
+      // UNDERSTOOD artifact is self-describing). All fields optional-additive.
+      const interpIn = asObj(p["interpretation"]);
+      const interpretation = (Object.keys(interpIn).length > 0 && typeof interpIn["text"] === "string") ? {
+        text: str(interpIn["text"]),
+        canonical: typeof interpIn["canonical"] === "string" ? interpIn["canonical"] : null,
+        reading: typeof interpIn["reading"] === "string" ? interpIn["reading"] : null,
+        confidence: typeof interpIn["confidence"] === "number" ? interpIn["confidence"] : 0,
+        status: typeof interpIn["status"] === "string" ? interpIn["status"] : "ok",
+      } : undefined;
 
       const constraints = p["constraints"] as { deadlineMs?: number; idempotencyKey?: string } | undefined;
       const idempotencyKey = constraints?.idempotencyKey ?? p["idempotencyKey"] ?? null;
@@ -116,6 +147,7 @@ startPlugin(definePlugin({
         sourceKind: sourceKind as any,
         payload: payloadData as any,
         payloadHash,
+        ...(interpretation !== undefined ? { interpretation } : {}),
         constraints: constraints ? { deadlineMs: constraints.deadlineMs, idempotencyKey: typeof idempotencyKey === "string" ? idempotencyKey : undefined } : undefined,
         causationId: ctx.meta?.causationId ?? "unknown",
         state: "submitted" as IST,
@@ -129,7 +161,7 @@ startPlugin(definePlugin({
       } catch (e: any) {
         return { status: "FAILED", value: { error: `intent.submit: vault write failed: ${e.message}` } };
       }
-      return { status: "OK", value: { intentId: intentRow.id, state: "submitted", sourcePrincipal, sourceKind } };
+      return { status: "OK", value: { intentId: intentRow.id, state: "submitted", sourcePrincipal, sourceKind, payloadHash, canonical: interpretation?.canonical ?? null } };
     },
 
     // §3.4 / contract: intent.resolve@1 — delegates routing to resolve.classify@1 (§3.4,
@@ -222,25 +254,28 @@ startPlugin(definePlugin({
 
     // §3.4 / contract: intent.cancel@1 — cancellation is NOT rollback (§3.9);
     // pending/gated steps skipped; in-flight steps allowed to settle via deadline.
+    // D-411 (S1) defect fix: stepId is DERIVED FROM THE PAYLOAD (default
+    // "all-pending") — the pre-D-411 code referenced an undefined `stepId`
+    // inside try/catch, so the compensation-evidence write silently no-oped
+    // (the structural analysis's named latent defect, line :233). The write
+    // result is now REPORTED in the outcome — never swallowed; cancellation
+    // itself still succeeds regardless (§3.9 non-rollback).
     "intent.cancel@1": async (payload: unknown, ctx: PluginContext): Promise<Outcome> => {
-      const p = payload as Record<string, unknown>;
+      const p = asObj(payload);
       const intentIdStr = p["intentId"];
       if (typeof intentIdStr !== "string") return { status: "FAILED", value: { error: "intent.cancel: intentId required" } };
       const hex = intentIdStr.split(":")[1] ?? intentIdStr;
-      // Phase 1 skeleton: marks pending steps skipped; does not interrupt executing steps.
+      const stepId = typeof p["stepId"] === "string" && p["stepId"].length > 0 ? p["stepId"] : "all-pending";
       // Phase 4 (§4): compensation evidence written (not rollback; separate consent-gated intent needed for full saga execution).
-      try {
-        await writeCompensationEvidence(ctx, hex, stepId ?? "unknown", "cancelled-by-user");
-      } catch (e: any) {
-        // Best-effort compensation evidence; cancellation succeeds regardless (§3.9, §4).
-      }
-      return { status: "OK", value: { intentId: intentIdStr, state: "cancelling", message: "Pending/gated steps skipped; compensation evidence recorded (Phase 4); in-flight steps settle via own deadline (non-rollback per §3.9)." } };
+      const comp = await writeCompensationEvidence(ctx, hex, stepId, "cancelled-by-user");
+      const compensationRecorded = comp.status === "OK";
+      return { status: "OK", value: { intentId: intentIdStr, state: "cancelling", stepId, compensationRecorded, ...(compensationRecorded ? {} : { compensationError: (comp.value as { error?: string }).error ?? "unknown" }), message: "Pending/gated steps skipped; in-flight steps settle via own deadline (non-rollback per §3.9)." } };
     },
 
     // §3.4 / contract: intent.status@1 — READ only; only sourcePrincipal,
     // delegated readers, or audit-authorized callers permitted (§3.4 note).
     "intent.status@1": async (payload: unknown, ctx: PluginContext): Promise<Outcome> => {
-      const p = payload as Record<string, unknown>;
+      const p = asObj(payload);
       const intentIdStr = p["intentId"];
       if (typeof intentIdStr !== "string") return { status: "FAILED", value: { error: "intent.status: intentId required" } };
       const hex = intentIdStr.split(":")[1] ?? intentIdStr;
@@ -248,8 +283,61 @@ startPlugin(definePlugin({
       if (!row) return { status: "FAILED", value: { error: "intent.status: not found" } };
       return { status: "OK", value: row.data };
     },
+
+    // D-411 (S1): intent.resolution@1 — the four-state resolution of an NL
+    // command, as rows in ns `intent`. UNDERSTOOD is the intent row itself
+    // (state "submitted" + interpretation summary, written by intent.submit);
+    // this op writes the three terminal states:
+    //   EXECUTED  — the routed call returned (outcome rides the row, ok or not)
+    //   REFUSED   — the law gate denied or required consent (decision + consentId)
+    //   AMBIGUOUS — no confident interpretation (intentRef: null — no artifact
+    //               exists to cite; the row itself is the evidence of the attempt)
+    // Row ids: `<hex>:res` when intentRef is given, `amb:<hex>:res` otherwise.
+    "intent.resolution@1": async (payload: unknown, ctx: PluginContext): Promise<Outcome> => {
+      const p = asObj(payload);
+      const resolution = str(p["resolution"]);
+      if (resolution !== "AMBIGUOUS" && resolution !== "REFUSED" && resolution !== "EXECUTED") {
+        return { status: "FAILED", value: { error: "intent.resolution: resolution must be AMBIGUOUS | REFUSED | EXECUTED (UNDERSTOOD is the intent row itself — see intent.submit)" } };
+      }
+      const intentRefRaw = typeof p["intentRef"] === "string" ? p["intentRef"] : null;
+      const intentRef = intentRefRaw !== null && intentRefRaw.length > 0 ? intentRefRaw : null;
+      if (resolution !== "AMBIGUOUS" && intentRef === null) {
+        return { status: "FAILED", value: { error: "intent.resolution: EXECUTED and REFUSED require intentRef (the persisted artifact they resolve); AMBIGUOUS carries null by design" } };
+      }
+      if (intentRef !== null && !/^intent:[0-9a-f]{16,64}$/.test(intentRef)) {
+        return { status: "FAILED", value: { error: "intent.resolution: intentRef must match intent:<hex>" } };
+      }
+      const payloadHash = typeof p["payloadHash"] === "string" ? p["payloadHash"] : undefined;
+      if (payloadHash !== undefined && !SHA256_RE.test(payloadHash)) {
+        return { status: "FAILED", value: { error: "intent.resolution: payloadHash must match sha256:<64 lowercase hex>" } };
+      }
+      const hex = intentRef !== null ? intentRef.split(":")[1] : (Math.random().toString(16).slice(2, 18) + Math.random().toString(16).slice(2, 18)).slice(0, 32);
+      const rowId = (intentRef !== null ? hex : "amb:" + hex) + ":res";
+      const row = {
+        kind: "resolution",
+        resolution: resolution as IntentResolution,
+        intentRef,
+        ...(payloadHash !== undefined ? { payloadHash } : {}),
+        ...(typeof p["text"] === "string" ? { text: p["text"] } : {}),
+        ...(typeof p["reading"] === "string" ? { reading: p["reading"] } : {}),
+        ...(typeof p["interpStatus"] === "string" ? { interpStatus: p["interpStatus"] } : {}),
+        ...(typeof p["decision"] === "string" ? { decision: p["decision"] } : {}),
+        ...(typeof p["consentId"] === "string" ? { consentId: p["consentId"] } : {}),
+        ...(p["outcome"] !== undefined ? { outcome: p["outcome"] } : {}),
+        causationId: ctx.meta?.causationId ?? "unknown",
+        createdAt: Date.now(),
+      };
+      try {
+        await portCall(ctx, "vault.append@1", { ns: NS_INTENT, id: rowId, data: row, meta: { type: "intent-resolution", phase: "D-411" } });
+      } catch (e: any) {
+        return { status: "FAILED", value: { error: `intent.resolution: vault write failed: ${e.message}` } };
+      }
+      return { status: "OK", value: { recorded: true, id: rowId, resolution, intentRef } };
+    },
   },
-}));
+});
+
+startPlugin(def); // no-op outside a worker (tests / FakeHost): the def stays pure
 
 // Phase 3: safe projection (§3.6); Phase 4: compensation + IntentContext (§4).
 // Design verified; full wiring deferred to Phase 3 production cycle.

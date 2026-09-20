@@ -19,6 +19,18 @@ export interface ExecuteOutcome {
   result?: unknown;
   refused?: { op: string; principal: string; consentId?: string; detail: string };
   ruleActionConsent?: { principal: string; op: string; consentId?: string; decision: string };
+  /** D-411 (S1) — the canonical-intent seam: the persisted artifact this
+   *  command resolved through (undefined iff the seam was unavailable or the
+   *  command never reached a submit). */
+  intentRef?: string;
+  payloadHash?: string;
+  /** D-411 (S1) — the four-state terminal resolution of this command
+   *  (UNDERSTOOD is the submit state itself, not an outcome field). */
+  resolution?: "AMBIGUOUS" | "REFUSED" | "EXECUTED";
+  /** D-411 (S1) — true iff the `:res` row write came back OK (the seam's
+   *  bookkeeping is best-effort by the surface, but its success is reported,
+   *  never assumed). */
+  resolutionRecorded?: boolean;
   worldV: number;
 }
 
@@ -72,17 +84,66 @@ export function createConsoleService(host: BootedHost, startedAt: number): Conso
     return interpret(text, w);
   };
 
+  // D-411 (S1): the four-state resolution bookkeeping — best-effort by the
+  // surface (a row-family write failure is VISIBLE: ExecuteOutcome simply
+  // lacks intentRef/resolution), never a thrown error on the user's command.
+  const recordResolution = async (row: Record<string, unknown>): Promise<boolean> => {
+    const r = await call("intent.resolution@1", row);
+    if (!r.ok) return false;
+    const o = (r.value ?? {}) as { status?: string };
+    return o.status === "OK";
+  };
+
   const execute = async (text: string): Promise<ExecuteOutcome> => {
     const interp = await interpretText(text);
     const w = await world();
     const ir = interp.ir;
     const out: ExecuteOutcome = { interpretation: interp, executed: false, worldV: w.v };
 
-    // surface pseudo-intents (the language layer describes them; the SURFACE serves them)
+    // surface pseudo-intents (the language layer describes them; the SURFACE serves them).
+    // D-411 (S1): genuinely-ambiguous commands (the assist family, or no IR at
+    // all, on non-empty input) record an AMBIGUOUS resolution row — the
+    // clarification loop's evidence. surface.help / surface.entity are console
+    // queries, not governed events — no rows.
     if (!ir || ir.intent.startsWith("surface.")) {
+      if (text.trim().length > 0 && (!ir || ir.intent === "surface.assist")) {
+        out.resolution = "AMBIGUOUS";
+        out.resolutionRecorded = await recordResolution({
+          resolution: "AMBIGUOUS",
+          text,
+          ...(interp.reading !== null ? { reading: interp.reading } : {}),
+          interpStatus: interp.status,
+        });
+      }
       out.surface = surfacePayload(ir, interp, w);
       out.executed = false;
       return out;
+    }
+
+    // D-411 (S1) — the canonical-intent seam, live path:
+    //   interpret -> persist (UNDERSTOOD) -> gate WITH citation -> execute -> resolve.
+    // The submit persists the canonical artifact; the pre-gate call below is
+    // the same law.check@1 the host's own mechanical gate runs for risky ops
+    // (defense in depth — two journal rows, one citation).
+    const sub = await call("intent.submit@1", {
+      type: ir.intent,
+      payload: ir.payload,
+      interpretation: {
+        text,
+        canonical: interp.canonical,
+        reading: interp.reading,
+        confidence: interp.confidence,
+        status: interp.status,
+      },
+    });
+    if (sub.ok) {
+      // the intent ops speak the Outcome convention ({status, value}) — the
+      // transport result wraps it once more (r.value = the Outcome).
+      const o = (sub.value ?? {}) as { status?: string; value?: { intentId?: string; payloadHash?: string } };
+      if (o.status === "OK" && o.value && typeof o.value["intentId"] === "string") {
+        out.intentRef = o.value["intentId"];
+        if (typeof o.value["payloadHash"] === "string") out.payloadHash = o.value["payloadHash"];
+      }
     }
 
     // the consent pre-check for rule actions: one combined card at rule creation.
@@ -102,15 +163,70 @@ export function createConsoleService(host: BootedHost, startedAt: number): Conso
       }
     }
 
+    // D-411 (S1): the canonical gate call — principal/op identical to the
+    // host's own gate for the routed call, but carrying the citation
+    // {intentRef, payloadHash}. A deny or require-consent decision resolves
+    // the command as REFUSED (the ✓ card carries the structured decision —
+    // the consent id comes from the law, not regex extraction).
+    // CONDITION: mirror the host's gating condition — only ops the host would
+    // gate (catalog risk MUTATION / EXTERNAL_MUTATION; unknown ops fail-closed
+    // to gated) get the pre-gate. ENGINE/READ ops are not host-gated and must
+    // not be pre-gated either, or the surface would refuse commands the host
+    // would run (the parity lesson: one gating condition, two enforcement
+    // points — defense in depth, not divergence).
+    const catalogRisk = w.ops.find((o) => o.op === ir.intent)?.risk;
+    const preGate = catalogRisk === undefined || catalogRisk === "MUTATION" || catalogRisk === "EXTERNAL_MUTATION";
+    if (out.intentRef !== undefined && preGate) {
+      const gate = await call("law.check@1", {
+        principal: "root",
+        op: ir.intent,
+        payload: ir.payload,
+        intentRef: out.intentRef,
+        ...(out.payloadHash !== undefined ? { payloadHash: out.payloadHash } : {}),
+      });
+      if (gate.ok) {
+        const d = gate.value as LawDecisionResult;
+        if (d.decision === "deny" || d.decision === "require-consent") {
+          out.refused = { op: ir.intent, principal: "root", consentId: d.consentId, detail: d.reason ?? "" };
+          out.resolution = "REFUSED";
+          out.resolutionRecorded = await recordResolution({
+            resolution: "REFUSED",
+            intentRef: out.intentRef,
+            ...(out.payloadHash !== undefined ? { payloadHash: out.payloadHash } : {}),
+            decision: d.decision,
+            ...(d.consentId !== undefined ? { consentId: d.consentId } : {}),
+            text,
+          });
+          return out;
+        }
+      }
+      // A failed pre-gate (e.g. DEGRADED — law unroutable) falls through to
+      // the routed call: the host's own fail-closed gate decides, exactly the
+      // pre-D-411 posture.
+    }
+
     const r = await call(ir.intent, ir.payload);
     out.op = ir.intent;
+    let refused: ExecuteOutcome["refused"];
     if (r.ok) {
       out.executed = true;
       out.result = r.value;
     } else {
       // REFUSED with a consentId → the confirm card (the ✓ family); other errors pass raw
       const consentId = extractConsentId(r.detail ?? "");
-      out.refused = { op: ir.intent, principal: "root", consentId, detail: r.detail ?? r.error };
+      refused = { op: ir.intent, principal: "root", consentId, detail: r.detail ?? r.error };
+      out.refused = refused;
+    }
+    const resolution: "EXECUTED" | "REFUSED" = !r.ok && refused?.consentId !== undefined ? "REFUSED" : "EXECUTED";
+    out.resolution = resolution;
+    if (out.intentRef !== undefined) {
+      out.resolutionRecorded = await recordResolution({
+        resolution,
+        intentRef: out.intentRef,
+        ...(out.payloadHash !== undefined ? { payloadHash: out.payloadHash } : {}),
+        text,
+        outcome: r.ok ? { ok: true } : { ok: false, error: r.error, detail: r.detail ?? null },
+      });
     }
     return out;
   };

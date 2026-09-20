@@ -31,6 +31,16 @@ export interface Intent {
   sourceKind: PrincipalKind;
   payload: JsonValue;
   payloadHash: string;
+  /** D-411 (S1): the deterministic interpretation that produced this intent —
+   *  persisted so the canonical artifact is self-describing (UNDERSTOOD state).
+   *  Additive optional: rows written before D-411 simply lack it. */
+  interpretation?: {
+    text: string;
+    canonical: string | null;
+    reading: string | null;
+    confidence: number;
+    status: string;
+  };
   constraints?: { deadlineMs?: number; idempotencyKey?: string };
   parentIntentId?: string;
   causationId: string;
@@ -41,6 +51,12 @@ export interface Intent {
   evidence: VaultProvenanceRef[];
   createdAt: number;
 }
+
+/** D-411 (S1): the four-state resolution of an NL command — the vision's
+ *  CON-05..07 claim, as rows. UNDERSTOOD is the intent row itself (state
+ *  "submitted" + interpretation); AMBIGUOUS / REFUSED / EXECUTED are `:res`
+ *  rows written via intent.resolution@1. */
+export type IntentResolution = "UNDERSTOOD" | "AMBIGUOUS" | "REFUSED" | "EXECUTED";
 
 const INTENT_HEX_RE = /^[0-9a-f]{16,64}$/;
 

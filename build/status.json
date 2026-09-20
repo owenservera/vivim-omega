@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-09-20T04:41:35.166Z",
+  "generatedAt": "2026-09-20T05:03:27.104Z",
   "repo": "vivim-omega",
   "branch": "omega",
-  "head": "9304c30",
+  "head": "3f1b194",
   "waves": [
     {
       "id": "Ω0",
@@ -90,7 +90,7 @@
     }
   ],
   "gate": {
-    "startedAt": "2026-09-20T04:40:10.152Z",
+    "startedAt": "2026-09-20T05:02:00.745Z",
     "checks": {
       "host-loc": {
         "ok": true,
@@ -125,13 +125,15 @@
       "decisions": {
         "ok": true,
         "detail": {
-          "rows": 116,
-          "records": 90,
+          "rows": 117,
+          "records": 91,
           "ratified": 90,
           "grandfatherBelow": 313,
           "openQuestions": {
-            "count": 0,
-            "ids": [],
+            "count": 1,
+            "ids": [
+              411
+            ],
             "board": "stale"
           }
         }
@@ -140,7 +142,7 @@
         "ok": true,
         "detail": {
           "specs": 18,
-          "entries": 75,
+          "entries": 76,
           "driftAllowlisted": {
             "vivim.law": {
               "files": [
@@ -196,9 +198,9 @@
               "reason": "alias-style variance run.json vs spine.json: same effective authority (HOST_OP_TO_CAP auto-mint); convergence deferred, see _note in run.json"
             }
           },
-          "riskParityOps": 46,
+          "riskParityOps": 48,
           "matrixConformance": "green",
-          "contractTypes": 131,
+          "contractTypes": 132,
           "callSiteAllowlisted": [
             "CompositionSpecEntry",
             "LangContribution",
@@ -254,7 +256,7 @@
       "tests": {
         "ok": true,
         "detail": {
-          "pass": 1056,
+          "pass": 1069,
           "fail": 0,
           "maxConcurrency": 4
         }
@@ -263,7 +265,7 @@
         "ok": true,
         "detail": {
           "compileMs": 3,
-          "bootMs": 18,
+          "bootMs": 19,
           "echo": true,
           "counterBump": true,
           "counterValue": {
@@ -286,7 +288,7 @@
   },
   "hostLoc": 1500,
   "tests": {
-    "pass": 1056,
+    "pass": 1069,
     "fail": 0
   },
   "benchmarks": {

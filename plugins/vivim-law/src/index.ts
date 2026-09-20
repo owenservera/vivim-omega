@@ -149,7 +149,7 @@ function resolve(doc: PolicyDoc, principal: string, op: string): Resolved {
 }
 
 // ---- the ops ----
-startPlugin(definePlugin({
+export const def = definePlugin({
   onInit: async (ctx) => {
     const init = registry.init(ctx.config["journalPath"], ctx.manifest.id);
     ctx.log(`vivim.law up (Ω1) — policy ${LAW_POLICY_V1.policyId}@${LAW_POLICY_V1.version}, journal replay: ${init.replayed} events`);
@@ -166,12 +166,20 @@ startPlugin(definePlugin({
   },
 
   ops: {
-    /** THE gate. Payload: {principal, op, payload, causationId}. Returns LawDecision. */
+    /** THE gate. Payload: {principal, op, payload, causationId} — plus, since
+     *  D-411 (S1, the canonical-intent seam), OPTIONAL {intentRef, payloadHash}:
+     *  callers that resolved a canonical intent before invoking cite it here,
+     *  and every journaled law decision carries the citation (evidence binding,
+     *  not new policy — evalPolicy stays typed on who/which-op; callers without
+     *  a citation journal exactly as before). Returns LawDecision. */
     "law.check@1": async (payload: unknown, ctx: PluginContext | null, meta: CallMeta) => {
       const p = asObj(payload);
       const principal = str(p["principal"]);
       const op = str(p["op"]);
       const causationId = optStr(p["causationId"]) ?? meta.causationId;
+      // D-411 (S1): the canonical-intent citation — optional, additive, journaled.
+      const intentRef = optStr(p["intentRef"]);
+      const payloadHash = optStr(p["payloadHash"]);
 
       let primary = resolve(LAW_POLICY_V1, principal, op);
       // Forbidden-action overlay (D-310): a per-principal deny that precedes
@@ -211,6 +219,10 @@ startPlugin(definePlugin({
           reason: primary.reason,
           ...(primary.consentId !== undefined ? { consentId: primary.consentId } : {}),
           causationId,
+          // D-411 (S1): the canonical-intent citation — present iff the caller
+          // resolved a canonical intent before invoking (falsifier F-3).
+          ...(intentRef !== undefined ? { intentRef } : {}),
+          ...(payloadHash !== undefined ? { payloadHash } : {}),
           ...(shadowDoc ? { shadow: { decision: divergence ? divergence.shadow.decision : primary.decision, diverged: divergence !== null } } : {}),
         });
       }
@@ -412,4 +424,6 @@ startPlugin(definePlugin({
       return out;
     },
   },
-}));
+});
+
+startPlugin(def); // no-op outside a worker (tests / FakeHost): the def stays pure

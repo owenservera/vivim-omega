@@ -504,6 +504,22 @@
           }
         },
         {
+          "id": "vivim.intent",
+          "source": "../plugins/vivim-intent",
+          "bootPhase": 1,
+          "grant": {
+            "capabilities": [
+              "port:vault.append@1",
+              "port:vault.get@1"
+            ],
+            "contracts": [
+              "intent.submit@1",
+              "intent.status@1",
+              "intent.resolution@1"
+            ]
+          }
+        },
+        {
           "id": "vivim.director",
           "source": "../plugins/vivim-director",
           "bootPhase": 1,

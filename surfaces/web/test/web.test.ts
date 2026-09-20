@@ -22,6 +22,11 @@ interface ExecOutcomeWire {
   result?: unknown;
   refused?: { op: string; principal: string; consentId?: string; detail: string };
   ruleActionConsent?: { principal: string; op: string; consentId?: string; decision: string };
+  /** D-411 (S1) — the canonical-intent seam on the wire. */
+  intentRef?: string;
+  payloadHash?: string;
+  resolution?: "AMBIGUOUS" | "REFUSED" | "EXECUTED";
+  resolutionRecorded?: boolean;
   worldV: number;
 }
 
@@ -76,7 +81,7 @@ describe("Ω13 · boot + seeding + snapshot replication", () => {
       expect(["active", "dormant"]).toContain(c.state);
       expect(id).toBeTruthy();
     }
-    expect(Object.keys(r.plugins).length).toBe(8);
+    expect(Object.keys(r.plugins).length).toBe(9); // D-411: vivim.intent joined the console composition
     expect(r.plugins["vivim.law"]?.state).toBe("active"); // bootPhase 0 gates from the first tick
     expect(r.plugins["pack.domain-email"]?.state).toBe("dormant"); // declarations only: unrouted by design
     // Seeding + snapshot replication wake law/vault/provider/mind; untouched
@@ -124,13 +129,25 @@ describe("Ω13 · interpret + execute: the owner's example end-to-end", () => {
     expect(r1.outcome.executed).toBe(false);
     expect(r1.outcome.refused?.consentId).toMatch(/^consent_[0-9a-f]+$/);
     expect(r1.outcome.refused?.op).toBe("message.send@1");
+    // D-411 (S1): the refused command cites its persisted canonical intent and
+    // resolves REFUSED with the row recorded
+    expect(r1.outcome.intentRef).toMatch(/^intent:[0-9a-f]{16,64}$/);
+    expect(r1.outcome.payloadHash).toMatch(/^sha256:[0-9a-f]{64}$/);
+    expect(r1.outcome.resolution).toBe("REFUSED");
+    expect(r1.outcome.resolutionRecorded).toBe(true);
     // 2. the confirm card grants it
     const g = await (await fetch(`${base}/api/consent`, { method: "POST", body: JSON.stringify({ consentId: r1.outcome.refused!.consentId }) })).json() as { ok: boolean; granted: boolean };
     expect(g.granted).toBe(true);
-    // 3. retry: same NL, now clean
+    // 3. retry: same NL, now clean — a NEW intent (each command is its own
+    // submission), identical payloadHash (F7 byte-identical canonical)
     const r2 = await (await fetch(`${base}/api/execute`, { method: "POST", body: JSON.stringify({ text: "send 'hello from the console test' to Sarah" }) })).json() as { outcome: ExecOutcomeWire };
     expect(r2.outcome.executed).toBe(true);
     expect(r2.outcome.result).toMatchObject({ messageId: expect.stringMatching(/^msg_/) });
+    expect(r2.outcome.resolution).toBe("EXECUTED");
+    expect(r2.outcome.resolutionRecorded).toBe(true);
+    expect(r2.outcome.intentRef).toMatch(/^intent:[0-9a-f]{16,64}$/);
+    expect(r2.outcome.intentRef).not.toBe(r1.outcome.intentRef);
+    expect(r2.outcome.payloadHash).toBe(r1.outcome.payloadHash);
   });
 
   test("D-384: /api/consent ignores a client-supplied principal (no cross-principal forgery)", async () => {
@@ -164,6 +181,56 @@ describe("Ω13 · interpret + execute: the owner's example end-to-end", () => {
     const to = (r.outcome.interpretation.ir?.slots["to"]);
     expect(to?.entityId).toBe("contact:peter-miller");
     expect(to?.matches?.length).toBe(2);
+  });
+});
+
+describe("D-411 (S1) · the canonical-intent seam, live path", () => {
+  test("F-4/F-5: executed command → intent row cited + EXECUTED resolution; distinct intents, identical canonical hash", async () => {
+    // consent for root/message.send@1 was granted in the prior test — this
+    // command executes; the seam assertions are deterministic either way (the
+    // refusal-path halves live in the prior test, where the state is fresh)
+    const r1 = await (await fetch(`${base}/api/execute`, { method: "POST", body: JSON.stringify({ text: "send 'seam evidence one' to Sarah" }) })).json() as { outcome: ExecOutcomeWire };
+    expect(r1.outcome.executed).toBe(true);
+    expect(r1.outcome.intentRef).toMatch(/^intent:[0-9a-f]{16,64}$/);
+    expect(r1.outcome.payloadHash).toMatch(/^sha256:[0-9a-f]{64}$/);
+    expect(r1.outcome.resolution).toBe("EXECUTED");
+    expect(r1.outcome.resolutionRecorded).toBe(true);
+    // a second, identical command: its OWN intent (distinct submission) with
+    // the identical canonical payloadHash (F7 byte-identical, live-path form)
+    const r2 = await (await fetch(`${base}/api/execute`, { method: "POST", body: JSON.stringify({ text: "send 'seam evidence one' to Sarah" }) })).json() as { outcome: ExecOutcomeWire };
+    expect(r2.outcome.executed).toBe(true);
+    expect(r2.outcome.intentRef).not.toBe(r1.outcome.intentRef);
+    expect(r2.outcome.payloadHash).toBe(r1.outcome.payloadHash);
+    // a different command: different hash (the hash is content-derived)
+    const r3 = await (await fetch(`${base}/api/execute`, { method: "POST", body: JSON.stringify({ text: "send 'seam evidence two' to Sarah" }) })).json() as { outcome: ExecOutcomeWire };
+    expect(r3.outcome.payloadHash).not.toBe(r1.outcome.payloadHash);
+  });
+
+  test("F-3 live: the law journal row for the pre-gate call carries {intentRef, payloadHash}", async () => {
+    const socket: Socket = io(`http://127.0.0.1:${service.port}/?XTransformPort=${service.port}`, {
+      path: "/", transports: ["websocket", "polling"], forceNew: true, reconnection: false, timeout: 5000,
+    });
+    const journalEvents: Array<Record<string, unknown>> = [];
+    socket.on("journal", (p: { events?: Array<Record<string, unknown>> }) => { for (const e of p.events ?? []) journalEvents.push(e); });
+    await new Promise<void>((resolve) => socket.on("connect", () => resolve()));
+    const r = await (await fetch(`${base}/api/execute`, { method: "POST", body: JSON.stringify({ text: "send 'seam journal evidence' to Sarah" }) })).json() as { outcome: ExecOutcomeWire };
+    expect(r.outcome.intentRef).toBeTruthy();
+    await new Promise((res) => setTimeout(res, 1500));
+    // the citation row: the surface's canonical pre-gate call (the host's own
+    // mechanical gate row carries no citation — two rows, one citation)
+    const cited = journalEvents.find((e) => e["op"] === "law.check" && e["targetOp"] === "message.send@1" && e["intentRef"] === r.outcome.intentRef);
+    expect(cited).toBeTruthy();
+    expect(cited!["payloadHash"]).toBe(r.outcome.payloadHash);
+    socket.disconnect();
+  });
+
+  test("F-4: an unparseable command → AMBIGUOUS resolution row (the assist edge's evidence)", async () => {
+    const r = await (await fetch(`${base}/api/execute`, { method: "POST", body: JSON.stringify({ text: "ask the assistant about the flurb wozzle" }) })).json() as { outcome: ExecOutcomeWire };
+    expect(r.outcome.executed).toBe(false);
+    expect(r.outcome.surface?.kind).toBe("assist");
+    expect(r.outcome.resolution).toBe("AMBIGUOUS");
+    expect(r.outcome.resolutionRecorded).toBe(true);
+    expect(r.outcome.intentRef).toBeUndefined(); // no canonical artifact exists to cite
   });
 });
 

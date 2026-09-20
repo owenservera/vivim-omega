@@ -66,8 +66,8 @@ describe("D-351 — risk parity net: manifest-declared risk === policy classific
     expect(mismatches, `D-351 parity violated — the manifest gate-trigger and the policy gate-truth disagree:\n${table}\nFix the policy table (exact rows outrank prefixes) or the manifest declaration; never let the two sources drift silently.`).toEqual([]);
   });
 
-  test("policy version carries the parity amendments (1.5.0, D-351 + D-356 + D-358 + D-374 + Wave 0)", () => {
-    expect(LAW_POLICY_V1.version).toBe("1.5.0");
+  test("policy version carries the parity amendments (1.6.0, D-351 + D-356 + D-358 + D-374 + Wave 0 + D-411)", () => {
+    expect(LAW_POLICY_V1.version).toBe("1.6.0");
   });
 
   test("the three repaired rows classify as declared, standalone of any composition", () => {
