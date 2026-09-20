@@ -152,10 +152,19 @@ In substance:
   prints the new `Process:` line correctly, including an honest `STALE` flag
   observed live (this record's own edits post-date the last committed
   `status.json`).
-- Full gate green ×2 on this record's tree (numbers to be cited at
-  ratification, per D-364's evidence-class discipline); `efficiency-tooling.test.ts`
-  (28/28) re-verified green against the amended `entry.ts`; zero host LOC;
-  anvil untouched.
+- Full gate green ×2 on this record's PROPOSED tree (D-364's evidence-class
+  discipline), both 1190 pass / 0 fail with the `process` stage green between
+  `invariants-freshness` and `tests`: the first started 2026-09-20T15:30:11Z,
+  the second ran directly after (the prior tip's 1175 plus this record's 15 new
+  falsifiers); docscan 0 findings; the checker clean. `CURRENT-INVARIANTS.md`
+  moved to pass 4 (stage-drift trigger) and its pin in
+  `invariants-freshness.test.ts` moved with it in the same commit. The
+  `efficiency-tooling.test.ts` suite (entry/brief/docscan/failures) re-verified
+  green against the amended `entry.ts`; zero host LOC; anvil untouched.
+- Program-size vs record-file counts: the `Process:` line reports RATIFIED
+  index rows (127 at this tip); the checker's own `ratified` figure counts
+  record files (102). Both are correct measures of different things and F-4
+  pins which one this tool reports.
 
 ## Index
 

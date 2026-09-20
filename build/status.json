@@ -1,12 +1,12 @@
 {
-  "generatedAt": "2026-09-20T14:22:42.690Z",
+  "generatedAt": "2026-09-20T15:33:37.412Z",
   "repo": "vivim-omega",
   "branch": "omega",
-  "head": "bb7a1b8",
+  "head": "cf7a8d5",
   "toolchain": {
     "bun": "1.3.14",
     "node": "24.3.0",
-    "os": "linux 5.10.134-013.15.kangaroo.al8.x86_64",
+    "os": "linux 6.18.44-fc-v37",
     "arch": "x64"
   },
   "waves": [
@@ -96,7 +96,7 @@
     }
   ],
   "gate": {
-    "startedAt": "2026-09-20T14:21:10.549Z",
+    "startedAt": "2026-09-20T15:31:56.033Z",
     "checks": {
       "host-loc": {
         "ok": true,
@@ -131,15 +131,18 @@
       "decisions": {
         "ok": true,
         "detail": {
-          "rows": 128,
-          "records": 102,
+          "rows": 130,
+          "records": 104,
           "ratified": 102,
           "grandfatherBelow": 313,
           "generatedFrom": 413,
           "trackWarnings": 0,
           "openQuestions": {
-            "count": 0,
-            "ids": [],
+            "count": 2,
+            "ids": [
+              423,
+              424
+            ],
             "board": "stale"
           }
         }
@@ -272,18 +275,32 @@
         "ok": true,
         "detail": {
           "policy": "report-only (D-415, A3 — the flip to failing is a future record's call, after one green wave of reports)",
-          "pass": 3,
-          "asOf": "D-421",
-          "ratifiedSince": 1,
-          "gateStages": 13,
+          "pass": 4,
+          "asOf": "D-422",
+          "ratifiedSince": 0,
+          "gateStages": 14,
           "stale": false,
           "triggers": []
+        }
+      },
+      "process": {
+        "ok": true,
+        "detail": {
+          "policy": "report-only (D-423 — mirrors D-415/D-368; the flip to failing, if ever, is a future record's call)",
+          "gateGreen": true,
+          "gateStale": false,
+          "boardOpen": 2,
+          "boardBlocking": 0,
+          "boardFreshness": "stale",
+          "docscanFindings": 0,
+          "ledgerResolved": false,
+          "ratifiedCount": 127
         }
       },
       "tests": {
         "ok": true,
         "detail": {
-          "pass": 1175,
+          "pass": 1190,
           "fail": 0,
           "maxConcurrency": 4
         }
@@ -291,8 +308,8 @@
       "attest": {
         "ok": true,
         "detail": {
-          "compileMs": 3,
-          "bootMs": 20,
+          "compileMs": 4,
+          "bootMs": 31,
           "echo": true,
           "counterBump": true,
           "counterValue": {
@@ -315,7 +332,7 @@
   },
   "hostLoc": 1500,
   "tests": {
-    "pass": 1175,
+    "pass": 1190,
     "fail": 0
   },
   "benchmarks": {
