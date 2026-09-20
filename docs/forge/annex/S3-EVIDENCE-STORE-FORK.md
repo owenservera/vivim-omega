@@ -8,8 +8,9 @@ S3) and — unlike S1 and S2, which the owner's directive queued for immediate
 execution — it is **a genuine architectural choice the structural analysis
 deliberately reserved for the owner** ("an owner call to make later, with a
 closing window"). At lift it becomes the PROPOSED decision record under the
-then-next open D-id — **D-414** (D-413 is the program tooling round, ratified
-2026-09-20; the S3 lift will be the scaffold's first owner-call record).
+then-next open D-id — **D-415** (D-413 the program tooling round and D-414
+the round-close automator round are both ratified 2026-09-20; the S3 lift
+will be the scaffold's first owner-call record).
 
 **Measured volume (the window's clock, per D-410's falsifier — MEASURED
 2026-09-20 on the D-413 tree, one full-gate corpus run):** **7,145 law-journal
