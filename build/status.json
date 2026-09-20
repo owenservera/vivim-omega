@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-09-20T14:19:30.840Z",
+  "generatedAt": "2026-09-20T14:22:42.690Z",
   "repo": "vivim-omega",
   "branch": "omega",
-  "head": "666938d",
+  "head": "bb7a1b8",
   "toolchain": {
     "bun": "1.3.14",
     "node": "24.3.0",
@@ -96,7 +96,7 @@
     }
   ],
   "gate": {
-    "startedAt": "2026-09-20T14:17:58.200Z",
+    "startedAt": "2026-09-20T14:21:10.549Z",
     "checks": {
       "host-loc": {
         "ok": true,
@@ -140,7 +140,7 @@
           "openQuestions": {
             "count": 0,
             "ids": [],
-            "board": "fresh"
+            "board": "stale"
           }
         }
       },
@@ -281,14 +281,18 @@
         }
       },
       "tests": {
-        "ok": false,
-        "detail": "1173 pass / 2 fail — failing: [\"F-1 — A13 the record brief (≤40 lines, decision payload only) > the largest generated-era record briefs under the cap with the payload present\",\"F-6 — A15 the docscan (live lock + injected fixtures) > LIVE LOCK: the current tree scans clean (the D-418 fix holds tree-wide)\",\"F-1 — A13 the record brief (≤40 lines, decision payload only) > the largest generated-era record briefs under the cap with the payload present\",\"F-6 — A15 the docscan (live lock + injected fixtures) > LIVE LOCK: the current tree scans clean (the D-418 fix holds tree-wide)\"]"
+        "ok": true,
+        "detail": {
+          "pass": 1175,
+          "fail": 0,
+          "maxConcurrency": 4
+        }
       },
       "attest": {
         "ok": true,
         "detail": {
-          "compileMs": 4,
-          "bootMs": 19,
+          "compileMs": 3,
+          "bootMs": 20,
           "echo": true,
           "counterBump": true,
           "counterValue": {
@@ -311,8 +315,8 @@
   },
   "hostLoc": 1500,
   "tests": {
-    "pass": 1173,
-    "fail": 2
+    "pass": 1175,
+    "fail": 0
   },
   "benchmarks": {
     "at": "2026-09-18T10:16:48.896Z",
