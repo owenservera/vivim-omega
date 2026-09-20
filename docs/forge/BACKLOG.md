@@ -18,11 +18,11 @@ implementation.
 - ~~**A3 · the invariants round (pass #2 + the freshness stage)**~~ — **DONE (D-415, ratified 2026-09-20)**: `CURRENT-INVARIANTS.md` pass #2, regenerated from the decision records as-of D-415 with the machine-readable marker (Wave 0's forge constitution, the Core Phase seams, the generated-row era, the D-391 B5 re-freeze — all folded in); the report-only `invariants-freshness` gate stage (T1 30-ratifications, T2 stage drift; the live lock test pins digest ↔ registry; T3 wave-closure deferred with its named trigger; the flip to failing after one green wave of reports). The acceleration review's build-order rows 3–5 are ALL landed — the scheduled program stack is built.
 - ~~**S3 · the evidence-store choicepoint**~~ — **DONE (D-416, ratified 2026-09-20 — THE CORE PHASE IS CLOSED)**: the owner's call took (a) fold-into-vault — law's narrative journal rows ride vault ns `law` (id family `journal:<boot>-<seq>`, best-effort preserved; the recursion guard: the journal never narrates its own writes — the changelog row IS the record); the kernel audit chain's persistence point landed as `law.audit.drain@1` (ns `audit`, one whole signed export per drain; the console drains at close — 57 grants on its own test run); the console relay + connect-time history read the vault (the D-387 bounded discipline carried over and COUNTED); the sidecar file is the transition artifact (remaining writer: the B5-frozen µhost transport gate rows); the registry absorbs vault journal rows live; the volume clock re-measured at lift: 7,145 rows / 65 journals, unchanged. Zero host LOC — B5 flat at 1500/1500. **core-omega-ready per D-410's ratified milestone row.**
 - ~~**C · the compaction invariant**~~ — **DONE (D-410's item C, stated 2026-09-20)**: "compaction never deletes a revision, period" is explicit namespace law in `docs/VAULT-NAMESPACES.md` (the stronger F9 prerequisite).
-- **At core-omega-ready (NOW REACHED — the next round's work)**: the plugin-identification pass — one record enumerating the plugins the core actually needs (tactical map + frozen 24-op catalog + the parked register below) — which un-parks everything below and opens parallel work. **Identify, never design** (the D-409 partition stays decided-parked; D-410's post-core gate).
+- ~~**At core-omega-ready (NOW REACHED — the next round's work)**~~ — **DONE (D-417, ratified 2026-09-20)**: the plugin-identification pass landed — the core needs ZERO new plugins (the seams all landed on existing machinery); the parallel-work lanes are enumerated (8 forge plugins covering the 23 unimplemented frozen-catalog ops + the Wave-2 assembly plugin; ids, op coverage, decided facts only — identify, never design; F-1's set-equality holds against the frozen 24 mechanically). **The register below is UN-PARKED; parallel work is OPEN.**
 
-## Parked until core-omega-ready (D-410 register)
+## UN-PARKED by D-417 (the historical D-410 register — parallel work is open; each lane's design lands as its own records)
 
-### Wave 1 (the mine wave) — PARKED
+### Wave 1 (the mine wave) — OPEN (first lane pair: forge-mine-capture + forge-mine, the decided D-409 shapes)
 
 - **Run `forge.mine.capture@1` against `fixtures/mines/synthetic-v0/`** — the
   mine is pinned (42 files, MANIFEST.json rootHash) and waiting; parked with
@@ -34,7 +34,7 @@ implementation.
 - **Mine id discipline in anger**: HARVEST_CLASSES + MINE_PATTERN get their
   first real consumers once a capture receipt exists — waits with the park.
 
-### Wave 1+ (forge build-out) — PARKED
+### Wave 1+ (forge build-out) — OPEN
 
 - **forge.survey / forge.assay / forge.shape / forge.emit / forge.proof /
   forge.tier** — wire declared in FORGE_OP_CATALOG (24 ops, frozen), zero

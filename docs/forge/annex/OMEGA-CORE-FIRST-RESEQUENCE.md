@@ -58,6 +58,14 @@ plugin-identification pass does at core-ready.
 
 ## 3 · The parked-plugin register
 
+**REGISTER LIFTED 2026-09-20 by D-417 (RATIFIED)** — core-omega-ready was
+reached (D-416), the plugin-identification pass enumerated the lanes (8
+forge plugins covering the 23 unimplemented frozen-catalog ops + the Wave-2
+assembly plugin; the core itself needs ZERO new plugins), and the park lifted
+with its ratification. The table below is the HISTORICAL register — what was
+parked, and why, for the record. Each lane's design now lands as its own
+records when its lane opens.
+
 Every plugin-design item in the current program, parked until core-omega-ready
 (the park lifts only via the plugin-identification record):
 
