@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -33,3 +33,5 @@ The Forge will mint plugins from mines. Nothing in the current manifest vocabula
 - `bun test sdk/test/generality.test.ts` — 15/15 green; sdk suite 68/68 no regression; anvil 856/860 after the +133.
 - Forge-surface gate red fixture: forge.plugin without generality fails GEN_LEVEL_MISSING (tooling/gates/test/forge-surface.test.ts).
 - Vivim legacy manifests (report-only stance, hard:false) list findings without failing — the phase-in policy is caller stance, not schema luck.
+
+- Ratified: landed in `0763556`; two consecutive full gates green (1056/0 ×2; generality 15/15, sdk 68/68, anvil 856/860, forge-surface GEN_LEVEL_MISSING red/green in the same tree).

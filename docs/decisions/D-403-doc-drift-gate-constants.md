@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -32,3 +32,5 @@ Wave 0's first audit compared the two architecture packets (`docs/forge/OMEGA-FO
 
 - `git diff` on `AGENTS.md` (B5 line, composition-count trap 5) and `tooling/gates/explain.ts` (host-loc text) — same-commit fix.
 - `bun run omega:quick` green after the edits (doc changes are gate-visible only through decisions + compositions stages, both green).
+
+- Ratified: landed in `0763556` (same-commit prose fixes + this record); quick gate green post-landing; second full gate green (1056/0).

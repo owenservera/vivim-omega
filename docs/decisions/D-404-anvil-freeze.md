@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -33,3 +33,5 @@ The Omega Forge needs a pre-boot edge everything can be measured against: the co
 - `bun test tooling/gates/test/anvil.test.ts` — 9/9: budget derivable from the module, real tree under budget, one-line-over red, new-export red (named), removed-export red, hygiene green.
 - `bun run tooling/gates/anvil.ts` → `{ok: true, loc: 856, budget: 860}`.
 - Quick gate green with stage 1b present (`anvil-loc`, `anvil-surface` ✓ in every run).
+
+- Ratified: landed in `0763556`; two consecutive full gates green (1056/0 ×2, anvil-loc 856/860 + anvil-surface 45 exports in every run).
