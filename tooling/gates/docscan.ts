@@ -170,10 +170,14 @@ export function scanDocs(root: string): { findings: Finding[]; checked: { files:
       findings.push({ rule: "S4", file: rel, line, msg: `citation D-${id} does not resolve (no index row, no record file)` });
     }
 
-    // S6 — banner coverage: a doc claiming supersession in its header names a D-id
-    const header = lines.slice(0, 30).join("\n");
-    if (/supersed/i.test(header) && !/\bD-\d+\b/.test(text)) {
-      findings.push({ rule: "S6", file: rel, line: 1, msg: "header claims supersession but no D-id is named anywhere in the doc" });
+    // S6 — banner coverage: a doc claiming supersession in its header names a
+    // D-id. GENERATED files are out of scope (the board's "SUPERSEDED" is the
+    // status vocabulary, not a claim — and at 0 open it carries no D-ids at all).
+    if (rel !== "docs/decisions/OPEN-QUESTIONS.md") {
+      const header = lines.slice(0, 30).join("\n");
+      if (/supersed/i.test(header) && !/\bD-\d+\b/.test(text)) {
+        findings.push({ rule: "S6", file: rel, line: 1, msg: "header claims supersession but no D-id is named anywhere in the doc" });
+      }
     }
   }
 

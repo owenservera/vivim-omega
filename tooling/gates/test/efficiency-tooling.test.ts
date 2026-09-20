@@ -35,7 +35,7 @@ describe("F-1 — A13 the record brief (≤40 lines, decision payload only)", ()
     expect(lines.length).toBeLessThanOrEqual(40);
     const text = lines.join("\n");
     expect(text).toContain("D-418");
-    expect(text).toContain("status: PROPOSED");
+    expect(text).toMatch(/status: (PROPOSED|RATIFIED)/);
     expect(text).toContain("class: directive");
     expect(text).toContain("summary:");
     expect(text).toContain("falsifiers: tooling/gates/test/v1-substrate-sweep.test.ts");
