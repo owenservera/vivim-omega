@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -41,3 +41,5 @@ D-410's Core Phase, second row; the structural analysis §4.2 (annex) grades S2 
   - **F-4 consent resolution**: `law.consent.grant@1 {consentId, principal: "user:bob"}` with vault caps → `user:bob`'s principal record exists after the grant (the identity-bearing write resolved through the record); a vault-write failure rolls the grant back and aborts fail-closed.
   - **F-5 grandfathered**: the same named grant WITHOUT vault caps succeeds exactly as before, and no record is claimed (memory-only posture, honest in the return).
 - Gate bar: **evidence-class** — two full gate greens on the record's tree, falsifiers above in the record before ratification.
+- **Ratified: landed in `af79bb1`; falsifiers F-1 through F-5 all green** (d412-principal 5/5 with the mid-boot token grant; forbidden-durability 4/4 restored); **two full gate greens 1074/0 ×2** on the record's tree (2026-09-20T05:19:10Z and 05:20:37Z; +5 tests over the 1069 baseline); host flat 1500/1500; anvil untouched (856/860, 45 exports); composition count unchanged at 18 (agent.json regenerated from the matrix).
+- Trap bitten and fixed this round, recorded: `principal.ts`'s `fromRecord` silently shadowed `forbidden.ts`'s same-named import binding (bun binds the last) — the forbidden overlay reload parsed its records through the principal parser and counted zero; caught by the D-325 restart falsifiers, fixed by import aliasing. Lesson: same-named exports across sibling modules are a shadowing hazard under loose transpilation — alias at the import site.
