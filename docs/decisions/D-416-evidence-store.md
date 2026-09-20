@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -123,6 +123,8 @@ already exists), which keeps B5 flat.
   partition stays parked until then), then parallel work opens.
 
 ## Evidence
+
+- Landed in `b3a936a`: falsifiers F-1..F-7 green in the record's tree BEFORE the flip per D-364 (6 new tests, `plugins/vivim-law/test/d416-evidence-store.test.ts`, plus the d387 #5/#6 rewrite carrying F-6; F-3 pinned by the existing GATE-Ω1 suite, green before and after); full gate green 1121/0 ×2 on the PROPOSED tree (2026-09-20T10:36:01Z and 10:37:31Z — 1115 + 6 new; host flat 1500/1500, zero host files touched, anvil untouched); the recursion guard's own bite: the fold's first draft self-recursed (every fold append gated → its check row folded → …) and burned the 500ms gate deadline — caught by the falsifier BEFORE the gate ever ran green, fixed as the record's guard; the row flips to RATIFIED by `omega:questions --write` (1 regenerated, 0 appended).
 
 - **Falsifiers (all in this record's tree BEFORE the flip, per D-364):**
   - **F-1 the fold (failing on old code):**
