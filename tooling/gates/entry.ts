@@ -15,6 +15,7 @@ import { boardFreshness, listOpenQuestions } from "./decisions.ts";
 import { resolveLedgerDir } from "./round-close.ts";
 import { renderDocscanReport, scanDocs } from "./docscan.ts";
 import { checkProcess } from "./process.ts";
+import { lastClosedEnvelope, renderSessionContext, verifySessions } from "./session.ts";
 
 const ROOT = join(import.meta.dir, "../..");
 
@@ -63,16 +64,17 @@ export function nextCommands(proposed: number[], boardCount: number): string[] {
   const lines: string[] = [];
   if (proposed.length > 0) {
     lines.push(`Next (PROPOSED records open: ${proposed.map((n) => `D-${n}`).join(", ")}):`);
-    lines.push("  1. falsifier baseline: bun test plugins/forge-author/test/happy/self-host.test.ts --timeout 60000 && bun run omega:quick");
-    lines.push("  2. full gate ×2 on the PROPOSED tree: bun run omega:gate (record the numbers)");
-    lines.push("  3. ratify: flip Status → RATIFIED + cite the landing sha + gate numbers in each record's Evidence");
-    lines.push("  4. bun run omega:questions --write (rows + board) — commit the ratify");
-    lines.push("  5. board refresh at the ratified tip (regenerate + commit — the ratify changed decision inputs)");
-    lines.push("  6. close-out (HANDOFF-ROUND-<N> + BACKLOG strikes) then bun run omega:round-close --note … --evidence … (rehearse --dry-run first)");
+    lines.push("  1. session discipline (D-430): omega:session begin --mission … FIRST, stream events as you work, close with the retrospective before round-close");
+    lines.push("  2. falsifier baseline: bun test plugins/forge-author/test/happy/self-host.test.ts --timeout 60000 && bun run omega:quick");
+    lines.push("  3. full gate ×2 on the PROPOSED tree: bun run omega:gate (record the numbers; omega:session import --gates after each)");
+    lines.push("  4. ratify: flip Status → RATIFIED + cite the landing sha + gate numbers in each record's Evidence");
+    lines.push("  5. bun run omega:questions --write (rows + board) — commit the ratify");
+    lines.push("  6. board refresh at the ratified tip (regenerate + commit — the ratify changed decision inputs)");
+    lines.push("  7. close-out (HANDOFF-ROUND-<N> + BACKLOG strikes), omega:session close --lesson …, then bun run omega:round-close --note … --evidence … (rehearse --dry-run first)");
   } else {
     lines.push("Next (0 PROPOSED):");
     lines.push("  baseline: bun test plugins/forge-author/test/happy/self-host.test.ts --timeout 60000 && bun run omega:quick");
-    lines.push(`  close: bun run omega:round-close --note … --evidence … (rehearse --dry-run first)${boardCount > 0 ? ` — ${boardCount} open question(s) on the board first` : ""}`);
+    lines.push(`  close: omega:session close --lesson … (if open) then bun run omega:round-close --note … --evidence … (rehearse --dry-run first)${boardCount > 0 ? ` — ${boardCount} open question(s) on the board first` : ""}`);
   }
   return lines;
 }
@@ -163,6 +165,16 @@ export function entryReport(root = ROOT): string[] {
       : `Process: mechanical breakage — ${pm.issues.join("; ").slice(0, 120)}`);
   } catch (e) {
     lines.push(`Process: mechanical breakage — ${String(e instanceof Error ? e.message : e).slice(0, 120)}`);
+  }
+
+  // session ledger (D-430) — the stream state + last session's bottleneck
+  // digest, sourced from the session module's own readers (never a second
+  // parser). If a session is OPEN, this is the loudest line on the page:
+  // the work is already inside a witnessed stream.
+  try {
+    lines.push(...renderSessionContext(verifySessions(root), lastClosedEnvelope(root)));
+  } catch (e) {
+    lines.push(`session: mechanical breakage — ${String(e instanceof Error ? e.message : e).slice(0, 120)}`);
   }
 
   // harness worklog law

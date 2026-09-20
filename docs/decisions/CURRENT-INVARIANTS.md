@@ -1,6 +1,17 @@
 # Current Invariants — the one-page law snapshot
 
-<!-- invariants: pass 5 · as-of D-429 · regenerated 2026-09-20 (D-425..D-429, the Ω-DEV agent-multiplier wave; the genome gate stage added under D-425; pass 4 was as-of D-424) · stages: anvil-loc anvil-surface attest bun-surface compositions decisions forge-surface fresh-tree genome host-loc import-surface invariants-freshness os-surface process tests -->
+<!-- invariants: pass 6 · as-of D-430 · regenerated 2026-09-22 (D-430, the session-ledger wave — Ω-DEV.6; no stage added — the session law rides round-close + process; pass 5 was as-of D-429) · stages: anvil-loc anvil-surface attest bun-surface compositions decisions forge-surface fresh-tree genome host-loc import-surface invariants-freshness os-surface process tests -->
+
+**Pass #6 (2026-09-22, the session ledger).** Refreshed on the D-415
+wave-close trigger — the session-ledger wave landed `D-430` (Ω-DEV.6,
+evidence-class, falsifiers green before the flip): the owner's 2026-09-22
+directives — a full session copy of the stream log, a structured and
+automated lessons-learned before publishing, timestamps to identify
+bottlenecks — are now law. Every session on this repo runs inside a
+chain-witnessed, time-stamped stream; the bundle is cut only after the
+retrospective. No gate stage was added (the law rides the round-close
+preflight + the process report); the Ω-DEV family is now six records.
+Pass #5 below stands unchanged.
 
 **Pass #5 (2026-09-20, the agent multipliers).** Refreshed on the D-415
 stage-drift trigger — a gate stage was added: `genome` (MECHANICAL, unlike
@@ -80,13 +91,14 @@ yet — implement when the first forge wave closure lands with one.
 - **The mine (D-406):** `fixtures/mines/synthetic-v0/` — 42 offline hash-pinned files (MANIFEST.json rootHash), un-Vivim-shaped by charter, waiting for `forge.mine.capture@1` (Wave 1, OPEN — the register lifted per D-417; first receipts are the mine wave's work).
 - The gate's `forge-surface` stage polices the boundary (5 checks + generality); red/green falsifiers live in `tooling/gates/test/forge-surface.test.ts`. The comparison walker excludes `node_modules` under the host `contentHashDir` precedent — machine state, not plugin bytes (recorded, revisit only if plugin dirs ever ship vendored deps that ARE plugin bytes).
 
-## The agent multipliers (D-425..D-429 — the Ω-DEV family)
+## The agent multipliers (D-425..D-430 — the Ω-DEV family)
 
 - **The system genome (D-425):** `genome/layers.json` is the only hand-authored input (the layer registry — 31 layers, the two-lineage map, the DAG); `omega:genome` folds it with the ledger and the test tree into `build/genome.json` + `build/genome.md`, committed and byte-verified. The `genome` gate stage is MECHANICAL: hand edits, stale folds, registry shape lies, cycles, unresolved falsifiers on implemented layers, and budget breaches FAIL; record status and the assume-implemented directive are reported facts. Implemented layers declare their evidence kind — `record` (one tree record + one falsifier file) or `program` (CORE: the built program is its own witness). Any wave touching decisions or the registry re-emits the genome in the same commit.
 - **The falsifier-first loop (D-426):** records declare named falsifiers as clause lines (`- F-XXX.N (title) — …`; prose mentions are mentions, never declarations); `omega:loop --stub` generates the RED stub (deterministic, one throwing test per clause) and REFUSES to clobber implemented files (LOOP_STUB_OVERWRITE); `--status` audits tree-wide coverage. Done-ness is mechanical: green falsifier or not done.
 - **The orchestration graph (D-427):** `omega:orchestrate` reads the genome's DAG as buckets (done / in-flight / verify-queue / build-queue / spec-queue / blocked, deps named); the constitutional merge check IS the full gate (`--merge`), refusing with the failing stages on red. Assumed deps satisfy planning and never become tree evidence.
 - **The development vault (D-428):** `ns.dev` as environment-local tooling state (`dev-vault/`, gitignored by pre-existing reservation): append-only, hash-chained (tamper-evident, not tamper-proof — stated), evidence-required, fold-derived. Law is committed; memory is local.
 - **The design simulation sandbox (D-429):** `omega:simulate <layer>` rehearses the red path — a fixed mutation catalog through the genome verifier, receipted to `build/sim-receipts/` with inputHash determinism. ADVISORY always; runtime behavioral simulation stays with Ω-8 (paper `D-432`).
+- **The session ledger (D-430, Ω-DEV.6 — the owner's 2026-09-22 directives as law):** every session runs `omega:session begin --mission …` FIRST, streams chain-witnessed, TIME-STAMPED events (`at` + `tMs`, regress refused; `build/gates.log` auto-imports as gate-run events; ops may carry `durationMs`), and closes with the structured retrospective — ≥1 evidence-cited lesson, each graduating to the dev-vault IDEMPOTENTLY, the sealed envelope digest-pinned. `omega:round-close` REFUSES while a session is open or the store is broken: no retrospective, no bundle. The close derives the bottleneck report (wall, per-kind durations, top silence gaps with their surrounding notes, slowest explicit ops) — lessons are written against measured friction. `sessions/` is environment-local (gitignored; law committed, memory local — the `D-428` boundary).
 
 ## The program law (D-408…D-421 — vision, partition, sequencing, tooling, the course-correction round)
 
@@ -100,7 +112,7 @@ yet — implement when the first forge wave closure lands with one.
 - **The shippable-composition fence (D-420, directive):** `compositions/browser.json` is formally the shippable-v1 composition (tagged `SHIPPABLE-V1 (D-420)` in its matrix note); the compositions gate stage enforces the fence (three named refusals: SHIPPABLE_V1_MISSING / SHIPPABLE_V1_UNTAGGED / AI_API_IN_SHIPPABLE — no AI-API realization boots in a shippable-tagged composition; the AI-API set is data: `provider.llm` today). The proving compositions (console/llm/chat/discovery-mind) keep `provider.llm` untouched and untagged.
 - **The governor scoping (D-421, directive, Blocks Wave 4):** tile-lifecycle scheduling (§18 ghost/dormant/hydrated/suspended, the 2-second unplug duty) presumes plugin-side living over existing `platform/` process-lifecycle capabilities + the out-of-tree watchdog placement (D-329) — the host does nothing new; a Wave-4 design record claiming a host primitive must name the equal-or-greater removal BEFORE code (B5, unconditional). F8 stays the judge.
 - **The generated-row era (D-413):** records from D-413 on carry `## Index` and their BUILD-DECISIONS row is GENERATED and byte-checked; `omega:new-decision` scaffolds contract-passing records; the `Blocks:` field (checker-validated vocabulary) + blocking-first board; cross-track citations carry the naming law (bare `D-NNN` = THIS ledger; foreign ids track-qualified, `akb:D-389`; report-only lint).
-- **The round-close automator (D-414):** `omega:round-close` — the ceremony as one fail-closed command (named preflight refusals; bundle cut + verify + sha256; the ledger row generated from git data; the next-round entry block derived from BACKLOG + the board). `build/status.json` carries the toolchain pin (`toolchain {bun, node, os, arch}`); `verify-status` reports drift, never fails on runner-shape. The close sequence: PROPOSED → gates ×2 → ratify → board refresh → close-out → `omega:round-close`.
+- **The round-close automator (D-414, session-gated by D-430):** `omega:round-close` — the ceremony as one fail-closed command (named preflight refusals; bundle cut + verify + sha256; the ledger row generated from git data; the next-round entry block derived from BACKLOG + the board + the session law). `build/status.json` carries the toolchain pin (`toolchain {bun, node, os, arch}`); `verify-status` reports drift, never fails on runner-shape. The close sequence: PROPOSED → gates ×2 → ratify → board refresh → close-out → `omega:session close` (the retrospective; D-430) → `omega:round-close` — which refuses if the session is still open.
 - **This page's own law (D-415):** the trigger-based refresh policy in the header marker above; the report-only `invariants-freshness` stage.
 
 ## Runtime surfaces and the adapter inventory (D-361 as rewritten by D-373)
@@ -122,7 +134,7 @@ yet — implement when the first forge wave closure lands with one.
 - Every decision ≥ D-313 has a record (six sections, options matrix, Decision line, evidence); statuses agree between index and record; RATIFIED requires a resolvable commit SHA. Index rows from D-360 on carry a class tag (`· evidence` / `· directive`); from **D-413 on rows are generated** from the record's `## Index` (byte-equality enforced — the eras: `< D-313` index-only, `D-313..D-412` hand-typed, `D-413+` generated).
 - **Cooling-off for B1–B4 evidence-class decisions:** the named falsifier IN the record BEFORE RATIFIED + a second gate run after; directive rows ratify same-day on gate green, honestly labeled.
 - **Composition freeze (D-370, amended D-391/D-406):** **18 specs** — new specs only through `_matrix.json` + `omega:generate composition` (hand-edited specs fail the gate; the conformance net D-376 + matrix D-377 mechanize it). Composition stance (D-316): N first-class compositions, no flagship; grant variance per-row via DRIFT_ALLOWLIST with D-pointers.
-- **Round protocol:** PROPOSED commit (code + records + index) → full gate green ×2 → Ratify (flip + regenerate row/board, cite landing SHA + gate numbers) → board refresh at the ratified tip → close-out (HANDOFF + BACKLOG) → `omega:round-close` (D-414) — the bundle, its sha256, and the ledger row are tool-generated from git data.
+- **Round protocol:** PROPOSED commit (code + records + index) → full gate green ×2 → Ratify (flip + regenerate row/board, cite landing SHA + gate numbers) → board refresh at the ratified tip → close-out (HANDOFF + BACKLOG) → `omega:session close` (D-430 — the retrospective, lessons to the dev-vault) → `omega:round-close` (D-414) — the bundle, its sha256, and the ledger row are tool-generated from git data, and the close refuses while a session is open.
 - Consolidation: this page regenerates **on trigger** (see the header policy). The full log is never pruned or rewritten — append-only, supersede never edit.
 
 ## The W0 close-out layer (D-376…D-383, the migration-readiness laws)
@@ -141,7 +153,7 @@ yet — implement when the first forge wave closure lands with one.
 
 - **Host LOC: 1500/1500 — AT the freeze, zero headroom.** Any host-touching change names its equal-or-greater removal BEFORE the code is written (B5: same-commit removal, never partial).
 - **Anvil: 856/860** — 4 lines of remove-to-add headroom, same rule.
-- **Tests: 1232 (the D-425 tree), sharding trigger long crossed** — the quick gate + lanes hold it; re-check wall-time as the suite grows past ~1,300.
+- **Tests: 1247 (the D-430 tree), sharding trigger long crossed** — the quick gate + lanes hold it; re-check wall-time as the suite grows past ~1,300.
 - **Single-principal boundary (L-11) is a fence, not a bug:** the first sharing-adjacent feature requires the GAP-4 ruling first (D-379's reopen rule).
 - **Calibration corpus + SLOs (L-12/L-13):** promotion thresholds remain unmeasured constants — not load-bearing for consequential decisions before Phase D / F-3.
 

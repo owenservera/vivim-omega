@@ -43,6 +43,7 @@ function assemble(over: Partial<Parameters<typeof assembleProcessModel>[0]> = {}
     statusText: greenStatus(TIP.slice(0, 7)), indexText: INDEX,
     open: [q(3)], boardFreshness: { state: "fresh" },
     docscanFindings: [], ledger: { resolved: true, dir: "/l", source: "env" },
+    session: { homePresent: false, open: null, closedCount: 0, verifyIssues: [] },
     ...over,
   });
 }
@@ -96,6 +97,11 @@ describe("F-2 assembleProcessModel", () => {
     expect(m.board.open.find((r) => r.n === 3)?.hasTbd).toBe(true);
     expect(m.docscan).toEqual({ findingCount: 3, byRule: { S4: 2, S6: 1 } });
     expect(m.proposedIds).toEqual([3, 9]);      // sorted by id
+  });
+  test("the session field rides through untouched (D-430)", () => {
+    const open = { id: "20260922-120000-x", mission: "m", beganAt: "2026-09-22T12:00:00Z", events: 7 };
+    const m = assemble({ session: { homePresent: true, open, closedCount: 2, verifyIssues: [] } });
+    expect(m.session).toEqual({ homePresent: true, open, closedCount: 2, verifyIssues: [] });
   });
   test("a `Blocks: none` row never counts as blocking", () => {
     expect(assemble({ open: [q(3, "none"), q(4, "none")] }).board.blockingCount).toBe(0);

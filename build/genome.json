@@ -3,20 +3,20 @@
   "kind": "the vivim-omega system genome — the machine-readable constitution (D-425); derived, committed, byte-verified; hand edits are gate failures",
   "lineage": {
     "note": "Two numbering systems, never conflated. treeId = THIS repo's ledger (docs/decisions/D-<n>-*.md, contiguous, authoritative for record files). specId = the external upgrade-spec lineage (paper ids; cite them backticked in prose). Where a paper id collides with a tree id the fields keep them distinct — the runbook's build-time renumbering rule, made mechanical.",
-    "specLineage": "Ω-0 paper D-449 (upgrade doc delivered 2026-09-21); Ω-DEV.1..5 paper D-450..D-454 (this wave); Ω-1..Ω-8 paper D-425..D-432; Ω-9 paper D-433; Ω-10..Ω-16 paper D-442..D-448; builder-gap reservations paper D-434..D-440 (D-441 unassigned reserve); Ω-0.5 candidate D-455. The tree ledger assigns D-425..D-429 to the Ω-DEV family — the collision is recorded here, not hidden.",
+    "specLineage": "Ω-0 paper D-449 (upgrade doc delivered 2026-09-21); Ω-DEV.1..5 paper D-450..D-454 (that wave); Ω-DEV.6 has no paper id — the owner's 2026-09-22 directives (session stream + structured lessons; timestamps for bottlenecks) landed directly as tree D-430; Ω-1..Ω-8 paper D-425..D-432; Ω-9 paper D-433; Ω-10..Ω-16 paper D-442..D-448; builder-gap reservations paper D-434..D-440 (D-441 unassigned reserve); Ω-0.5 candidate D-455. The tree ledger assigns D-425..D-429 to the Ω-DEV family — the collision is recorded here, not hidden.",
     "assumedDirective": "The owner directed (2026-09-21): the Ω-1..Ω-16 layers are assume-implemented for continuation purposes per their ratified external specs. The genome records BOTH facts honestly: the directive (this field) and the tree evidence (null record / null falsifier file per layer, reported by the fold). external-assumed is a claim about paper, never about this tree."
   },
   "counts": {
-    "layers": 31,
-    "implemented": 6,
+    "layers": 32,
+    "implemented": 7,
     "externalAssumed": 16,
     "ratifiedUnimplemented": 1,
     "queued": 8,
-    "decisions": 135,
+    "decisions": 136,
     "ratified": 134,
-    "proposed": 1,
-    "records": 109,
-    "testFiles": 117,
+    "proposed": 2,
+    "records": 110,
+    "testFiles": 118,
     "gateStages": 15,
     "plugins": 25,
     "compositions": 19
@@ -176,6 +176,32 @@
           "F-PRESIM.2 (mutation-coverage)",
           "F-PRESIM.3 (advisory-never-blocking)",
           "F-PRESIM.4 (unknown-layer-refusal)"
+        ],
+        "evidenceKind": "record"
+      }
+    },
+    {
+      "id": "Ω-DEV.6",
+      "name": "Session ledger",
+      "status": "implemented",
+      "dependsOn": [
+        "Ω-DEV.4"
+      ],
+      "note": "the intake protocol for the dev-vault: every agent session opens with a mission, streams chain-witnessed time-stamped events (at + tMs, regress refused; gates.log auto-import), and closes with a structured retrospective whose lessons graduate to the dev-vault; round-close refuses while a session is open — no retrospective, no publish; the close derives the bottleneck report (top silence gaps, slowest ops) so lessons cite measured friction (owner directives 2026-09-22)",
+      "specId": null,
+      "evidence": {
+        "treeId": 430,
+        "recordFile": "docs/decisions/D-430-session-ledger.md",
+        "recordStatus": "PROPOSED",
+        "falsifier": "F-SESSION",
+        "falsifierFile": "tooling/gates/test/f-session.test.ts",
+        "falsifierClauses": [
+          "F-SESSION.1 (single-open)",
+          "F-SESSION.2 (append-only-witness)",
+          "F-SESSION.3 (time-stamped-events)",
+          "F-SESSION.4 (publish-gate)",
+          "F-SESSION.5 (structured-retrospective)",
+          "F-SESSION.6 (bottleneck-report)"
         ],
         "evidenceKind": "record"
       }
@@ -1316,6 +1342,11 @@
       "n": 429,
       "status": "RATIFIED",
       "file": "docs/decisions/D-429-design-simulation-sandbox.md"
+    },
+    {
+      "n": 430,
+      "status": "PROPOSED",
+      "file": "docs/decisions/D-430-session-ledger.md"
     }
   ],
   "falsifiers": [
@@ -1380,6 +1411,19 @@
         "F-PRESIM.2 (mutation-coverage)",
         "F-PRESIM.3 (advisory-never-blocking)",
         "F-PRESIM.4 (unknown-layer-refusal)"
+      ]
+    },
+    {
+      "id": "F-SESSION",
+      "layer": "Ω-DEV.6",
+      "file": "tooling/gates/test/f-session.test.ts",
+      "clauses": [
+        "F-SESSION.1 (single-open)",
+        "F-SESSION.2 (append-only-witness)",
+        "F-SESSION.3 (time-stamped-events)",
+        "F-SESSION.4 (publish-gate)",
+        "F-SESSION.5 (structured-retrospective)",
+        "F-SESSION.6 (bottleneck-report)"
       ]
     },
     {
@@ -1587,6 +1631,7 @@
       "tooling/gates/test/f-loop.test.ts",
       "tooling/gates/test/f-orch.test.ts",
       "tooling/gates/test/f-presim.test.ts",
+      "tooling/gates/test/f-session.test.ts",
       "tooling/gates/test/forge-surface.test.ts",
       "tooling/gates/test/generate.test.ts",
       "tooling/gates/test/import-surface.test.ts",

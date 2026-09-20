@@ -36,6 +36,7 @@
     "omega:loop": "bun run tooling/gates/loopstub.ts",
     "omega:orchestrate": "bun run tooling/gates/orchestrate.ts",
     "omega:devault": "bun run tooling/gates/devvault.ts",
+    "omega:session": "bun run tooling/gates/session.ts",
     "omega:simulate": "bun run tooling/gates/simulate.ts",
     "omega:bench": "bun run tooling/bench/bench.ts",
     "omega:probe": "bun run tooling/bench/vault-probe.ts",

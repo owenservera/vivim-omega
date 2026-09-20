@@ -11,3 +11,8 @@ testkit/test/fixtures/ghosts/.gen/
 
 # D-427 (Ω-DEV.3): the orchestration plan is a derived LENS, regenerate on demand — the genome is the law
 build/orchestration-plan.json
+
+# D-430 (Ω-DEV.6): the session ledger — environment-local stream memory
+# (open.json + stream.jsonl + stream.chain.json + closed/), never committed;
+# law is committed, memory is local (the D-428 boundary)
+sessions/

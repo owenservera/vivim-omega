@@ -26,6 +26,7 @@ const GREEN: import("../round-close.ts").PreflightFacts = {
   statusCarried: true, statusDetail: "carried",
   ledgerOk: true, ledgerDetail: "ok",
   tipAdvanced: true, tipDetail: "advanced",
+  sessionOk: true, sessionDetail: "no open session",
 };
 
 describe("F-1 — the preflight refuses, loudly and by name", () => {
@@ -36,6 +37,7 @@ describe("F-1 — the preflight refuses, loudly and by name", () => {
     const detailKey: Record<string, string> = {
       cleanTree: "treeDetail", quickGreen: "quickDetail", decisionsGreen: "decisionsDetail",
       boardFresh: "boardDetail", statusCarried: "statusDetail", ledgerOk: "ledgerDetail", tipAdvanced: "tipDetail",
+      sessionOk: "sessionDetail",
     };
     const cases: Array<[keyof typeof GREEN, string, RegExp]> = [
       ["cleanTree", "M docs/x.md", /dirty tree: M docs\/x\.md/],
@@ -45,6 +47,7 @@ describe("F-1 — the preflight refuses, loudly and by name", () => {
       ["statusCarried", "head abc1234 is not an ancestor", /status\.json not carried\+green: head abc1234/],
       ["ledgerOk", "gap", /ledger not ready: gap/],
       ["tipAdvanced", "same", /tip unchanged since the last bundle/],
+      ["sessionOk", "session 20260922-… open since … with 12 event(s)", /session not closed: session 20260922-… open since … with 12 event\(s\) — the retrospective is part of the publish ceremony/],
     ];
     for (const [k, detail, re] of cases) {
       const v = preflightVerdict({ ...GREEN, [k]: false, [detailKey[String(k)]]: detail } as typeof GREEN);
@@ -175,6 +178,9 @@ describe("F-4 — the next-round entry block is derived, not typed", () => {
     expect(block).toContain("S3 · the evidence-store choicepoint");
     expect(block).toContain("Parked until core-omega-ready");
     expect(block).toContain("HANDOFF-ROUND-");
+    expect(block).toContain("Session discipline FIRST ACTION (D-430)");
+    expect(block).toContain("omega:session begin");
+    expect(block).toContain("omega:session context");
   });
   test("empty board and no OPEN items degrade honestly", () => {
     const block = nextRoundEntryBlock("# Backlog\n\n- ~~**done**~~ — DONE.\n", []);

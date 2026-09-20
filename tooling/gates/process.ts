@@ -36,6 +36,7 @@ import { spawnSync as nodeSpawnSync } from "node:child_process";
 import { boardFreshness, listOpenQuestions, parseIndexRows, type OpenQuestion } from "./decisions.ts";
 import { scanDocs } from "./docscan.ts";
 import { resolveLedgerDir } from "./round-close.ts";
+import { verifySessions } from "./session.ts";
 
 function sh(cmd: string[], cwd: string): { code: number; out: string } {
   const p = nodeSpawnSync(cmd[0], cmd.slice(1), { cwd, encoding: "buffer" });
@@ -107,6 +108,12 @@ export interface ProcessModel {
     dir: string | null;
     source: string | null;    // which candidate resolved it (round-close.ts's own label)
   };
+  session: {
+    homePresent: boolean;
+    open: { id: string; mission: string; beganAt: string; events: number } | null;
+    closedCount: number;
+    verifyIssues: string[];   // mechanical breakage only — an open session is a fact, not a failure
+  };
   ratifiedCount: number;      // RATIFIED INDEX ROWS (the whole program, incl. grandfathered hand-era rows) — NOT record files: decisions.ts counts only record files (fewer), a different, also-correct number
   proposedIds: number[];      // D-numbers currently PROPOSED (mirrors the board 1:1, by id)
 }
@@ -125,6 +132,7 @@ export function assembleProcessModel(evidence: {
   boardFreshness: { state: "fresh" | "stale" | "missing" };
   docscanFindings: Array<{ rule: string }>;
   ledger: { resolved: boolean; dir: string | null; source: string | null };
+  session: ProcessModel["session"];
 }): ProcessModel {
   const gate = summarizeStatus(evidence.statusText, evidence.tip);
   const rows = parseIndexRows(evidence.indexText);
@@ -144,6 +152,7 @@ export function assembleProcessModel(evidence: {
     },
     docscan: { findingCount: evidence.docscanFindings.length, byRule },
     ledger: evidence.ledger,
+    session: evidence.session,
     ratifiedCount,
     proposedIds: evidence.open.map((q) => q.n).sort((a, b) => a - b),
   };
@@ -166,10 +175,26 @@ export function deriveProcessModel(root: string, at: string = new Date().toISOSt
   // whether or not it exists (entry.ts's own pattern: check existsSync after).
   const resolved = resolveLedgerDir(root);
   const ledger = { resolved: existsSync(resolved.dir), dir: resolved.dir, source: resolved.source };
+  // D-430: the session state, collected through the session ledger's own
+  // verify (never a second parser). An open session is a REPORTED fact; only
+  // mechanical breakage (verify issues) fails the stage.
+  let session: ProcessModel["session"] = { homePresent: false, open: null, closedCount: 0, verifyIssues: [] };
+  try {
+    const sv = verifySessions(root);
+    session = {
+      homePresent: true,
+      open: sv.open ? { id: sv.open.id, mission: sv.open.mission, beganAt: sv.open.beganAt, events: sv.openEvents } : null,
+      closedCount: sv.closedCount,
+      verifyIssues: sv.issues,
+    };
+  } catch (e) {
+    session = { homePresent: true, open: null, closedCount: 0, verifyIssues: [String(e instanceof Error ? e.message : e).slice(0, 160)] };
+  }
   return assembleProcessModel({
     at, branch, tip, statusText, indexText, open, boardFreshness: bf,
     docscanFindings: findings.map((f) => ({ rule: f.rule })),
     ledger,
+    session,
   });
 }
 
@@ -188,6 +213,9 @@ export function renderProcessReport(m: ProcessModel): string[] {
   }
   lines.push(`docscan: ${m.docscan.findingCount} finding(s)${m.docscan.findingCount > 0 ? ` — ${Object.entries(m.docscan.byRule).map(([r, n]) => `${r}:${n}`).join(", ")}` : ""}`);
   lines.push(`ledger: ${m.ledger.resolved ? `${m.ledger.dir} (${m.ledger.source ?? "?"})` : "(unresolved)"}`);
+  lines.push(m.session.open
+    ? `session: OPEN ${m.session.open.id} ("${m.session.open.mission}") since ${m.session.open.beganAt} — ${m.session.open.events} event(s); round-close will refuse until the retrospective closes it (D-430)`
+    : `session: none open${m.session.homePresent ? ` · ${m.session.closedCount} envelope(s) sealed` : " (no sessions home)"}`);
   lines.push(`ratified: ${m.ratifiedCount} (index rows; record files are a subset — decisions.ts counts those)`);
   return lines;
 }
@@ -208,8 +236,11 @@ export function checkProcess(root: string): ProcessCheckResult {
   } catch (e) {
     return { ok: false, detail: {}, issues: [`process model derivation failed: ${String(e instanceof Error ? e.message : e)}`] };
   }
+  // D-430: a broken sessions store is MECHANICAL breakage (the derivation
+  // read it and it lied about its own shape); an open session stays reported.
+  const sessionIssues = model.session.verifyIssues.map((i) => `sessions store: ${i}`);
   return {
-    ok: true,
+    ok: sessionIssues.length === 0,
     detail: {
       policy: "report-only (D-423 — mirrors D-415/D-368; the flip to failing, if ever, is a future record's call)",
       gateGreen: model.gate.present ? model.gate.ok : null,
@@ -219,9 +250,13 @@ export function checkProcess(root: string): ProcessCheckResult {
       boardFreshness: model.board.freshness,
       docscanFindings: model.docscan.findingCount,
       ledgerResolved: model.ledger.resolved,
+      sessionOpen: model.session.open !== null,
+      sessionHomePresent: model.session.homePresent,
+      sessionEvents: model.session.open?.events ?? 0,
+      sessionClosedCount: model.session.closedCount,
       ratifiedCount: model.ratifiedCount,
     },
-    issues: [],
+    issues: sessionIssues,
   };
 }
 

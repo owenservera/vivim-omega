@@ -27,6 +27,7 @@ import { spawnSync as nodeSpawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { isAbsolute, join } from "node:path";
 import { boardFreshness, checkDecisions, listOpenQuestions } from "./decisions.ts";
+import { verifySessions } from "./session.ts";
 
 const ROOT = join(import.meta.dir, "../..");
 
@@ -123,6 +124,7 @@ export interface PreflightFacts {
   statusCarried: boolean; statusDetail: string;
   ledgerOk: boolean; ledgerDetail: string;
   tipAdvanced: boolean; tipDetail: string;
+  sessionOk: boolean; sessionDetail: string;   // D-430: the publish gate — no retrospective, no bundle
 }
 export function preflightVerdict(f: PreflightFacts): { ok: boolean; refusals: string[] } {
   const refusals: string[] = [];
@@ -133,6 +135,7 @@ export function preflightVerdict(f: PreflightFacts): { ok: boolean; refusals: st
   if (!f.statusCarried) refusals.push(`status.json not carried+green: ${f.statusDetail} — run omega:gate green and commit it first`);
   if (!f.ledgerOk) refusals.push(`ledger not ready: ${f.ledgerDetail}`);
   if (!f.tipAdvanced) refusals.push(`tip unchanged since the last bundle: ${f.tipDetail} — nothing to close (double-run guard)`);
+  if (!f.sessionOk) refusals.push(`session not closed: ${f.sessionDetail} — the retrospective is part of the publish ceremony; run omega:session close (D-430)`);
   return { ok: refusals.length === 0, refusals };
 }
 
@@ -173,17 +176,22 @@ export function nextRoundEntryBlock(
   lines.push("1. Baseline first (falsifier discipline — must be green on entry):");
   lines.push("   bun test plugins/forge-author/test/happy/self-host.test.ts --timeout 60000");
   lines.push("   bun run omega:quick");
-  lines.push("2. Open questions on the board (blocking-first):");
+  lines.push("2. Session discipline FIRST ACTION (D-430): begin the session ledger before writing any code —");
+  lines.push("   bun run omega:session begin --mission \"what this round is for\" --agent \"who\"");
+  lines.push("   … stream events as you work (omega:session log --kind code|test|gate-run|repair|decision 'note'), import gate runs (omega:session import --gates),");
+  lines.push("   check friction mid-session (omega:session report), and close with the retrospective + lessons BEFORE omega:round-close — it refuses while a session is open.");
+  lines.push("   Read last session's bottleneck digest first: bun run omega:session context");
+  lines.push("3. Open questions on the board (blocking-first):");
   if (board.length === 0) lines.push("   (none — 0 open)");
   for (const q of board) lines.push(`   D-${q.n} · ${q.title.slice(0, 100)} [Blocks: ${q.blocks}]`);
-  lines.push("3. BACKLOG open items:");
+  lines.push("4. BACKLOG open items:");
   if (openItems.length === 0) lines.push("   (no OPEN-marked bullet parsed — read docs/forge/BACKLOG.md directly)");
   for (const it of openItems) lines.push(`   - ${it}`);
   if (parkedSections.length > 0) {
-    lines.push("4. Parked (do not touch — see docs/forge/annex/OMEGA-CORE-FIRST-RESEQUENCE.md §3 for the register):");
+    lines.push("5. Parked (do not touch — see docs/forge/annex/OMEGA-CORE-FIRST-RESEQUENCE.md §3 for the register):");
     for (const s of parkedSections) lines.push(`   - ${s}`);
   }
-  lines.push("5. Read the current HANDOFF-ROUND-<N>.md before writing any code — the boundary it names is binding.");
+  lines.push("6. Read the current HANDOFF-ROUND-<N>.md before writing any code — the boundary it names is binding.");
   return lines.join("\n");
 }
 
@@ -262,6 +270,27 @@ function collectFacts(root: string, ledgerDir: string, ledgerSearched: string): 
   }
   const headFull = git(["rev-parse", "HEAD"], root).out.trim();
   const tipAdvanced = lastTip === "" ? true : headFull !== lastTip;
+  // D-430 (Ω-DEV.6): the session publish gate. Green only when NO session is
+  // open AND the store verifies (a broken store is a named refusal, never a
+  // silent pass); a store that does not exist yet is green (the pre-D-430
+  // world and fresh clones).
+  let sessionOk = true;
+  let sessionDetail = "(no sessions home — pre-D-430 or fresh clone)";
+  try {
+    const sv = verifySessions(root);
+    if (sv.issues.length > 0) {
+      sessionOk = false;
+      sessionDetail = `sessions store RED — ${sv.issues[0]}`;
+    } else if (sv.open) {
+      sessionOk = false;
+      sessionDetail = `session ${sv.open.id} ("${sv.open.mission}") open since ${sv.open.beganAt} with ${sv.openEvents} event(s)`;
+    } else {
+      sessionDetail = `no open session · ${sv.closedCount} envelope(s) sealed`;
+    }
+  } catch (e) {
+    sessionOk = false;
+    sessionDetail = `sessions store unreadable — ${String(e instanceof Error ? e.message : e).slice(0, 140)}`;
+  }
   return {
     cleanTree, treeDetail: tree.out.trim().split("\n").slice(0, 3).join(" / ").slice(0, 160),
     quickGreen, quickDetail: quick.out.trim().split("\n").slice(-3).join(" / ").slice(0, 200),
@@ -270,6 +299,7 @@ function collectFacts(root: string, ledgerDir: string, ledgerSearched: string): 
     statusCarried, statusDetail,
     ledgerOk: ledgerDetail === "ok" || ledgerDetail.startsWith("no prior bundles"), ledgerDetail,
     tipAdvanced, tipDetail: `HEAD ${headFull.slice(0, 7)} vs last bundle tip ${lastTip.slice(0, 7) || "(none)"}`,
+    sessionOk, sessionDetail,
     lastTip, bundleFiles,
   };
 }

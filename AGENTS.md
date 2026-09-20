@@ -27,6 +27,16 @@ Requires Bun ≥ 1.3.14. CI: `gate-ubuntu`, `gate-reproduce`, `node-canary` requ
 - **B5 frozen:** `host/src` ≤ **1500 LOC**, hard gate (D-365 froze 1100; D-391
   re-amended once and loudly to 1500, re-frozen). No new host surface
   without removing old surface **in the same commit**. Policy lives out-of-tree.
+- **Session ledger (D-430):** every session on this repo runs
+  `bun run omega:session begin --mission "…" --agent "…"` FIRST, streams
+  time-stamped events as it works (`omega:session log --kind
+  code|test|gate-run|repair|decision "note"`, `omega:session import --gates`
+  after gate runs), and closes with the structured retrospective — ≥1
+  evidence-cited lesson per close, each graduating to the dev-vault.
+  `omega:round-close` **refuses while a session is open**: no retrospective,
+  no bundle. The close prints the derived bottleneck report (top silence
+  gaps, slowest ops) — write the lessons against that measured friction.
+  Timestamps are chain-witnessed; a regressed `tMs` is refused, never absorbed.
 - **B1–B4 evidence rule (D-364):** evidence-class decisions touching boot security
   need the named falsifier IN the record BEFORE ratification + a second gate run
   after. Directive-class rows ratify same-day on gate green — label honestly.
@@ -110,4 +120,6 @@ Edit RATIFIED records · byte-compare `status.json` (runners differ; compare
 structural claims) · add host code without same-commit removal · add a
 composition without deleting/generating one · branch per OS · commit red
 `status.json` · push with bare refspecs · lower a test timeout to make a
-suite pass · `rmSync` without `force:true` on scratch dirs.
+suite pass · `rmSync` without `force:true` on scratch dirs · close a session
+with zero lessons · backdate session events · commit `sessions/` or
+`dev-vault/` (local memory, never law).
