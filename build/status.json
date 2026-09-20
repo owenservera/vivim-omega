@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-09-20T05:07:05.756Z",
+  "generatedAt": "2026-09-20T05:22:04.826Z",
   "repo": "vivim-omega",
   "branch": "omega",
-  "head": "a118c34",
+  "head": "05b510d",
   "waves": [
     {
       "id": "Ω0",
@@ -90,7 +90,7 @@
     }
   ],
   "gate": {
-    "startedAt": "2026-09-20T05:05:39.128Z",
+    "startedAt": "2026-09-20T05:20:37.609Z",
     "checks": {
       "host-loc": {
         "ok": true,
@@ -125,13 +125,15 @@
       "decisions": {
         "ok": true,
         "detail": {
-          "rows": 117,
-          "records": 91,
+          "rows": 118,
+          "records": 92,
           "ratified": 91,
           "grandfatherBelow": 313,
           "openQuestions": {
-            "count": 0,
-            "ids": [],
+            "count": 1,
+            "ids": [
+              412
+            ],
             "board": "stale"
           }
         }
@@ -196,7 +198,7 @@
               "reason": "alias-style variance run.json vs spine.json: same effective authority (HOST_OP_TO_CAP auto-mint); convergence deferred, see _note in run.json"
             }
           },
-          "riskParityOps": 48,
+          "riskParityOps": 50,
           "matrixConformance": "green",
           "contractTypes": 132,
           "callSiteAllowlisted": [
@@ -238,7 +240,7 @@
       "import-surface": {
         "ok": true,
         "detail": {
-          "scanned": 148,
+          "scanned": 149,
           "rules": 5
         }
       },
@@ -254,7 +256,7 @@
       "tests": {
         "ok": true,
         "detail": {
-          "pass": 1069,
+          "pass": 1074,
           "fail": 0,
           "maxConcurrency": 4
         }
@@ -286,7 +288,7 @@
   },
   "hostLoc": 1500,
   "tests": {
-    "pass": 1069,
+    "pass": 1074,
     "fail": 0
   },
   "benchmarks": {

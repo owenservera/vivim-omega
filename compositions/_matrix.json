@@ -23,7 +23,10 @@
               "law.forbidden.set@1",
               "law.forbidden.reload@1",
               "law.amendment@1",
-              "law.describe@1"
+              "law.describe@1",
+              "law.principal.register@1",
+              "law.principal.retire@1",
+              "law.principal.get@1"
             ]
           }
         },

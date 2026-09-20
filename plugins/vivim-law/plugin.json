@@ -2,26 +2,99 @@
   "manifestVersion": "1",
   "id": "vivim.law",
   "version": "0.2.0",
-  "description": "Ω1 law spine: the gate (law.check), consent grants, capability-handle algebra, registry (journal replay), per-principal forbidden-action overlay (law.forbidden.set, D-310; vault-durable per D-325 with law.forbidden.reload), shadow amendment, and the principal describe read (law.describe, D-353: kind + forbidden + narrowed consents). Replaces the Ω0 law-stub via recipe re-compile + atomic pin swap (D-213).",
+  "description": "\u03a91 law spine: the gate (law.check), consent grants, capability-handle algebra, registry (journal replay), per-principal forbidden-action overlay (law.forbidden.set, D-310; vault-durable per D-325 with law.forbidden.reload), shadow amendment, and the principal describe read (law.describe, D-353: kind + forbidden + narrowed consents). Replaces the \u03a90 law-stub via recipe re-compile + atomic pin swap (D-213).",
   "entry": "src/index.ts",
-  "publisher": { "keyId": "", "signature": "" },
+  "publisher": {
+    "keyId": "",
+    "signature": ""
+  },
   "contributions": {
     "contract": [
-      { "kind": "contract", "id": "law.check", "version": "1", "risk": "READ" },
-      { "kind": "contract", "id": "law.registry", "version": "1", "risk": "READ" },
-      { "kind": "contract", "id": "law.consent.grant", "version": "1", "risk": "READ" },
-      { "kind": "contract", "id": "law.tokens.revoke", "version": "1", "risk": "READ" },
-      { "kind": "contract", "id": "law.forbidden.set", "version": "1", "risk": "READ" },
-      { "kind": "contract", "id": "law.forbidden.reload", "version": "1", "risk": "READ" },
-      { "kind": "contract", "id": "law.amendment", "version": "1", "risk": "READ" },
-      { "kind": "contract", "id": "law.describe", "version": "1", "risk": "READ" }
+      {
+        "kind": "contract",
+        "id": "law.check",
+        "version": "1",
+        "risk": "READ"
+      },
+      {
+        "kind": "contract",
+        "id": "law.registry",
+        "version": "1",
+        "risk": "READ"
+      },
+      {
+        "kind": "contract",
+        "id": "law.consent.grant",
+        "version": "1",
+        "risk": "READ"
+      },
+      {
+        "kind": "contract",
+        "id": "law.tokens.revoke",
+        "version": "1",
+        "risk": "READ"
+      },
+      {
+        "kind": "contract",
+        "id": "law.forbidden.set",
+        "version": "1",
+        "risk": "READ"
+      },
+      {
+        "kind": "contract",
+        "id": "law.forbidden.reload",
+        "version": "1",
+        "risk": "READ"
+      },
+      {
+        "kind": "contract",
+        "id": "law.amendment",
+        "version": "1",
+        "risk": "READ"
+      },
+      {
+        "kind": "contract",
+        "id": "law.describe",
+        "version": "1",
+        "risk": "READ"
+      },
+      {
+        "kind": "contract",
+        "id": "law.principal.register",
+        "version": "1",
+        "risk": "MUTATION"
+      },
+      {
+        "kind": "contract",
+        "id": "law.principal.retire",
+        "version": "1",
+        "risk": "MUTATION"
+      },
+      {
+        "kind": "contract",
+        "id": "law.principal.get",
+        "version": "1",
+        "risk": "READ"
+      }
     ]
   },
   "dependencies": [],
   "capabilities": {
-    "requested": ["host.journal.append", "host.tokens.revoke", "port:vault.append@1", "port:vault.query@1", "port:vault.get@1"],
-    "justification": "law.check journals every gate decision to the vault law-journal (host.journal.append); law.tokens.revoke delegates plugin token revocation to the host generation bump (host.tokens.revoke). D-325: law.forbidden.set journals the forbidden overlay to vault ns law and reloads it at boot (vault.append/query/get) — granted per-composition by the user-signed Recipe (agent.json), never by this manifest; compositions without the vault grant stay memory-only."
+    "requested": [
+      "host.journal.append",
+      "host.tokens.revoke",
+      "port:vault.append@1",
+      "port:vault.query@1",
+      "port:vault.get@1"
+    ],
+    "justification": "law.check journals every gate decision to the vault law-journal (host.journal.append); law.tokens.revoke delegates plugin token revocation to the host generation bump (host.tokens.revoke). D-325: law.forbidden.set journals the forbidden overlay to vault ns law and reloads it at boot (vault.append/query/get) \u2014 granted per-composition by the user-signed Recipe (agent.json), never by this manifest; compositions without the vault grant stay memory-only."
   },
-  "runtime": { "tier": "worker-thread", "budget": { "cpuMs": 100, "memMB": 64 } },
+  "runtime": {
+    "tier": "worker-thread",
+    "budget": {
+      "cpuMs": 100,
+      "memMB": 64
+    }
+  },
   "contentHash": ""
 }

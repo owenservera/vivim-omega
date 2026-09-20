@@ -10,6 +10,7 @@ import type { LawDecision, PortResult, ConsentGrant, PrincipalKind } from "@vivi
 import { LAW_POLICY_V1, evalPolicy, type PolicyDoc } from "./policy.ts";
 import { ConsentTable } from "./consent.ts";
 import { ForbiddenTable, FORBIDDEN_NS, FORBIDDEN_ID_PREFIX, forbiddenVaultId, toRecord, fromRecord } from "./forbidden.ts";
+import { PRINCIPAL_NS, principalVaultId, newRecord, retireRecord, fromRecord as fromPrincipalRecord, type PrincipalRecord } from "./principal.ts"; // D-412 (S2) — fromRecord ALIASED: forbidden.ts owns the bare name (the silent-shadowing lesson: two same-named imports, bun binds the last)
 import { mintCap, attenuate } from "./tokens.ts";
 import { ShadowAmendment, AMENDMENT_SWAP_NOTE } from "./amendment.ts";
 import { LawRegistry } from "./registry.ts";
@@ -115,6 +116,29 @@ function optStr(v: unknown): string | undefined {
 }
 function bump(): number {
   return ++generation;
+}
+
+/** D-412 (S2): read a principal identity row — null when absent or malformed
+ *  (skipped honestly, never fabricated — the forbidden-reload discipline). */
+async function readPrincipalRecord(ctx: PluginContext, principal: string): Promise<PrincipalRecord | null> {
+  try {
+    const g = await ctx.port.call("vault.get@1", { ns: PRINCIPAL_NS, id: principalVaultId(principal) });
+    if (!g.ok) return null;
+    return fromPrincipalRecord((g.value as VaultGetResult).data);
+  } catch {
+    return null;
+  }
+}
+
+/** D-412 (S2): ensure a principal identity row exists (register when absent).
+ *  Throws on write failure — callers decide rollback (fail-closed, D-325 pattern). */
+async function ensurePrincipalRecord(ctx: PluginContext, principal: string): Promise<PrincipalRecord> {
+  const existing = await readPrincipalRecord(ctx, principal);
+  if (existing !== null) return existing;
+  const rec = newRecord(principal);
+  const r = await ctx.port.call("vault.append@1", { ns: PRINCIPAL_NS, id: principalVaultId(principal), data: rec });
+  if (!r.ok) throw new Error(`vault.append@1 ${r.error}: ${r.detail ?? "no detail"}`);
+  return rec;
 }
 
 /** Best-effort journal append through the host op (capability: host.journal.append). */
@@ -265,6 +289,22 @@ export const def = definePlugin({
       }
 
       const rec = consentTable.grant(consentId, { ...(principal !== undefined ? { principal } : {}), ...(scope !== undefined ? { scope } : {}) });
+      // D-412 (S2): the consent ceremony is the identity-bearing write — when
+      // it names a principal AND law holds vault caps, the grant resolves
+      // through the principal record (ensured to exist). Fail-closed on the
+      // record write: the in-memory grant rolls back, the ceremony aborts —
+      // never half-done (the D-325 forbidden-durability pattern). Without
+      // vault caps the grant behaves exactly as before (memory-only posture).
+      let principalRecord: PrincipalRecord | null = null;
+      if (principal !== undefined && forbiddenPersistence) {
+        if (!ctx) throw new Error("law.consent.grant: no plugin context — principal record impossible, grant aborted fail-closed");
+        try {
+          principalRecord = await ensurePrincipalRecord(ctx, principal);
+        } catch (e) {
+          consentTable.revoke(consentId);
+          throw new Error(`law.consent.grant: principal record write failed — grant aborted fail-closed (missing dependency vivim.vault?): ${String(e)}`);
+        }
+      }
       const gen = bump();
       const cap = attenuate(rootConsentCap, `law.consent:id=${consentId}`); // narrowing, by construction
       registry.countEvent();
@@ -278,6 +318,9 @@ export const def = definePlugin({
         grant: { consentId: rec.consentId, ...(rec.principal !== undefined ? { principal: rec.principal } : {}), ...(rec.scope !== undefined ? { scope: rec.scope } : {}), grantedAt: rec.grantedAt } satisfies ConsentGrant,
         generation: gen,
         cap,
+        // D-412 (S2): the principal-record posture of this grant — resolved
+        // (record exists), memory-only (no vault caps), or unnamed.
+        ...(principalRecord !== null ? { principalRecord: { principal: principalRecord.principal, state: principalRecord.state, generation: principalRecord.generation } } : principal !== undefined ? { principalRecord: null } : {}),
       };
     },
 
@@ -386,6 +429,74 @@ export const def = definePlugin({
       if (!ctx) throw new Error("law.forbidden.reload: no plugin context — missing dependency vivim.vault queryable");
       const count = await reloadForbidden(ctx);
       return { loaded: true, persistence: true, count };
+    },
+
+    /** D-412 (S2) — register a principal identity row. Idempotent while
+     *  active (returns the existing record); REFUSES PRINCIPAL_REUSED when
+     *  the id was retired — the string can never become a different record
+     *  (the non-reuse invariant, enforced). */
+    "law.principal.register@1": async (payload: unknown, ctx: PluginContext | null, meta: CallMeta) => {
+      const p = asObj(payload);
+      const principal = str(p["principal"]);
+      if (!principal) throw new Error("law.principal.register: payload requires {principal}");
+      registry.countEvent();
+      if (!ctx || !ctx.capabilities.includes("port:vault.append@1") || !ctx.capabilities.includes("port:vault.get@1")) {
+        throw new Error("law.principal.register: requires port:vault.append@1 + port:vault.get@1 (identity rows ARE the seam — memory-only is not a posture here, unlike the forbidden overlay)");
+      }
+      const existing = await readPrincipalRecord(ctx, principal);
+      if (existing !== null && existing.state === "retired") {
+        throw new Error(`law.principal.register: PRINCIPAL_REUSED — '${principal}' was retired and can never be re-registered (non-reuse invariant, D-412)`);
+      }
+      if (existing !== null) {
+        return { principal: existing.principal, kind: existing.kind, state: existing.state, generation: existing.generation, registeredAt: existing.registeredAt, alreadyRegistered: true };
+      }
+      const rec = newRecord(principal);
+      const r = await ctx.port.call("vault.append@1", { ns: PRINCIPAL_NS, id: principalVaultId(principal), data: rec });
+      if (!r.ok) throw new Error(`law.principal.register: vault append ${r.error}: ${r.detail ?? "no detail"} — refused fail-closed`);
+      registry.observe(principal, "active", "principal.register");
+      await journal(ctx, { source: "vivim.law", op: "law.principal.register", principal, kind: rec.kind, caller: meta.from, causationId: meta.causationId });
+      return { principal: rec.principal, kind: rec.kind, state: rec.state, generation: rec.generation, registeredAt: rec.registeredAt, alreadyRegistered: false };
+    },
+
+    /** D-412 (S2) — retire a principal identity row. Retired is FOREVER:
+     *  the row stays (retention: forever), the id is dead. Refuses
+     *  PRINCIPAL_UNKNOWN (absent) and PRINCIPAL_RETIRED (already retired). */
+    "law.principal.retire@1": async (payload: unknown, ctx: PluginContext | null, meta: CallMeta) => {
+      const p = asObj(payload);
+      const principal = str(p["principal"]);
+      if (!principal) throw new Error("law.principal.retire: payload requires {principal}");
+      registry.countEvent();
+      if (!ctx || !ctx.capabilities.includes("port:vault.append@1") || !ctx.capabilities.includes("port:vault.get@1")) {
+        throw new Error("law.principal.retire: requires port:vault.append@1 + port:vault.get@1");
+      }
+      const existing = await readPrincipalRecord(ctx, principal);
+      if (existing === null) {
+        throw new Error(`law.principal.retire: PRINCIPAL_UNKNOWN — '${principal}' has no identity row`);
+      }
+      if (existing.state === "retired") {
+        throw new Error(`law.principal.retire: PRINCIPAL_RETIRED — '${principal}' is already retired (retired is forever, D-412)`);
+      }
+      const rec = retireRecord(existing);
+      const r = await ctx.port.call("vault.append@1", { ns: PRINCIPAL_NS, id: principalVaultId(principal), data: rec });
+      if (!r.ok) throw new Error(`law.principal.retire: vault append ${r.error}: ${r.detail ?? "no detail"} — refused fail-closed`);
+      registry.observe(principal, "retired", "principal.retire");
+      await journal(ctx, { source: "vivim.law", op: "law.principal.retire", principal, caller: meta.from, causationId: meta.causationId });
+      return { principal: rec.principal, state: rec.state, retiredAt: rec.retiredAt, generation: rec.generation };
+    },
+
+    /** D-412 (S2) — READ a principal identity row: the record or
+     *  {found: false}. Never throws on absence — absence is data. */
+    "law.principal.get@1": async (payload: unknown, ctx: PluginContext | null, _meta: CallMeta) => {
+      const p = asObj(payload);
+      const principal = str(p["principal"]);
+      if (!principal) throw new Error("law.principal.get: payload requires {principal}");
+      registry.countEvent();
+      if (!ctx || !ctx.capabilities.includes("port:vault.get@1")) {
+        throw new Error("law.principal.get: requires port:vault.get@1");
+      }
+      const rec = await readPrincipalRecord(ctx, principal);
+      if (rec === null) return { found: false, principal };
+      return { found: true, ...rec };
     },
 
     /** D-353 — the principal describe read (agent.describe@1's law-side mirror).

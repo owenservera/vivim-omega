@@ -68,10 +68,15 @@ export interface PolicyDoc {
  *  First exercised when vivim.intent entered a composition (console, the
  *  canonical-intent seam's live path) — before that the family was unwired
  *  and silently default-rode EXTERNAL_MUTATION, exactly the drift class
- *  D-351's net exists to catch. `intent.status@1` is READ (never gated). */
+ *  D-351's net exists to catch. `intent.status@1` is READ (never gated).
+ *  1.7.0 (D-412, Core Phase S2): the principal-identity family enters the net
+ *  — exact rows `law.principal.register@1` and `law.principal.retire@1` →
+ *  MUTATION (vault-internal identity rows, ns `principal`, the class family
+ *  of `vault.*`; granted in the agent composition where law holds vault
+ *  caps). `law.principal.get@1` is READ (never gate-triggering). */
 export const LAW_POLICY_V1: PolicyDoc = {
   policyId: "law.policy",
-  version: "1.6.0",
+  version: "1.7.0",
   description: "Ω1 baseline: risk-class defaults, mutation journaling, principal deny-list, credential-consent rule",
   riskTable: [
     { op: "risky.op@1", risk: "EXTERNAL_MUTATION" },
@@ -90,6 +95,8 @@ export const LAW_POLICY_V1: PolicyDoc = {
     { op: "intent.step.execute@1", risk: "MUTATION" },       // D-411 (S1): step-state writes under delegation
     { op: "intent.cancel@1", risk: "MUTATION" },             // D-411 (S1): cancellation + compensation evidence writes
     { op: "intent.resolution@1", risk: "MUTATION" },         // D-411 (S1): the four-state resolution rows (ns intent)
+    { op: "law.principal.register@1", risk: "MUTATION" },    // D-412 (S2): principal identity rows (ns principal) — exact rows, never default-riding
+    { op: "law.principal.retire@1", risk: "MUTATION" },      // D-412 (S2): retirement appends the identity row's terminal state
   ],
   defaultRisk: "EXTERNAL_MUTATION", // unknown ops are treated as the strictest class (fail-closed)
   riskDefaults: {
