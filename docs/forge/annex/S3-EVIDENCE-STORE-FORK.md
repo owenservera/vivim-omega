@@ -8,14 +8,18 @@ S3) and — unlike S1 and S2, which the owner's directive queued for immediate
 execution — it is **a genuine architectural choice the structural analysis
 deliberately reserved for the owner** ("an owner call to make later, with a
 closing window"). At lift it becomes the PROPOSED decision record under the
-then-next open D-id (realistically **D-413**).
+then-next open D-id — **D-414** (D-413 is the program tooling round, ratified
+2026-09-20; the S3 lift will be the scaffold's first owner-call record).
 
-**Measured volume at call time (the window's clock, per D-410's falsifier):**
-law-journal rows written by the full-gate test corpus on this tree — the
-runtime journal is test/demo volume only (nothing deployed); the window is
-wide but the cost of unification grows with every row, which is exactly why
-the number belongs in the record: **the choice must be called before the
-first real deployment writes governance rows at volume, not after.**
+**Measured volume (the window's clock, per D-410's falsifier — MEASURED
+2026-09-20 on the D-413 tree, one full-gate corpus run):** **7,145 law-journal
+rows across 65 scratch journals** — 5,000 of them the D-387 `jh-large`
+deliberate volume fixture, 1,310 the chat-pilot run, ~835 across the other 62
+suites. All ephemeral (scratch dirs, nothing deployed, zero persistent rows
+anywhere); the runtime journal is test/demo volume only. The window is wide
+but the cost of unification grows with every row, which is exactly why the
+number belongs in the record: **the choice must be called before the first
+real deployment writes governance rows at volume, not after.**
 
 ## Status
 
@@ -101,4 +105,6 @@ LOC** (the export already exists), which keeps B5 flat.
 - D-411 (intent citations in law journal rows), D-412 (principal events) —
   the narrative families that would ride the fold.
 - D-410's milestone row S3 + its falsifier ("the S3 fork file must carry a
-  measured volume number at call time so the expiry is visible").
+  measured volume number at call time so the expiry is visible") — **the
+  number is now carried above, measured on the D-413 tree**; re-measure at
+  lift if more than trivial rows land in between.
