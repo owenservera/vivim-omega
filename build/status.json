@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-09-20T09:13:28.025Z",
+  "generatedAt": "2026-09-20T10:39:01.599Z",
   "repo": "vivim-omega",
   "branch": "omega",
-  "head": "b532c3b",
+  "head": "c36a696",
   "toolchain": {
     "bun": "1.3.14",
     "node": "24.3.0",
@@ -96,7 +96,7 @@
     }
   ],
   "gate": {
-    "startedAt": "2026-09-20T09:12:00.049Z",
+    "startedAt": "2026-09-20T10:37:31.167Z",
     "checks": {
       "host-loc": {
         "ok": true,
@@ -131,15 +131,17 @@
       "decisions": {
         "ok": true,
         "detail": {
-          "rows": 121,
-          "records": 95,
+          "rows": 122,
+          "records": 96,
           "ratified": 95,
           "grandfatherBelow": 313,
           "generatedFrom": 413,
           "trackWarnings": 0,
           "openQuestions": {
-            "count": 0,
-            "ids": [],
+            "count": 1,
+            "ids": [
+              416
+            ],
             "board": "stale"
           }
         }
@@ -204,7 +206,7 @@
               "reason": "alias-style variance run.json vs spine.json: same effective authority (HOST_OP_TO_CAP auto-mint); convergence deferred, see _note in run.json"
             }
           },
-          "riskParityOps": 50,
+          "riskParityOps": 52,
           "matrixConformance": "green",
           "contractTypes": 132,
           "callSiteAllowlisted": [
@@ -274,7 +276,7 @@
       "tests": {
         "ok": true,
         "detail": {
-          "pass": 1115,
+          "pass": 1121,
           "fail": 0,
           "maxConcurrency": 4
         }
@@ -283,7 +285,7 @@
         "ok": true,
         "detail": {
           "compileMs": 3,
-          "bootMs": 20,
+          "bootMs": 18,
           "echo": true,
           "counterBump": true,
           "counterValue": {
@@ -306,7 +308,7 @@
   },
   "hostLoc": 1500,
   "tests": {
-    "pass": 1115,
+    "pass": 1121,
     "fail": 0
   },
   "benchmarks": {

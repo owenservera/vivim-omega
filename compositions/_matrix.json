@@ -13,7 +13,9 @@
               "host.tokens.revoke",
               "port:vault.append@1",
               "port:vault.query@1",
-              "port:vault.get@1"
+              "port:vault.get@1",
+              "port:vault.getmany@1",
+              "host.kernel.lens"
             ],
             "contracts": [
               "law.check@1",
@@ -26,7 +28,8 @@
               "law.describe@1",
               "law.principal.register@1",
               "law.principal.retire@1",
-              "law.principal.get@1"
+              "law.principal.get@1",
+              "law.audit.drain@1"
             ]
           }
         },
@@ -344,7 +347,11 @@
           "grant": {
             "capabilities": [
               "host.journal.append",
-              "host.tokens.revoke"
+              "host.tokens.revoke",
+              "port:vault.append@1",
+              "port:vault.query@1",
+              "port:vault.getmany@1",
+              "host.kernel.lens"
             ],
             "contracts": [
               "law.check@1",
@@ -352,7 +359,8 @@
               "law.consent.grant@1",
               "law.tokens.revoke@1",
               "law.amendment@1",
-              "law.describe@1"
+              "law.describe@1",
+              "law.audit.drain@1"
             ]
           }
         },

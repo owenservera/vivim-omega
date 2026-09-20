@@ -1,26 +1,88 @@
 // surfaces/web/src/events.ts — the live stream (Ω13): journal tail + world version pushes.
-// The journal is the host's append-only evidence (vaultDir/law-journal.jsonl); the world
-// version comes from mind.snapshot@1 (deterministic v = events + entities + rules + lexicon).
+// D-416 (S3, the fold): law's narrative journal rows live in vault ns "law" — the
+// console relay reads the VAULT now, not the sidecar file. One query per tick over
+// the journal id family (id + rev + cid — light columns), getmany for ONLY the new
+// bodies; cost tracks what is shown, the D-387 discipline carried over. The world
+// version still comes from mind.snapshot@1 (deterministic v = events + entities + rules + lexicon).
 //
-// D-387 (2026-09-18 external performance review #1/#5/#6):
+// D-387 (2026-09-18 external performance review #1/#5/#6), still in force:
 //   · startWorldPoll skips its tick entirely when no socket is connected, checks the
 //     version through a BODILESS snapshot (includeBodies:false — v is count-derived),
 //     and only pays for the full payload when the version actually changed.
-//   · pump() uses fs.promises (no synchronous filesystem work on the event loop);
-//     an in-flight guard prevents tick overlap.
-//   · journalHistory reads BACKWARD in bounded chunks — cost tracks what is shown
-//     (last N lines), not the lifetime size of the append-only journal.
-import { existsSync, statSync, openSync, readSync, closeSync, type Stats } from "node:fs";
-import { stat, open } from "node:fs/promises";
-import { join } from "node:path";
+//   · pump() never overlaps ticks (in-flight guard); every read is async (no
+//     synchronous filesystem work on the event loop).
+//   · journalHistory fetches ONLY the last `maxLines` bodies (one query for the id
+//     family + one bounded getmany) — never the journal's lifetime bytes.
+import type { PortResult } from "@vivim/omega-contracts";
 import type { Server } from "socket.io";
 import type { ConsoleService } from "./api.ts";
 
 export type JournalLine = { ts: number } & Record<string, unknown>;
 
+/** The root-principal call adapter (router.callAsRoot shaped) — the pure readers
+ *  below are testable with a fake over seeded data, no live host required. */
+export type RootCall = (op: string, payload?: unknown) => Promise<PortResult>;
+
+/** Vault ns owning law's narrative journal rows since the D-416 fold (the ns
+ *  exists: the forbidden overlay D-325 lives here too). */
+const JOURNAL_NS = "law";
+/** The fold's id family — ids are <prefix><boot36-padded>-<seq36-padded>, so
+ *  lexicographic order IS chronological order (within and across boots). */
+const JOURNAL_ID_PREFIX = "journal:";
+/** getmany page — the vault's own bound is 512 (D-387); page at it, never over. */
+const GETMANY_PAGE = 512;
+
+interface QueryRow { id?: unknown }
+interface GetRow { id?: unknown; found?: unknown; data?: unknown }
+
+/** The journal id family, sorted chronologically (id sort — padded by construction). */
+export async function journalIds(call: RootCall): Promise<string[]> {
+  const r = await call("vault.query@1", { ns: JOURNAL_NS, filter: { idPrefix: JOURNAL_ID_PREFIX } });
+  if (!r.ok) throw new Error(`vault.query@1 ${r.error}: ${r.detail ?? ""}`);
+  const rows = Array.isArray(r.value) ? (r.value as QueryRow[]) : [];
+  const ids = rows.map((row) => row.id).filter((id): id is string => typeof id === "string");
+  ids.sort(); // padded boot-seq: lexicographic == chronological
+  return ids;
+}
+
+/** Fetch the bodies for the given journal ids, paged under the getmany bound.
+ *  Rows come back in request order; missing ids are skipped honestly. */
+async function journalBodies(call: RootCall, ids: string[]): Promise<JournalLine[]> {
+  const out: JournalLine[] = [];
+  for (let i = 0; i < ids.length; i += GETMANY_PAGE) {
+    const page = ids.slice(i, i + GETMANY_PAGE);
+    const r = await call("vault.getmany@1", { ns: JOURNAL_NS, ids: page });
+    if (!r.ok) throw new Error(`vault.getmany@1 ${r.error}: ${r.detail ?? ""}`);
+    for (const row of (Array.isArray(r.value) ? (r.value as GetRow[]) : [])) {
+      if (row.found === true && typeof row.data === "object" && row.data !== null) {
+        out.push(row.data as JournalLine);
+      }
+    }
+  }
+  return out;
+}
+
+/** The tail's one tick: new journal rows since `seen` (ids added to the set on
+ *  success — a failed fetch retries the same rows next tick, never drops them). */
+export async function journalTail(call: RootCall, seen: Set<string>): Promise<JournalLine[]> {
+  const ids = (await journalIds(call)).filter((id) => !seen.has(id));
+  if (ids.length === 0) return [];
+  const rows = await journalBodies(call, ids);
+  for (const id of ids) seen.add(id);
+  return rows;
+}
+
+/** The recent journal history (bounded): the last `maxLines` rows — one query
+ *  for the id family + getmany for ONLY those ids' bodies. */
+export async function journalHistory(call: RootCall, maxLines = 60): Promise<JournalLine[]> {
+  const ids = await journalIds(call);
+  if (ids.length === 0) return [];
+  return journalBodies(call, ids.slice(-maxLines));
+}
+
 export interface LiveStreams {
-  /** tail the journal file and emit 'journal' events; returns a stop() */
-  startJournalTail(io: Server, vaultDir: string): () => void;
+  /** tail the vault's ns-law journal rows and emit 'journal' events; returns a stop() */
+  startJournalTail(io: Server, service: ConsoleService): () => void;
   /** poll the world version; on change broadcast 'world' with the fresh snapshot */
   startWorldPoll(io: Server, service: ConsoleService, intervalMs: number): () => void;
 }
@@ -28,44 +90,23 @@ export interface LiveStreams {
 export function createLiveStreams(): LiveStreams {
   let journalStopped = false;
 
-  const startJournalTail = (io: Server, vaultDir: string): (() => void) => {
-    const journalPath = join(vaultDir, "law-journal.jsonl");
-    let offset = 0;
-    if (existsSync(journalPath)) {
-      const st: Stats = statSync(journalPath);
-      offset = Math.max(0, st.size - 8192); // start from the last ~8KB so the console has history
-    }
+  const startJournalTail = (io: Server, service: ConsoleService): (() => void) => {
+    // D-416 (S3): the fold's read side — one light query per tick (the journal
+    // id family), getmany only for NEW bodies, emit them as 'journal' events.
+    // Best-effort per tick: a vault hiccup (mid-boot, gone) skips the tick,
+    // never crashes the surface; the unseen ids retry next tick.
+    const seen = new Set<string>();
     let timer: ReturnType<typeof setInterval> | null = null;
     let pumping = false;
     const pump = async (): Promise<void> => {
       if (journalStopped || pumping) return;
       pumping = true;
       try {
-        let st: Stats;
-        try { st = await stat(journalPath); } catch { return; } // no journal yet — nothing to tail
-        if (st.size <= offset) { if (st.size < offset) offset = 0; return; }
-        const fh = await open(journalPath, "r");
-        try {
-          const len = st.size - offset;
-          const buf = Buffer.alloc(len);
-          await fh.read(buf, 0, len, offset);
-          offset += len;
-          const text = buf.toString("utf-8");
-          // only complete lines; a trailing partial stays for the next pump
-          const lines = text.split("\n").filter(Boolean);
-          const complete = text.endsWith("\n");
-          const usable = complete ? lines : lines.slice(0, -1);
-          if (!complete) offset -= Buffer.byteLength(lines[lines.length - 1] ?? "", "utf-8") + 1;
-          const events: JournalLine[] = [];
-          for (const line of usable) {
-            try { events.push(JSON.parse(line) as JournalLine); } catch { /* malformed tail byte: skip */ }
-          }
-          if (events.length > 0) io.emit("journal", { events });
-        } finally { await fh.close(); }
-      } catch { /* tail is best-effort; never crash the surface */ }
+        const events = await service.journalTail(seen);
+        if (events.length > 0) io.emit("journal", { events });
+      } catch { /* vault unavailable this tick — skip, retry next tick */ }
       finally { pumping = false; }
     };
-    // initial history batch for late joiners is sent per-connection in server.ts
     void pump();
     timer = setInterval(() => { void pump(); }, 250);
     return () => { journalStopped = true; if (timer) clearInterval(timer); };
@@ -98,39 +139,4 @@ export function createLiveStreams(): LiveStreams {
   };
 
   return { startJournalTail, startWorldPoll };
-}
-
-/** The recent journal history (bounded) — sent to each new socket.
- *  D-387 (perf review #5): reads BACKWARD in bounded chunks instead of loading the
- *  whole append-only journal (never rotated, so the old readFileSync scaled with the
- *  journal's LIFETIME size on every socket connect). Cost now tracks the last
- *  `maxLines` complete lines plus one boundary chunk. */
-export function journalHistory(vaultDir: string, maxLines = 60): JournalLine[] {
-  const journalPath = join(vaultDir, "law-journal.jsonl");
-  try {
-    if (!existsSync(journalPath)) return [];
-    const st = statSync(journalPath);
-    if (st.size === 0) return [];
-    const CHUNK = 16384;
-    let pos = st.size;
-    let tail = Buffer.alloc(0);
-    // walk backward until the accumulated tail holds more than maxLines newlines
-    while (pos > 0) {
-      const len = Math.min(CHUNK, pos);
-      pos -= len;
-      const buf = Buffer.alloc(len);
-      const fd = openSync(journalPath, "r");
-      try { readSync(fd, buf, 0, len, pos); } finally { closeSync(fd); }
-      tail = Buffer.concat([buf, tail]); // buffer concat (not string) — a chunk boundary must never split a UTF-8 char
-      let nl = 0;
-      for (let i = tail.length - 1; i >= 0 && nl <= maxLines; i--) if (tail[i] === 0x0a) nl++;
-      if (nl > maxLines) break;
-    }
-    let lines = tail.toString("utf-8").split("\n");
-    // not at BOF → the first element is a (possibly partial) boundary fragment: drop it
-    if (pos > 0 && lines.length > 0) lines = lines.slice(1);
-    return lines.filter((l) => l.length > 0).slice(-maxLines).map((l) => {
-      try { return JSON.parse(l) as JournalLine; } catch { return null; }
-    }).filter(Boolean) as JournalLine[];
-  } catch { return []; }
 }

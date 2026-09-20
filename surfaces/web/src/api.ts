@@ -10,6 +10,7 @@ import type { PortResult } from "@vivim/omega-contracts";
 import { interpret } from "@vivim/omega-nlcl-pure";
 import type { Interpretation, IR, WorldModel } from "@vivim/omega-nlcl-pure";
 import { consentIdFor } from "@vivim/omega-contracts"; // stable (principal, op) derivation — the single contracts definition
+import { journalTail as vaultJournalTail, journalHistory as vaultJournalHistory, type JournalLine } from "./events.ts";
 
 export interface ExecuteOutcome {
   interpretation: Interpretation;
@@ -53,6 +54,18 @@ export interface ConsoleService {
   consent(consentId: string): Promise<{ granted: boolean; detail?: string }>;
   /** The opt-in LLM edge (N2): a SUGGESTION, never an execution. */
   assist(text: string): Promise<{ suggestion: string; sim: boolean }>;
+  /** D-416 (S3, the fold's read side): the journal tail's one tick — new ns-law
+   *  vault rows since `seen` (ids added to the set on success; a failed fetch
+   *  retries the same rows next tick, never drops them). */
+  journalTail(seen: Set<string>): Promise<JournalLine[]>;
+  /** D-416 (S3): the connect-time bounded history — the last `maxLines`
+   *  journal rows from the vault (one light query + getmany for ONLY those
+   *  bodies — cost tracks what is shown, the D-387 discipline). */
+  journalHistory(maxLines?: number): Promise<JournalLine[]>;
+  /** D-416 (S3): the audit-chain persistence point at close — drains the
+   *  kernel's signed chain into vault ns "audit" through law.audit.drain@1.
+   *  Best-effort at close: the outcome is reported, never thrown. */
+  auditDrain(): Promise<{ drained?: number; headHash?: string; verified?: boolean; detail?: string }>;
   uptimeMs(): number;
 }
 
@@ -258,7 +271,27 @@ export function createConsoleService(host: BootedHost, startedAt: number): Conso
     return { suggestion: v.completion?.content ?? "", sim: v.sim ?? false };
   };
 
-  return { host, world, worldLight, interpretText, execute, consent, assist, uptimeMs: () => Date.now() - startedAt };
+  // D-416 (S3): the fold's read side + the drain — the root-call adapter feeds
+  // the pure readers in events.ts (same surface, no cross-surface imports).
+  const rootCall = (op: string, payload?: unknown): Promise<PortResult> => call(op, payload ?? {});
+  const journalTail = (seen: Set<string>): Promise<JournalLine[]> => vaultJournalTail(rootCall, seen);
+  const journalHistory = (maxLines?: number): Promise<JournalLine[]> => vaultJournalHistory(rootCall, maxLines ?? 60);
+
+  /** Best-effort by design (close must complete): the drain's failure mode is a
+   *  reported detail, never a thrown error — the chain stays in memory either
+   *  way, the caller decides what a skipped drain means. */
+  const auditDrain = async (): Promise<{ drained?: number; headHash?: string; verified?: boolean; detail?: string }> => {
+    try {
+      const r = await call("law.audit.drain@1", {});
+      if (!r.ok) return { detail: `law.audit.drain@1 ${r.error}: ${r.detail ?? ""}` };
+      const v = (r.value ?? {}) as { drained?: number; headHash?: string; verified?: boolean };
+      return { drained: v.drained, headHash: v.headHash, verified: v.verified };
+    } catch (e) {
+      return { detail: String(e) };
+    }
+  };
+
+  return { host, world, worldLight, interpretText, execute, consent, assist, journalTail, journalHistory, auditDrain, uptimeMs: () => Date.now() - startedAt };
 }
 
 function surfacePayload(ir: IR | null, interp: Interpretation, w: WorldModel): { kind: "help" | "entity" | "assist"; payload: Record<string, unknown> } {

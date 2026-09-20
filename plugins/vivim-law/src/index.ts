@@ -1,8 +1,14 @@
 // vivim.law — index.ts (Ω1 spine)
 // The gate. Wiring: policy (data) + consent table + forbidden-action overlay +
-// shadow amendment + registry, exposed as eight READ-risk contracts. Mutating host
+// shadow amendment + registry, exposed as READ-risk contracts. Mutating host
 // capabilities (journal append, tokens revoke) are exercised ONLY through ports,
 // and journaling is best-effort — a law decision is never blocked by a journal failure.
+//
+// D-416 (S3, the evidence-store fold): law's narrative journal rows ride the vault
+// chain wherever port:vault.append@1 is granted (ns "law", id family
+// "journal:<boot>-<seq>"); without the grant the legacy host sidecar port stays
+// the write path (the transition discipline). The kernel audit chain's persistence
+// point is law.audit.drain@1 (ns "audit"). Zero host LOC — B5 stays flat.
 import { definePlugin, startPlugin } from "@vivim/omega-shim";
 import type { PluginContext, CallMeta } from "@vivim/omega-shim";
 import { HOST_OPS, principalKind } from "@vivim/omega-contracts";
@@ -22,6 +28,21 @@ const shadow = new ShadowAmendment(LAW_POLICY_V1);
 const registry = new LawRegistry();
 const rootConsentCap = mintCap("law.consent"); // attenuated per grant — the algebra in live use
 let generation = 1;                            // law state generation (bumps on every state change)
+
+// D-416 (S3): the fold's id families — per-boot stamp + per-process sequence,
+// both zero-padded base36 so lexicographic order == chronological order within
+// a boot, and two law processes never fold their events into one object
+// lineage (a collision would merge two events' history under one id).
+const JOURNAL_NS = "law";                       // the ns exists: forbidden overlay (D-325) lives here
+const JOURNAL_ID_PREFIX = "journal:";
+const AUDIT_NS = "audit";                       // D-416: the audit-chain persistence ns
+const AUDIT_ID_PREFIX = "audit-chain:";
+const journalBoot = Date.now().toString(36).padStart(9, "0");
+let journalSeq = 0;
+let drainSeq = 0;
+/** getmany page for the registry's vault absorb — safely under the vault's
+ *  GET_MANY_BOUND (512, D-387); never imported cross-plugin (import-surface law). */
+const REGISTRY_PAGE = 200;
 
 // ---- forbidden durability (D-325): vault-backed overlay -------------------
 // Persistence is composition-granted, never assumed: the law entry must grant
@@ -141,9 +162,40 @@ async function ensurePrincipalRecord(ctx: PluginContext, principal: string): Pro
   return rec;
 }
 
-/** Best-effort journal append through the host op (capability: host.journal.append). */
+/** Best-effort journal append (D-416/S3: THE FOLD). With port:vault.append@1
+ *  granted, the narrative row rides vault ns "law" (id family
+ *  journal:<boot>-<seq>) under the changelog chain + CAS — one row per event,
+ *  the governed event as a fold like any other; the D-411 intent citations and
+ *  D-412 principal events ride the same chain (they are journal rows). Without
+ *  the vault grant (spine/chat/test rigs) the legacy host sidecar port stays
+ *  the write path — the transition discipline, behavior unchanged. Best-effort
+ *  EITHER way: a law decision is never blocked by a journal failure; the
+ *  failure is logged, the row is lost loudly, never silently. */
 async function journal(ctx: PluginContext | null, entry: Record<string, unknown>): Promise<void> {
   if (!ctx) return;
+  if (ctx.capabilities.includes("port:vault.append@1")) {
+    // D-416 (S3): the recursion guard — the journal never narrates ITS OWN
+    // writes. Every fold append is a gated MUTATION whose law.check row would
+    // itself fold, recursing without bound (the pre-fold host-op path was
+    // gate-free BY CONSTRUCTION — capability-gated, never law-gated; the fold
+    // must preserve that property on the routed path). The gate row for
+    // vivim.law's OWN vault append is skipped — the changelog row for the
+    // append IS that record (hash-chained + CAS + boot-verified — richer
+    // evidence than the narrative row would be). Other principals' appends
+    // keep their gate rows: their fold appends are law's writes, so the guard
+    // still cuts the recursion at depth one for every caller.
+    if (entry["op"] === "law.check" && entry["targetOp"] === "vault.append@1" && entry["principal"] === ctx.manifest.id) {
+      return;
+    }
+    const id = `${JOURNAL_ID_PREFIX}${journalBoot}-${(++journalSeq).toString(36).padStart(9, "0")}`;
+    try {
+      const r: PortResult = await ctx.port.call("vault.append@1", { ns: JOURNAL_NS, id, data: { ts: Date.now(), ...entry } });
+      if (!r.ok) ctx.log(`law: journal fold ${r.error} (${r.detail ?? ""}) — decision stands, row lost loudly`);
+    } catch (e) {
+      ctx.log(`law: journal fold failed: ${String(e)} — decision stands, row lost loudly`);
+    }
+    return;
+  }
   try {
     const r: PortResult = await ctx.port.call(HOST_OPS.journalAppend, entry);
     if (!r.ok) ctx.log(`law: journal append ${r.error} (${r.detail ?? ""}) — decision stands, journaling skipped`);
@@ -253,16 +305,64 @@ export const def = definePlugin({
       return decision;
     },
 
-    /** Lifecycle registry: ids seen, journal events, active consents, law generation. */
-    "law.registry@1": (_payload: unknown, _ctx: PluginContext | null, meta: CallMeta) => {
+    /** Lifecycle registry: ids seen, journal events, active consents, law generation.
+     *  D-416 (S3): the fold's read side — law's narrative rows live in vault ns
+     *  "law" wherever the fold is active; they are absorbed LIVE here (query the
+     *  journal id family, fetch ONLY the new bodies, paged under the getmany
+     *  bound — the D-387 discipline). Best-effort: a vault read failure degrades
+     *  the registry to the file+observed view, never throws. */
+    "law.registry@1": async (_payload: unknown, ctx: PluginContext | null, meta: CallMeta) => {
       registry.observe(meta.from, "active", "op");
       registry.countEvent();
+      if (ctx && ctx.capabilities.includes("port:vault.query@1") && ctx.capabilities.includes("port:vault.getmany@1")) {
+        try {
+          const q: PortResult = await ctx.port.call("vault.query@1", { ns: JOURNAL_NS, filter: { idPrefix: JOURNAL_ID_PREFIX } });
+          if (q.ok) {
+            const rows = (Array.isArray(q.value) ? q.value : []).filter((r): r is { id: string } => typeof (r as { id?: unknown })?.id === "string");
+            const fresh = rows.map((r) => r.id).filter((id) => !registry.vaultRowSeen(id));
+            for (let i = 0; i < fresh.length; i += REGISTRY_PAGE) {
+              const page = fresh.slice(i, i + REGISTRY_PAGE);
+              const g: PortResult = await ctx.port.call("vault.getmany@1", { ns: JOURNAL_NS, ids: page });
+              if (!g.ok) break; // best-effort: absorb what arrived; the rest waits for the next call
+              for (const row of (Array.isArray(g.value) ? g.value : []) as Array<{ id?: unknown; found?: unknown; data?: unknown }>) {
+                if (row.id !== undefined && row.found === true && typeof row.data === "object" && row.data !== null) {
+                  registry.absorbVaultRow(String(row.id), row.data as Record<string, unknown>);
+                }
+              }
+            }
+          }
+        } catch { /* best-effort by design — the snapshot stays servable */ }
+      }
       return registry.snapshot(consentTable.activeCount(), generation, {
         persistence: forbiddenPersistence,
         loaded: forbiddenLoaded,
         count: forbiddenLoaded ? forbiddenTable.list().filter((e) => e.ops.length > 0).length : forbiddenLoadedCount,
         ...(forbiddenLastError !== null ? { lastError: forbiddenLastError } : {}),
       });
+    },
+
+    /** D-416 (S3) — the audit-chain persistence point (common to both fork
+     *  options, landed with (a)): drain the kernel's signed audit chain (the
+     *  HOST_OPS.auditChain export — verified, signerKeyId, publicKey, length,
+     *  headHash, entries) into vault ns "audit" as ONE whole append per drain.
+     *  The chain itself is untouched (the drain is read-only on the kernel —
+     *  the lens reports, it never authors); fail-closed on the vault append,
+     *  the caller sees the error. Id family audit-chain:<boot>-<seq> — one
+     *  snapshot object per drain, never superseding: every drain is a full
+     *  export, the row IS the persistence. The kernel attaches at EVERY boot
+     *  (D-340); availability is a cap question, never a wiring one. */
+    "law.audit.drain@1": async (_payload: unknown, ctx: PluginContext | null, _meta: CallMeta) => {
+      registry.countEvent();
+      if (!ctx || !ctx.capabilities.includes("host.kernel.lens") || !ctx.capabilities.includes("port:vault.append@1")) {
+        throw new Error("law.audit.drain: requires host.kernel.lens + port:vault.append@1 (the persistence point IS the seam — memory-only is not a posture here, unlike the forbidden overlay)");
+      }
+      const chain: PortResult = await ctx.port.call(HOST_OPS.auditChain, {});
+      if (!chain.ok) throw new Error(`law.audit.drain: audit chain export ${chain.error}: ${chain.detail ?? "no detail"}`);
+      const value = chain.value as { verified: boolean; signerKeyId: string; publicKey: string; length: number; headHash: string; entries: unknown[] };
+      const id = `${AUDIT_ID_PREFIX}${journalBoot}-${(++drainSeq).toString(36).padStart(9, "0")}`;
+      const r: PortResult = await ctx.port.call("vault.append@1", { ns: AUDIT_NS, id, data: value });
+      if (!r.ok) throw new Error(`law.audit.drain: vault append ${r.error}: ${r.detail ?? "no detail"} — drain refused fail-closed`);
+      return { drained: value.length, headHash: value.headHash, verified: value.verified, ns: AUDIT_NS, id };
     },
 
     /** Grant a consent (default) or explicitly deny-revoke it ({action:"revoke"}).

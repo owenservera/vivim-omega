@@ -2,17 +2,24 @@
 //   #1 · startWorldPoll — the poll is GATED on connected sockets (zero watchers →
 //        zero vault reads), version-checks through the BODILESS snapshot, and only
 //        pays for the full payload when the version actually changed
-//   #5 · journalHistory — bounded backward read: correct last-N out of a huge
-//        journal, boundary-safe (no trailing newline, partial first line, empty)
-//   #6 · startJournalTail — async pump still emits appended lines and survives
-//        truncation (offset reset)
+//   #5 · journalHistory — bounded read: the LAST maxLines rows out of a huge
+//        vault journal, fetched with exactly ONE query + getmany of ONLY those
+//        ids (cost tracks what is shown)
+//   #6 · startJournalTail — the async pump emits new vault rows within a tick
+//        window, never re-emits seen rows, and a transient vault failure skips
+//        its tick without dropping anything (unseen ids retry)
+// D-416 (S3, the fold) rewrote #5/#6 from the retired file tail to the vault
+// readers (journalId family query + bounded getmany) — the D-387 invariants
+// carry over unchanged; the falsifiers got STRONGER (the bounded property is
+// now counted: the fake RootCall records every getmany id requested).
 // The service here is a FAKED ConsoleService (counting stub) — the real console
 // composition is exercised by web.test.ts; this file pins the STREAM LOGIC.
 import { describe, test, expect, afterEach } from "bun:test";
-import { mkdirSync, rmSync, writeFileSync, appendFileSync, existsSync } from "node:fs";
+import { mkdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { omegaTmp } from "@vivim/omega-platform";
-import { createLiveStreams, journalHistory } from "../src/events.ts";
+import { createLiveStreams, journalHistory, journalTail, type RootCall, type JournalLine } from "../src/events.ts";
+import type { PortResult } from "@vivim/omega-contracts";
 
 function tmp(name: string): string {
   const dir = omegaTmp("omega-web-test/d387", `${name}-${Date.now()}-${process.pid}`);
@@ -50,6 +57,42 @@ function countingService(v0: number): CountingService {
 const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
 
 afterEach(() => { /* timers are stopped by each test's stop() */ });
+
+// ---- D-416 (S3/F-6): the fake vault — an in-memory ns-law store behind a
+// RootCall, counting every query and every getmany id (the bounded property is
+// OBSERVED, not assumed). Journal ids use the fold's real shape so ordering
+// behaves exactly as production (padded boot-seq: lexicographic == chronological).
+interface FakeVault {
+  rows: Map<string, JournalLine>;
+  queryCalls: number;
+  getmanyIds: string[]; // every id ever requested, flattened
+  failNext: boolean; // one-shot: the next query fails (the transient-tick test)
+}
+function fakeVault(): FakeVault {
+  return { rows: new Map(), queryCalls: 0, getmanyIds: [], failNext: false };
+}
+function jid(seq: number): string {
+  return `journal:${"000000001"}-${seq.toString(36).padStart(9, "0")}`;
+}
+function fakeRootCall(v: FakeVault): RootCall {
+  return async (op: string, payload?: unknown): Promise<PortResult> => {
+    if (op === "vault.query@1") {
+      v.queryCalls++;
+      if (v.failNext) { v.failNext = false; return { ok: false, error: "DEGRADED", detail: "simulated transient vault failure" }; }
+      const p = (payload ?? {}) as { filter?: { idPrefix?: string } };
+      const prefix = p.filter?.idPrefix ?? "";
+      const ids = [...v.rows.keys()].filter((id) => id.startsWith(prefix)).sort();
+      return { ok: true, value: ids.map((id) => ({ id, rev: 1, cid: `cid:${id}` })) };
+    }
+    if (op === "vault.getmany@1") {
+      const p = (payload ?? {}) as { ids?: string[] };
+      const ids = p.ids ?? [];
+      v.getmanyIds.push(...ids);
+      return { ok: true, value: ids.map((id) => ({ id, found: v.rows.has(id), ...(v.rows.has(id) ? { rev: 1, cid: `cid:${id}`, data: v.rows.get(id) } : {}) })) };
+    }
+    return { ok: false, error: "REFUSED", detail: `no fake for ${op}` };
+  };
+}
 
 describe("D-387 #1 · socket-gated world poll", () => {
   test("zero connected sockets → ZERO vault reads (the old poll read forever)", async () => {
@@ -107,72 +150,88 @@ describe("D-387 #1 · socket-gated world poll", () => {
   });
 });
 
-describe("D-387 #5 · bounded journalHistory (backward read)", () => {
-  test("returns exactly the LAST maxLines parsed events out of a large journal", () => {
-    const dir = tmp("jh-large");
-    const jp = join(dir, "law-journal.jsonl");
+describe("D-387 #5 (D-416 rewrite) · bounded journalHistory (vault read)", () => {
+  test("returns exactly the LAST maxLines rows out of a huge vault journal — ONE query, getmany of ONLY those ids", async () => {
+    const v = fakeVault();
+    const call = fakeRootCall(v);
     const N = 5000;
-    for (let i = 0; i < N; i++) appendFileSync(jp, JSON.stringify({ ts: i, op: "t", seq: i }) + "\n");
-    const got = journalHistory(dir, 60);
+    for (let i = 0; i < N; i++) v.rows.set(jid(i), { ts: i, op: "t", seq: i });
+    const got = await journalHistory(call, 60);
     expect(got).toHaveLength(60);
-    expect((got[0] as { seq: number }).seq).toBe(N - 60);
-    expect((got[59] as { seq: number }).seq).toBe(N - 1);
+    expect((got[0] as { seq: number }).seq).toBe(N - 60); // chronological head of the window
+    expect((got[59] as { seq: number }).seq).toBe(N - 1); // the newest row
+    // the D-387 invariant, COUNTED: cost tracks what is shown — exactly one
+    // query for the id family, and getmany for ONLY the last 60 ids (never
+    // the journal's lifetime bytes). OLD CODE FAILS HERE: the file tail had no
+    // vault read path at all.
+    expect(v.queryCalls).toBe(1);
+    expect(v.getmanyIds).toHaveLength(60);
+    expect(v.getmanyIds).toEqual(Array.from({ length: 60 }, (_, k) => jid(N - 60 + k)));
   });
 
-  test("boundary safety: no trailing newline (partial last line still parses), fewer lines than the window, empty, missing", () => {
-    const dir = tmp("jh-edge");
-    // no trailing newline
-    const jp = join(dir, "law-journal.jsonl");
-    writeFileSync(jp, JSON.stringify({ ts: 1, a: 1 }) + "\n" + JSON.stringify({ ts: 2, b: 2 })); // no \n at EOF
-    expect(journalHistory(dir, 60)).toEqual([{ ts: 1, a: 1 }, { ts: 2, b: 2 }]);
-    // fewer complete lines than maxLines → all of them
-    rmSync(jp, { force: true });
-    writeFileSync(jp, JSON.stringify({ ts: 1 }) + "\n");
-    expect(journalHistory(dir, 60)).toEqual([{ ts: 1 }]);
-    // empty file
-    rmSync(jp, { force: true });
-    writeFileSync(jp, "");
-    expect(journalHistory(dir, 60)).toEqual([]);
-    // missing file
-    expect(journalHistory(tmp("jh-absent"), 60)).toEqual([]);
+  test("boundary safety: fewer rows than the window, empty store, non-journal rows invisible", async () => {
+    const v = fakeVault();
+    const call = fakeRootCall(v);
+    // empty → []
+    expect(await journalHistory(call, 60)).toEqual([]);
+    // one row → all of it
+    v.rows.set(jid(0), { ts: 1, only: true });
+    expect(await journalHistory(call, 60)).toEqual([{ ts: 1, only: true }]);
+    // non-journal ns-law rows (the forbidden overlay) are invisible to the family query
+    v.rows.set("forbidden:omega.risky", { principal: "omega.risky", ops: ["risky.op@1"] });
+    const got = await journalHistory(call, 60);
+    expect(got).toHaveLength(1);
+    expect((got[0] as { only?: boolean }).only).toBe(true);
   });
 
-  test("a huge single line spanning many chunks does not corrupt its neighbors", () => {
-    const dir = tmp("jh-huge");
-    const jp = join(dir, "law-journal.jsonl");
-    const big = "z".repeat(60_000); // > 3 chunks — forces multi-chunk backward assembly
-    writeFileSync(jp, JSON.stringify({ ts: 0, big }) + "\n" + JSON.stringify({ ts: 1, tail: "last" }) + "\n");
-    const got = journalHistory(dir, 60);
+  test("a huge row body is one getmany body, not a chunk-walk (no size-dependent read machinery)", async () => {
+    const v = fakeVault();
+    const call = fakeRootCall(v);
+    const big = "z".repeat(60_000);
+    v.rows.set(jid(0), { ts: 0, big });
+    v.rows.set(jid(1), { ts: 1, tail: "last" });
+    const got = await journalHistory(call, 60);
     expect(got).toHaveLength(2);
-    expect((got[0] as { big: string }).big).toHaveLength(60_000);
-    expect((got[1] as { tail: string }).tail).toBe("last");
+    expect((got[0] as { big?: string }).big).toHaveLength(60_000);
+    expect((got[1] as { tail?: string }).tail).toBe("last");
   });
 });
 
-describe("D-387 #6 · async journal tail pump", () => {
-  test("appended lines are emitted within a tick window; truncation resets the offset", async () => {
-    const dir = tmp("tail");
-    const jp = join(dir, "law-journal.jsonl");
-    writeFileSync(jp, JSON.stringify({ ts: 0, boot: true }) + "\n");
+describe("D-387 #6 (D-416 rewrite) · async vault journal tail pump", () => {
+  test("new rows are emitted within a tick window; seen rows never re-emit; a transient failure skips its tick and drops nothing", async () => {
+    const v = fakeVault();
+    const call = fakeRootCall(v);
+    v.rows.set(jid(0), { ts: 0, boot: true });
     const io = fakeIo(0);
     const streams = createLiveStreams();
-    const stop = streams.startJournalTail(io as never, dir);
+    const service = {
+      journalTail: (seen: Set<string>): Promise<JournalLine[]> => journalTail(call, seen),
+    };
+    const stop = streams.startJournalTail(io as never, service as never);
     await sleep(400); // initial pump + a couple of async ticks
     expect(io.emitted.filter((e) => e.event === "journal").length).toBeGreaterThan(0);
+
     // append → the async pump must pick it up
     const before = io.emitted.length;
-    appendFileSync(jp, JSON.stringify({ ts: 1, live: true }) + "\n");
+    v.rows.set(jid(1), { ts: 1, live: true });
     await sleep(600);
     expect(io.emitted.length).toBeGreaterThan(before);
     const flat = io.emitted.filter((e) => e.event === "journal").flatMap((e) => (e.payload as { events: { live?: boolean }[] }).events);
     expect(flat.some((e) => e.live === true)).toBe(true);
-    // truncation (size < offset) → offset resets, tail continues from the new head
-    rmSync(jp, { force: true });
-    writeFileSync(jp, JSON.stringify({ ts: 2, fresh: true }) + "\n");
+
+    // seen rows never re-emit (the id diff — the tail's whole correctness)
     await sleep(600);
-    const flat2 = io.emitted.filter((e) => e.event === "journal").flatMap((e) => (e.payload as { events: { fresh?: boolean }[] }).events);
-    expect(flat2.some((e) => e.fresh === true)).toBe(true);
+    const journalEmits = io.emitted.filter((e) => e.event === "journal").length;
+    await sleep(600);
+    expect(io.emitted.filter((e) => e.event === "journal").length).toBe(journalEmits); // idle → silent
+
+    // a transient vault failure skips its tick WITHOUT dropping anything: the
+    // row appended during the outage still arrives on a later tick
+    v.failNext = true;
+    v.rows.set(jid(2), { ts: 2, outage: true });
+    await sleep(900); // the failed tick + recovery ticks
+    const flat2 = io.emitted.filter((e) => e.event === "journal").flatMap((e) => (e.payload as { events: { outage?: boolean }[] }).events);
+    expect(flat2.some((e) => e.outage === true)).toBe(true); // retried, never dropped
     stop();
-    expect(existsSync(jp)).toBe(true);
   });
 });

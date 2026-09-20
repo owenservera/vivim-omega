@@ -5,6 +5,9 @@
 // law.registry@1 call it re-reads the journal live and merges what it has observed
 // in-process. This module is the ONE read-only filesystem touch in the plugin
 // (sanctioned by the Ω1 spec: state persists via the law journal, never a side file).
+// D-416 (S3, the fold): law's narrative rows ride vault ns "law" wherever the fold
+// is active — the op handler feeds them here by id (absorbVaultRow); this module
+// stays port-free and pure (the import-safe split the plugin's other modules keep).
 import { existsSync, readFileSync } from "node:fs";
 import type { LifecycleState } from "@vivim/omega-contracts";
 
@@ -28,10 +31,10 @@ export interface ForbiddenOverlayStatus {
 
 export interface RegistrySnapshot {
   plugins: string[]; // sorted composition ids seen (reserved principals excluded)
-  events: number;    // journal events in known history (replayed at init + absorbed live)
+  events: number;    // journal events in known history (file replay + live absorb + vault journal rows, D-416)
   consents: number;  // active consent grants (injected by the caller)
   generation: number;// law state generation (injected by the caller)
-  replayed: number;  // events replayed at init
+  replayed: number;  // events replayed at init (the transition file)
   observed: number;  // in-process law op events since boot (not journal-derived)
   states: Record<string, PluginObservation>;
   forbidden?: ForbiddenOverlayStatus; // D-325 overlay durability state (present when the caller reports it)
@@ -67,6 +70,11 @@ export class LawRegistry {
   private cursor = 0;     // lines already absorbed (replay + live)
   private observed = 0;   // in-process law events (ops + decisions seen, not yet journaled)
   private selfId = "";
+  // D-416 (S3): the fold's read-side state — vault journal rows absorbed by id
+  // (the query returns every journal id every call; the seen-set makes absorb
+  // idempotent, the counter feeds the snapshot's events field).
+  private vaultSeen = new Set<string>();
+  private vaultAbsorbed = 0;
 
   /** Init: replay the journal (when a path is configured) and register ourselves. */
   init(journalPath: unknown, selfId: string): { replayed: number; journalPath: string } {
@@ -107,6 +115,23 @@ export class LawRegistry {
     this.observed++;
   }
 
+  /** D-416 (S3): has this vault journal row id already been absorbed? (The
+   *  query returns every journal id on every call — the seen-set is the diff.) */
+  vaultRowSeen(id: unknown): boolean {
+    return typeof id === "string" && this.vaultSeen.has(id);
+  }
+
+  /** D-416 (S3): absorb one vault journal row by id (the fold's read-side
+   *  merge). Idempotent: an already-seen id is a no-op. Returns true when the
+   *  row was new — the caller's paging uses it only for accounting. */
+  absorbVaultRow(id: string, e: JournalEntry): boolean {
+    if (this.vaultSeen.has(id)) return false;
+    this.vaultSeen.add(id);
+    this.vaultAbsorbed++;
+    this.absorbEntry(e, "vault-journal");
+    return true;
+  }
+
   /** Live re-read: absorb journal lines written since our cursor. Returns journal-derived event total. */
   refresh(): number {
     if (!this.journalPath) return this.replayed + this.absorbed;
@@ -119,7 +144,7 @@ export class LawRegistry {
   }
 
   snapshot(consents: number, generation: number, forbidden?: ForbiddenOverlayStatus): RegistrySnapshot {
-    const events = this.refresh();
+    const events = this.refresh() + this.vaultAbsorbed; // file rows + vault rows — both are the journal now (D-416)
     const states: Record<string, PluginObservation> = {};
     for (const [id, o] of this.observations) states[id] = { ...o, seenVia: [...o.seenVia] };
     return {

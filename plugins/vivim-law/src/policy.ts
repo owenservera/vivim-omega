@@ -73,10 +73,15 @@ export interface PolicyDoc {
  *  — exact rows `law.principal.register@1` and `law.principal.retire@1` →
  *  MUTATION (vault-internal identity rows, ns `principal`, the class family
  *  of `vault.*`; granted in the agent composition where law holds vault
- *  caps). `law.principal.get@1` is READ (never gate-triggering). */
+ *  caps). `law.principal.get@1` is READ (never gate-triggering).
+ *  1.8.0 (D-416, Core Phase S3): `law.audit.drain@1` enters the net — exact
+ *  row → MUTATION (the audit-chain persistence write, ns `audit`, the same
+ *  vault-internal class family; catalog-declared MUTATION in the manifest,
+ *  never default-riding — the parity net holds the two sources to one
+ *  truth, the D-351 discipline). */
 export const LAW_POLICY_V1: PolicyDoc = {
   policyId: "law.policy",
-  version: "1.7.0",
+  version: "1.8.0",
   description: "Ω1 baseline: risk-class defaults, mutation journaling, principal deny-list, credential-consent rule",
   riskTable: [
     { op: "risky.op@1", risk: "EXTERNAL_MUTATION" },
@@ -97,6 +102,7 @@ export const LAW_POLICY_V1: PolicyDoc = {
     { op: "intent.resolution@1", risk: "MUTATION" },         // D-411 (S1): the four-state resolution rows (ns intent)
     { op: "law.principal.register@1", risk: "MUTATION" },    // D-412 (S2): principal identity rows (ns principal) — exact rows, never default-riding
     { op: "law.principal.retire@1", risk: "MUTATION" },      // D-412 (S2): retirement appends the identity row's terminal state
+    { op: "law.audit.drain@1", risk: "MUTATION" },           // D-416 (S3): the audit-chain persistence point (ns audit) — vault-internal class family, exact row, never default-riding
   ],
   defaultRisk: "EXTERNAL_MUTATION", // unknown ops are treated as the strictest class (fail-closed)
   riskDefaults: {

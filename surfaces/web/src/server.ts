@@ -15,7 +15,7 @@ import { basename, join } from "node:path";
 import { Server } from "socket.io";
 import { bootSurface } from "./boot.ts";
 import { createConsoleService, type ExecuteOutcome } from "./api.ts";
-import { createLiveStreams, journalHistory } from "./events.ts";
+import { createLiveStreams } from "./events.ts";
 import { NCLL_VERSION } from "@vivim/omega-nlcl-pure";
 
 export interface ConsoleServiceOptions {
@@ -183,8 +183,12 @@ export async function startConsoleService(opts: ConsoleServiceOptions): Promise<
         const world = await service.world();
         socket.emit("snapshot", { world, nlclVersion: NCLL_VERSION });
       } catch { /* fresh boot mid-flight */ }
+      // D-416 (S3): the connect-time history reads the VAULT (ns law, the
+      // fold's read side) — the file tail is retired with the fold.
+      try {
+        socket.emit("journal", { events: await service.journalHistory(60) });
+      } catch { /* vault mid-boot: the tail will stream rows as they land */ }
     })();
-    socket.emit("journal", { events: journalHistory(opts.vaultDir) });
     socket.on("interpret", async (payload: { text?: string }, ack?: (r: unknown) => void) => {
       try {
         const text = typeof payload?.text === "string" ? payload.text : "";
@@ -195,7 +199,7 @@ export async function startConsoleService(opts: ConsoleServiceOptions): Promise<
   });
 
   const streams = createLiveStreams();
-  const stopTail = streams.startJournalTail(io, opts.vaultDir);
+  const stopTail = streams.startJournalTail(io, service);
   const stopPoll = streams.startWorldPoll(io, service, opts.worldPollMs ?? 500);
 
   /** Immediate world replication after a mutating interaction (the poller stays as the
@@ -222,6 +226,12 @@ export async function startConsoleService(opts: ConsoleServiceOptions): Promise<
       // keep-alive clients (bun fetch) would otherwise hold the event loop hostage
       httpServer.closeIdleConnections?.();
       httpServer.closeAllConnections?.();
+      // D-416 (S3): the audit-chain persistence point — drain the kernel's
+      // signed chain into vault ns "audit" BEFORE the host (and its in-memory
+      // chain) shuts down. Best-effort: the outcome is logged, close completes.
+      const drain = await service.auditDrain();
+      if (drain.detail !== undefined) console.error(`[Ω13] audit drain skipped: ${drain.detail}`);
+      else console.log(`[Ω13] audit chain drained: ${String(drain.drained ?? 0)} grants → ns audit (head ${String(drain.headHash ?? "?").slice(0, 8)}…)`);
       await boot.host.shutdown().catch(() => {});
     },
   };

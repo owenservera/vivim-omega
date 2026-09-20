@@ -2,7 +2,7 @@
   "manifestVersion": "1",
   "id": "vivim.law",
   "version": "0.2.0",
-  "description": "\u03a91 law spine: the gate (law.check), consent grants, capability-handle algebra, registry (journal replay), per-principal forbidden-action overlay (law.forbidden.set, D-310; vault-durable per D-325 with law.forbidden.reload), shadow amendment, and the principal describe read (law.describe, D-353: kind + forbidden + narrowed consents). Replaces the \u03a90 law-stub via recipe re-compile + atomic pin swap (D-213).",
+  "description": "Ω1 law spine: the gate (law.check), consent grants, capability-handle algebra, registry (journal replay + the D-416 vault-journal absorb), per-principal forbidden-action overlay (law.forbidden.set, D-310; vault-durable per D-325 with law.forbidden.reload), shadow amendment, and the principal describe read (law.describe, D-353). D-416 (S3, the evidence-store fold): law's narrative journal rows ride vault ns law (id family journal:<boot>-<seq>) wherever port:vault.append@1 is granted — the legacy host sidecar port stays the write path without it (the transition discipline) — and law.audit.drain@1 persists the kernel's signed audit chain into vault ns audit (the persistence point). Replaces the Ω0 law-stub via recipe re-compile + atomic pin swap (D-213).",
   "entry": "src/index.ts",
   "publisher": {
     "keyId": "",
@@ -75,6 +75,12 @@
         "id": "law.principal.get",
         "version": "1",
         "risk": "READ"
+      },
+      {
+        "kind": "contract",
+        "id": "law.audit.drain",
+        "version": "1",
+        "risk": "MUTATION"
       }
     ]
   },
@@ -85,9 +91,10 @@
       "host.tokens.revoke",
       "port:vault.append@1",
       "port:vault.query@1",
-      "port:vault.get@1"
+      "port:vault.get@1",
+      "host.kernel.lens"
     ],
-    "justification": "law.check journals every gate decision to the vault law-journal (host.journal.append); law.tokens.revoke delegates plugin token revocation to the host generation bump (host.tokens.revoke). D-325: law.forbidden.set journals the forbidden overlay to vault ns law and reloads it at boot (vault.append/query/get) \u2014 granted per-composition by the user-signed Recipe (agent.json), never by this manifest; compositions without the vault grant stay memory-only."
+    "justification": "law.check journals every gate decision: with vault caps the narrative row rides vault ns law (the D-416 fold), without them the host law-journal sidecar (host.journal.append — the transition path); law.tokens.revoke delegates plugin token revocation to the host generation bump (host.tokens.revoke). D-325: law.forbidden.set journals the forbidden overlay to vault ns law and reloads it at boot (vault.append/query/get) — granted per-composition by the user-signed Recipe (agent.json), never by this manifest; compositions without the vault grant stay memory-only. D-416 (S3): law.audit.drain@1 exports the kernel audit chain through host.kernel.lens and persists it whole into vault ns audit — the same per-composition grant shape: the cap is requested here, granted only where a signed recipe says so."
   },
   "runtime": {
     "tier": "worker-thread",
