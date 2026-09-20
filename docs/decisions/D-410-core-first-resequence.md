@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -38,4 +38,4 @@ The structural pass (`docs/forge/annex/OMEGA-CORE-STRUCTURAL-ANALYSIS.md`, commi
 - `docs/forge/annex/OMEGA-PROGRAM-ACCELERATION.md` §5.1 (the matrix this record resolves), §3.2 (B1 displacement proven, B2 the volume clock).
 - `docs/forge/annex/OMEGA-CORE-FIRST-RESEQUENCE.md` — the milestone definition, parked-plugin register, post-core sequence, and falsifiers of the ordering itself.
 - D-408 (the amended vision the core work structurally supports — restored and ratified this round); D-409 (the same round's split-plugin decision).
-- Gate evidence for ratification: cited in the ratify commit per repo convention (quick gate green post-landing; full gate on the record's tree). Directive-class per D-364 — no boot-security surface touched, zero code.
+- Ratified: landed in `5cbd629`; quick gate green post-landing; full gate green on the record's tree (1056/0, host flat 1500/1500); directive-class per D-364 — no boot-security surface touched, zero code.

@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -37,4 +37,4 @@ D-406 froze the 24-op `forge.*` catalog with the mine family declared in wire (c
 - `docs/forge/BACKLOG.md` Wave 1 pre-position (capture EXTERNAL_MUTATION, siblings READ, one plugin per class — "do not fix the catalog; split the partition").
 - `tooling/gates/forge-surface.ts` (stage 5d) one-risk-class-per-plugin + refusal-tests-required; D-406 record — the catalog freeze; `fixtures/mines/synthetic-v0/MANIFEST.json` (42 files, rootHash-pinned).
 - `docs/forge/annex/OMEGA-CORE-STRUCTURAL-ANALYSIS.md` §5 — mine rows are new writes, not migrations; the receipt is a governed-event row from the first byte.
-- Gate evidence for ratification: cited in the ratify commit per repo convention (quick gate green post-landing; full gate on the record's tree). Directive-class per D-364 — no boot-security surface touched, zero code.
+- Ratified: landed in `5cbd629`; quick gate green post-landing; full gate green on the record's tree (1056/0, host flat 1500/1500); directive-class per D-364 — no boot-security surface touched, zero code.

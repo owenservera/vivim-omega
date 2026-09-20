@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -50,4 +50,4 @@ All corpus citations above were re-verified verbatim this round from /home/z/my-
 - Baseline before writing: branch wave0-omega-forge clean at 476be50; quick gate green (host 1500/1500 flat, all structural stages pass, 2026-09-20T02:32Z).
 - The three critique rounds are part of this round's working context (IM session); their content is synthesized into the Context above rather than attached verbatim — the amended vision text is the durable artifact.
 - Amendments preserved verbatim where not touched: §1 the shift, §3 philosophy (plus one added bullet: own/share/evolve), the 5-tuple and CP-1..CP-4 resolutions, the healing loop, the provenance surfaces, the 100x table (except row 4), the original nine refusals, F1-F6, and the Wave 0 keystone claim.
-- Gate evidence for ratification: cited in the ratify commit per repo convention (quick gate green post-landing; full gate green on the record's tree). Directive-class per D-364.
+- Ratified: restored in `3015831` (verbatim from the parked commit `18d0ea8`); re-entry round landed in `5cbd629`; quick gate green post-landing; full gate green on the record's tree (1056/0, host flat 1500/1500, attest green, forge-surface green); directive-class per D-364 (no boot-security surface touched — zero code, zero host LOC).
