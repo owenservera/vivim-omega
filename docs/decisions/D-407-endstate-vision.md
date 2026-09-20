@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -38,3 +38,4 @@ The program reached its first dream round with a full reference corpus on the ta
 - Wave 0 standing at adoption: branch tip dddf4e4, full gate 1056/0 green on the Round 2 tree, self-hosting falsifier green on a real boot (forge-author 31/31, forge-surface 14/14, anvil 9/9, generality 15/15, pack.builder 24/24).
 - The vision document's own claims are all either measured (inventories, gate numbers), already enforced (Wave 0 machinery), or explicitly marked as falsifiers owed by named future waves.
 - Gate evidence for ratification: cited in the ratify commit per repo convention (quick gate green post-landing; full gate green on the record's tree).
+- Ratified: landed in `4f1ad7f`; quick gate green post-landing; full gate green on the record's tree (1056/0, host flat 1500/1500, attest green, forge-surface green); directive-class per D-364 (no boot-security surface touched — zero code, zero host LOC).
