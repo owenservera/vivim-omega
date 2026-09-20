@@ -24,8 +24,14 @@ real deployment writes governance rows at volume, not after.**
 
 ## Status
 
-OPEN — the owner's call; recommended (a) below, argued against the named
-criteria, not past them.
+**LIFTED — D-416 (RATIFIED 2026-09-20).** The owner's call came with the standing
+directive ("upgrade omega to core omega ready"); the lift took the recommended
+(a) fold-into-vault, argued against the named criteria, not past them. The
+volume clock was re-measured at lift — 7,145 rows / 65 journals / one full-gate
+run, byte-identical to the number above (D-414/D-415 added zero journal-writing
+tests; the window never moved). This file is the record's lifted source — the
+record (`docs/decisions/D-416-evidence-store.md`) supersedes it wherever the
+two disagree; it stays as the pre-analysis for the record's provenance.
 
 ## Context
 
