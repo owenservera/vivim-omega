@@ -1,6 +1,7 @@
 # D-389 — Intent Mechanism: All Phases (Complete Status)
 
-Status: PROPOSED · evidence · v0.4 · committed `99f7fb8` (remote `main` updated when network available)
+Status: ~~PROPOSED~~ **RATIFIED** — see the decision record `docs/decisions/D-389-intent-mechanism.md` (this companion's "PROPOSED" line and its "Remote status" section below are v0.4-era snapshots, corrected 2026-09-20 in the doc-logic pass; the record is the authority)
+*(snapshot-era line kept verbatim: PROPOSED · evidence · v0.4 · committed `99f7fb8` (remote `main` updated when network available))*
 
 ## What exists (contracts, plugin, docs, tests)
 - `contracts/src/intent.ts` — durable `Intent` + `IntentStep` + `IntentState`

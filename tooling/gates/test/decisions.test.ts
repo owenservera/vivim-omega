@@ -109,7 +109,16 @@ describe("open-questions board — team surface over PROPOSED records", () => {
   test("lists the PROPOSED records with recommendations and TBD flags", () => {
     const qs = listOpenQuestions(root);
     const ids = qs.map((q) => q.n);
-    expect(ids).toEqual([...ids].sort((a, b) => a - b)); // D-number order, append-proof
+    // D-413 (A4) board law: BLOCKING-first, then D-number — records carrying a
+    // non-none Blocks value sort ahead of none-records, ascending within each
+    // band. (Test-led correction 2026-09-20: the naive D-number assertion
+    // predated the first Blocks-carrying PROPOSED record — D-421 — and
+    // contradicted the comparator's own law comment.)
+    const blocking = qs.filter((q) => q.blocks !== "none").map((q) => q.n);
+    const unblocked = qs.filter((q) => q.blocks === "none").map((q) => q.n);
+    expect(blocking).toEqual([...blocking].sort((a, b) => a - b));
+    expect(unblocked).toEqual([...unblocked].sort((a, b) => a - b));
+    expect(ids).toEqual([...blocking, ...unblocked]);
     // Ratification history cleared the board: foundation wave (96a58f4) cleared
     // D-313/314/317 + D-366/372/373/374/375; the W0 close-out cleared D-376..D-383;
     // W1 cleared D-385. D-316 closed 2026-09-18 — its own revisit trigger met (the

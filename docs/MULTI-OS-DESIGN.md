@@ -1,6 +1,6 @@
 # Multi-OS Concept — one codebase, every OS, no per-OS branches (D-372 design)
 
-Status: **PROPOSED design** (decision record: `docs/decisions/D-372-multi-os-platform-seam.md`).
+Status: **RATIFIED** (D-372; this doc's "PROPOSED design" line is a pre-ratification snapshot, corrected 2026-09-20 in the doc-logic pass — the record is the authority).
 Nothing here changes behavior. Implementation rides in phased follow-ups; each
 phase lands with its own falsifier and gate evidence per house process.
 

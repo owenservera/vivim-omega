@@ -1,5 +1,11 @@
 # Proposal: Next Wave — Computation Routing + Provenance Linkage (D-323/D-324)
 
+> **SUPERSEDED 2026-09-18 — archived copy exists at `docs/archive/PROPOSAL-NEXT-WAVE.md`
+> (this live duplicate missed the archive banner). D-323 and D-324 are RATIFIED** —
+> the status line below is a stale snapshot, not an open ask. Do not re-execute:
+> the build spec below already landed as the named records. Live sequencing:
+> `docs/forge/BACKLOG.md` + the decision ledger.
+
 **Status:** PROPOSED — awaiting owner greenlight. On approval this becomes the build
 spec; D-rows below flip PROPOSED→RATIFIED only on a green gate, per the Decision Contract.
 **Baseline:** `omega` @ `9a1e00f` (gate green 542/542). Touches no host, no law, no vault,

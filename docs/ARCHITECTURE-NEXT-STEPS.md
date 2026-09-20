@@ -1,5 +1,17 @@
 # VIVIM-Ω — Architecture Notes: Where We Are, What's Next
 
+> **RETIRED SNAPSHOT (archived copy: `docs/archive/ARCHITECTURE-NEXT-STEPS.md`,
+> retired 2026-09-18 — this live duplicate missed the archive banner).** The
+> baseline numbers below (host 834/1000, 516/516) are era-true snapshots —
+> present law: host **1500/1500 flat** (B5, D-391). Do not act on this as a
+> live spec. **Exception — §G5 remains ADOPTED:** D-419 (the CDP-substrate
+> lane) adopts §G5's byte-identical falsifier discipline (and Phase-C C0)
+> whole: write down what "byte-identical" means for live-vs-fixture captures
+> BEFORE the substitution test is coded — a live capture substitutes for
+> `webmail-inbox/page.json` with zero classifier changes, or the fixture
+> format is what's wrong, not the provider. Live sequencing: D-417/D-419 +
+> `docs/forge/BACKLOG.md`.
+
 **Author posture:** principal architect, writing for the owner and the upgrade agent.
 **Baseline:** `omega` @ `597d567` — gate green (`bun test` 516/516, `omega:gate` ok:true), host 834/1000 LOC, D-312 ratified.
 **Scope of this doc:** planning reference only. It ratifies nothing and builds nothing.

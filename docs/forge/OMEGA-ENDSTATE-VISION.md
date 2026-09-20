@@ -5,7 +5,10 @@
 > the canvas is the primary surface, not the product; the atom generalized from
 > the conversation event to the **governed event** (§5); the **Natural Language
 > Control Plane** elevated to a constitutional peer (§2); the civilization
-> (Part II) and physics (Part III) layers added. **Precedence:** this document
+> (Part II) and physics (Part III) layers added. **Superseded by D-418**
+> (directive): the v1 substrate is Chrome master/slave (`provider.browser`) —
+> §28's row 3, §24's Frank badge, and §31's Wave-1 boundary are re-pointed
+> there; **no AI-API realization ships in v1**. **Precedence:** this document
 > *extends* `OMEGA-FORGE-ARCHITECTURE.md` / `_plus.md` — where they conflict,
 > they win; where the gate and this document disagree, the gate wins. It is a
 > direction, not a backlog: every claim below lands through a wave, a
@@ -512,7 +515,7 @@ user compositions                  (speculative → earning)
 | **Vault** | append-only, CAS, retention | **one vault, ~16 namespaces**, owner/writers/retention per row; `ns canvas` included | 201 Prisma models across 2 DBs · 67 store contracts |
 | **Law** | consent, refusal, policy | `vivim.law` gates every streamed response; refusal = sentence | C7 resilience/trust — pattern, not code |
 | **Intent** | perception → canonical intent | the Natural Language Control Plane (§2): rules · lexicon · grammar · classifiers · ML for the ambiguous tail — **the law consumes canonical intent only**; the LLM is a realization, never the resolver of record | ~70 NLCL files, LLM silently in the parse path; `capability-system` = 377 signals, the corpus's highest topic |
-| **Plugin** | capability-scoped unit | providers, domain, lens, and **forge** plugins — realization rows, never singletons | 186 flat engines · 16 manifests · ProviderRegistry |
+| **Plugin** | capability-scoped unit | providers, domain, lens, and **forge** plugins — realization rows, never singletons; the Wave-2 assembly plugin (the mind-spine carrier) is **distinct from `vivim.mind` (Ω10, self-knowledge/WorldModel, live)** — it owns context assembly for the intelligence fabric, not world-model grounding | 186 flat engines · 16 manifests · ProviderRegistry |
 | **Composition** | signed, running set | **every tile is a composition**; no product composition carries `forge.*` | — |
 | **Evidence** | ledger, replay, proof | every row cites evidence; L-FORGE replay discipline | 2 databases → 1 ledger |
 | **Forge** | the role that builds plugins | self-extension + healing at two scales; third-party Forges through the same door | the tooling-absorption pipeline |
@@ -534,7 +537,7 @@ The end state is easiest to see as days in the life of people who have never rea
 
 **Evening — Eve never opens the canvas.** She forges a legacy app from the CLI — capture, assay, propose, sign, execute, prove — and gets a composition, a ledger, and two badges. The run takes four hours; it sleeps and wakes as a headless composition, ledgering as it goes (§15). Then she asks the vault: *show me all rows written by providers in the last 24 hours.* The vault answers. *Headless completeness is not a fallback mode; it is the proof that the canvas is a projection.*
 
-**Night — Frank asks "why?"** A tile behaves strangely. He opens its provenance: the three plugins it composes, each badged; the composition forged by `forge.author` on such a date; three healings (Gmail v1→v2→v3) each with its diff, proof report, and signature; `provider.llm-ollama` shown as `harvested`, shaped by Vivim; the synthetic second mine shown for what it is — a 42-file app that deliberately resembles nothing. *Every level of "why?" has an answer, and the answer is a row, not a memory.*
+**Night — Frank asks "why?"** A tile behaves strangely. He opens its provenance: the three plugins it composes, each badged; the composition forged by `forge.author` on such a date; three healings (Gmail v1→v2→v3) each with its diff, proof report, and signature; `provider.llm-ollama` shown as `harvested`, shaped by Vivim **(post-v1 — re-dated by D-418: no AI-API realization ships in v1; the badge era pictured here is a later stage of the arc, and the picture is drawn accordingly)**; the synthetic second mine shown for what it is — a 42-file app that deliberately resembles nothing. *Every level of "why?" has an answer, and the answer is a row, not a memory.*
 
 **Saturday — two vaults, one canvas.** Alice and Bob plan the launch on a shared workspace: her GitHub tiles beside his customer notes. There is no shared server — the spatial state merges by CRDT when they reconnect, and every capability that crossed between their vaults did so under a treaty both signed, scoped to the weekend, expiring Monday (§16). On the shared badge, it reads what it always reads: who vouches, what it is proven against — and *whose capability it is running on*.
 
@@ -621,7 +624,7 @@ The old tree measured: 1,043 src files · 186 flat engines · 201+ Prisma models
 |---|---|---|---|
 | 1 | 201 Prisma models, two databases | ~16 namespaces derived from the one-writer question; owner/writers/retention declared in the same commit as the row | **FRESH** |
 | 2 | ProviderRegistry singleton | N substitutable, comparable, revocable realization rows, each stamping `realizationRef`, each verified before promotion | **FRESH** |
-| 3 | ChatGPT = browser-mediated, per-account, rotting selectors | Ollama pilots the spine (local, deterministic); Chrome becomes one quarantined realization — *and the healing loop's proving ground* | **FRESH / DEFER** |
+| 3 | ChatGPT = browser-mediated, per-account, rotting selectors | **Chrome master/slave (`provider.browser`) is the shippable-v1 substrate — and the healing loop's proving ground; no AI-API realization ships in v1** (amended by D-418 — the Ollama-pilots claim is superseded; external LLMs return post-v1 as quarantined, verified realizations) | **FRESH / DEFER** |
 | 4 | ~70 NLCL files, LLM silently in the parse path — `capability-system` = the mine's highest-signal topic (377 signals) | the **Intent Layer** (§2): natural language as a *primary operating interface* — deterministic tooling + ML perception → canonical intent; the LLM takes the ambiguous tail, confidence attached, never silently, **never inside the law gate** | **FRESH — constitutional, not cleanup** |
 | 5 | 4 hand-built surfaces kept in parity by discipline | one `surfaceOpMeta` derivation; every surface is a client — language included, via canonical intent | **FRESH** |
 | 6 | 186 flat hardcoded engines | realization rows and manifest data; engines as declarations, not code files | **RE-EXPRESS** |
@@ -695,8 +698,8 @@ The road is walked one falsifier at a time; the shapes below are the *arc*, each
 
 | Wave | The falsifier it owes | What it roughly lands |
 |---|---|---|
-| **1 (next)** | **W5 atom**: person types → streamed response through the law gate → ledgered → queryable | `forge.mine.capture@1` on both mines; the five vertical-slice boundaries (`pack.domain-conversation`, `vivim.chat`, `vivim.providers`, `provider.llm-ollama`, parser pins) |
-| **2** | promotion earned + **F12**: the mind spine | memory namespaces (epistemic kinds + retention), realization rows, generality promotions, the context-assembly spine |
+| **1 (next)** | **W5 atom**: person types → streamed response through the law gate → ledgered → queryable | `forge.mine.capture@1` on both mines; the five vertical-slice boundaries (`pack.domain-conversation`, `vivim.chat`, `vivim.providers`, `provider.browser`, parser pins — boundary re-pointed by D-418: v1 ships no AI-API realization) |
+| **2** | promotion earned + **F12**: the mind spine | memory namespaces (epistemic kinds + retention), realization rows, generality promotions, the context-assembly spine (the assembly plugin — the mind-spine carrier — **distinct from `vivim.mind` (Ω10, self-knowledge/WorldModel, live)**: it owns context assembly for the intelligence fabric, not world-model grounding) |
 | **3** | surface parity by construction + **F7**: intent determinism | `surfaceOpMeta` derivation; refusal sentences `{code, sentence}` everywhere; the Intent Layer — language becomes a first-class surface |
 | **4** | F1 + CP-3 + CP-4 + **F8** + **F9** | `ns canvas`, live objects, the consent surface; the governor (tile lifecycle + budget watchdog); the scrubber and branches |
 | **5** | F3: a provider heals end-to-end under ratification | canonical shape schemas; `provider.browser` as realization; the loop outward |

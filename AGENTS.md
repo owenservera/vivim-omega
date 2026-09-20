@@ -34,7 +34,7 @@ Requires Bun ≥ 1.3.14. CI: `gate-ubuntu`, `gate-reproduce`, `node-canary` requ
 - **Never edit a RATIFIED record or rewrite history.** Supersede, never edit.
   PROPOSED records may be amended before ratification.
 - **Append-only log:** `docs/BUILD-DECISIONS.md` is the audit trail;
-  `docs/decisions/CURRENT-INVARIANTS.md` is the read-first synthesis (refresh ~every 30 ratifications).
+  `docs/decisions/CURRENT-INVARIANTS.md` is the read-first synthesis (refresh on trigger per D-415 — wave close, B-law/gate-stage change, or 30 ratifications; the `invariants-freshness` gate stage reports staleness).
 - **Board:** `docs/decisions/OPEN-QUESTIONS.md` is generated — edit records, then regenerate. Commit it in the same wave.
 
 ## Decision records: checker traps (all bitten live — respect them)

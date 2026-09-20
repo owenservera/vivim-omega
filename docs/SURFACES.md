@@ -138,4 +138,9 @@ Secrets never ride payloads, never ride environments.
   token instead of the root principal.
 - Consent persistence across boots (journal replay of grants into the law's
   consent table).
-- A credentials spine plugin (`credential.use@1`) with vault-held secrets.
+- ~~A credentials spine plugin (`credential.use@1`)~~ **landed since this
+  list was drawn** (D-356: `plugins/vivim-credentials` — `credential.put@1`,
+  `credential.use@1`, `credential.redact@1`). Still post-v1: the *live-tier*
+  half — vault-held secret material behind `credential.use` (today the spine
+  holds references and the sandbox grants no live secret material, per the
+  credential law above).

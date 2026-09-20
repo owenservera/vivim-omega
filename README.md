@@ -78,7 +78,7 @@ bootPhase order → mint capability tokens → wire the router).
 
 ## Documents
 
-- `docs/CURRENT-INVARIANTS.md` — the one-page law snapshot (read this, not 360 rows — D-364)
+- `docs/decisions/CURRENT-INVARIANTS.md` — the one-page law snapshot (read this, not 360 rows — D-364)
 - `docs/BUILD-DECISIONS.md` — the build-track decision register (D-210…, append-only)
 - `docs/decisions/README.md` — the Decision Contract (records, classes, cooling-off)
 - `docs/parity/` — the D-340 evidence chain: nine-requirement gap map, scalability ceilings, LOC fork, and the `vivim_omega_core` Rust reference kernel

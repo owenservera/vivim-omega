@@ -40,7 +40,7 @@ section must land on at least one atom — or the vision has a claim it cannot c
 | Tag | Surface | Today's carrier (verified 2026-09-20) |
 |---|---|---|
 | **H** | host / kernel / anvil | µhost ≤ 1,500 LOC flat (B5); anvil sdk 856/860 + 45 frozen exports (D-404); `contracts/` pinned wire types |
-| **V** | vault / object store | one vault (D-373) behind the driver seam: append-only hash-chained changelog, CAS blobs, 16 namespaces, latest-wins hot rows + cold fallback, `vault.roundtrip@1` swap harness |
+| **V** | vault / object store | one vault (D-373) behind the driver seam: append-only hash-chained changelog, CAS blobs, 19 namespaces at the 2026-09-20 snapshot (16 at this doc's writing; the ns table is the count of record), latest-wins hot rows + cold fallback, `vault.roundtrip@1` swap harness |
 | **L** | law / consent | `vivim.law` gate `law.check@1` (LAW_POLICY_V1 + ConsentTable + ForbiddenTable overlay + ShadowAmendment); `law-journal.jsonl` (unsigned, best-effort) |
 | **C** | capability | `Cap{scope, generation, parent}` token algebra with attenuation (broadening throws); D-340 capability graph + signed audit chain; grants compiled into signed compositions |
 | **I** | intent | `vivim.nlcl` + `vivim.nlcl-pure` (zero-import deterministic core, law N1); `contracts/src/intent*.ts` IR (D-389: IntentState machine, IntentStep, `payloadHash`, planRef); `vivim.intent` plugin — declared in wire, **unwired in all 18 compositions** |

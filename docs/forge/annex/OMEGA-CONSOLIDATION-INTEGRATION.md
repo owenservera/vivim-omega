@@ -11,7 +11,7 @@ what the working set already supersedes. It de-collides one decision number.
 |---|---|
 | Status | Integration companion. Not a decision, not a record, not ratified. Nothing here lands anywhere until decisioning resumes and the constitution says so. |
 | Source | The Consolidated Core draft — itself a merge of four artifacts that never lived in one document: the Sovereign Canvas endstate doc, the Intent Layer amendment, the five-gap physics-engine critique, and the AKB/legacy integration strategy. |
-| Relationship | The Consolidated Core is the earlier/parallel **consolidation envelope**. The five files are the later, amended, **atomized chain**. Neither is authoritative: omega's ratified law is parked at `476be50` (D-407) and both travel separately, per the owner direction. |
+| Relationship | The Consolidated Core is the earlier/parallel **consolidation envelope**. The five files are the later, amended, **atomized chain**. Neither is authoritative: omega's ratified law is parked at `476be50` (D-407) and both travel separately, per the owner direction. *(Post-publication note, 2026-09-20: the park lifted the same day — D-410..D-417; live sequencing is `docs/forge/BACKLOG.md`.)* |
 | Precedence | Inherited from the source: extends `OMEGA-FORGE-ARCHITECTURE.md` / `_plus.md` — where they conflict, they win; where the gate and this document disagree, **the gate wins**. This is a direction, not a backlog. |
 
 ---
@@ -413,6 +413,12 @@ falsifier can be green while the fork it tests is still open.
 > deliberately, fully Chrome master/slave: no AI-API realization is connected
 > at ship time.
 
+> **Decided 2026-09-20 by D-418** (the v1 substrate call; D-420 fences the
+> composition boundary mechanically): the ship posture above is law — Chrome
+> master/slave (`provider.browser`) ships, no AI-API realization in v1. Its
+> "carried here only" status is retired: the posture now lives in the
+> decision ledger, cited here for the record.
+
 The working set says LLMs are optional, Chrome is a quarantined realization,
 Ollama pilots the spine (100x row 3) — but it never states the *ship-time*
 posture. The distinction matters: "Ollama pilots the spine" is about the
@@ -420,6 +426,9 @@ technology's proving sequence; "no AI-API at ship" is about the first product's
 risk posture. Whether that posture survives contact with the amended vision is
 itself a fork — but the claim must not be lost before it can be decided. Treat
 it as ship-posture input to OD-1-adjacent planning, carried only here.
+*(Post-decision note, 2026-09-20: the fork above is closed by D-418 — the
+posture survived; the "Ollama pilots the spine" proving-sequence claim was
+superseded with it. Paragraph kept verbatim as the pre-decision record.)*
 
 ---
 
@@ -449,7 +458,7 @@ it as ship-posture input to OD-1-adjacent planning, carried only here.
 ## 6 · What this document is not
 
 Not a decision, not a decision record, not an amendment — nothing here is
-ratified or proposed into the repo, which stays parked at `476be50` until
+ratified or proposed into the repo, which stays parked at `476be50` until *(lifted 2026-09-20 — D-410..D-417, see BACKLOG)*
 decisioning resumes. Not a backlog (that is the repo's own). Not the
 atomization target (that is the amended vision). Not a merge — the five files
 are not edited by this document; where they supersede the Consolidated Core,

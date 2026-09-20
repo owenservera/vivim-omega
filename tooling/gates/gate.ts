@@ -134,7 +134,7 @@ try {
 // manifest, bootPhase-0 law, D-325 law+vault invariant, grant drift allowlist)
 try {
   const { checkCompositions } = await import("./compositions.ts");
-  const c = await checkCompositions(ROOT);
+  const c = await checkCompositions(ROOT, { shippableFence: true }); // D-420: the stage enforces the shippable fence
   if (c.ok) pass("compositions", c.detail);
   else fail("compositions", c.issues.join("; "));
 } catch (e) { fail("compositions", String(e)); }

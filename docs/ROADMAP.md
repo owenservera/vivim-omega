@@ -6,6 +6,9 @@
 > core-omega-ready, then a plugin-identification pass precedes parallel work.
 > The phases below are the pre-re-sequencing map, kept for the record; the
 > authoritative sequencing is D-410 + `docs/forge/BACKLOG.md`.
+> **Additionally superseded 2026-09-20 by D-418:** the Ollama-first W2 sequencing
+> below is additionally superseded by D-418 — see there for the
+> v1 substrate call (Chrome master/slave ships; no AI-API realization in v1).
 
 **Posture:** planning reference only. It ratifies nothing and builds nothing — every phase
 below lands through the normal path: PROPOSED wave commit → green `omega:gate` → falsifier

@@ -20,7 +20,7 @@ changes. This document designs the missing second half.
 
 ## 0. The segmentation ruling (the question the owner asked explicitly)
 
-"Are any core primitives needed in the core?" — **No. The µhost stays untouched (822 LOC).**
+"Are any core primitives needed in the core?" — **No. The µhost stays untouched (822 LOC).** *(Host size era-true at writing, 2026-09-era; present law: host 1500/1500 flat, zero headroom — B5, D-391. The ruling itself — nothing moves into the host — stands.)*
 
 | Concern | Placement | Why |
 |---|---|---|

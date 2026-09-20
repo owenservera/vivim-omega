@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-09-20T10:56:29.313Z",
+  "generatedAt": "2026-09-20T13:13:34.537Z",
   "repo": "vivim-omega",
   "branch": "omega",
-  "head": "ac9aabf",
+  "head": "64436f2",
   "toolchain": {
     "bun": "1.3.14",
     "node": "24.3.0",
@@ -96,7 +96,7 @@
     }
   ],
   "gate": {
-    "startedAt": "2026-09-20T10:54:59.093Z",
+    "startedAt": "2026-09-20T13:12:04.212Z",
     "checks": {
       "host-loc": {
         "ok": true,
@@ -131,15 +131,20 @@
       "decisions": {
         "ok": true,
         "detail": {
-          "rows": 123,
-          "records": 97,
+          "rows": 127,
+          "records": 101,
           "ratified": 97,
           "grandfatherBelow": 313,
           "generatedFrom": 413,
           "trackWarnings": 0,
           "openQuestions": {
-            "count": 0,
-            "ids": [],
+            "count": 4,
+            "ids": [
+              421,
+              418,
+              419,
+              420
+            ],
             "board": "stale"
           }
         }
@@ -206,6 +211,15 @@
           },
           "riskParityOps": 52,
           "matrixConformance": "green",
+          "shippableFence": {
+            "marker": "SHIPPABLE-V1 (D-420)",
+            "tagged": [
+              "browser"
+            ],
+            "aiApiRealizations": [
+              "provider.llm"
+            ]
+          },
           "contractTypes": 132,
           "callSiteAllowlisted": [
             "CompositionSpecEntry",
@@ -263,9 +277,9 @@
         "ok": true,
         "detail": {
           "policy": "report-only (D-415, A3 — the flip to failing is a future record's call, after one green wave of reports)",
-          "pass": 2,
-          "asOf": "D-415",
-          "ratifiedSince": 2,
+          "pass": 3,
+          "asOf": "D-421",
+          "ratifiedSince": 0,
           "gateStages": 13,
           "stale": false,
           "triggers": []
@@ -274,7 +288,7 @@
       "tests": {
         "ok": true,
         "detail": {
-          "pass": 1126,
+          "pass": 1147,
           "fail": 0,
           "maxConcurrency": 4
         }
@@ -306,7 +320,7 @@
   },
   "hostLoc": 1500,
   "tests": {
-    "pass": 1126,
+    "pass": 1147,
     "fail": 0
   },
   "benchmarks": {

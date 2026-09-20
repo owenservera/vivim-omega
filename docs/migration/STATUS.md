@@ -73,3 +73,11 @@ reviewer reasons) + the D-380 provider bar (per-file stealth admission,
 API_NATIVE-first, byte-identical fixture rule) — mechanics land in
 provider-browser, governor restructure is T-08; every wave appends
 `40-EVIDENCE/W2/`.
+
+> **Correction note, 2026-09-20 (the doc-logic pass):** the Base pin and W2
+> entry above are 2026-09-17-era snapshots. Present law: host **1500/1500
+> flat** (B5, D-391), **18** compositions (D-391/D-406 matrix era),
+> **19** vault-ns rows in `docs/VAULT-NAMESPACES.md` (incl. `canvas`
+> RESERVED). The W2 "API_NATIVE-first" mechanics ordering is void — v1 ships
+> Chrome master/slave, no AI-API realization (D-418); the live CDP lane is
+> D-419 + `docs/forge/BACKLOG.md`.

@@ -25,6 +25,16 @@
 //   7. D-377 matrix conformance: compositions/_matrix.json is the source of
 //      truth — every shipped spec must regenerate byte-identical from it.
 //      A drifted hand-edit fails here with a named first-diff line.
+//   8. D-420 shippability fence: the shippable-v1 composition is NAMED by its
+//      `SHIPPABLE-V1 (D-420)` note marker (matrix note → regenerate, D-377),
+//      and no composition carrying the marker may boot an AI-API realization
+//      (provider.llm today) — the mechanical analog of FORGE_IN_PRODUCT for
+//      the AI-API drift class (D-418's prose drift, made structurally
+//      impossible). Three named refusals: SHIPPABLE_V1_MISSING,
+//      SHIPPABLE_V1_UNTAGGED, AI_API_IN_SHIPPABLE. Runs when the caller opts
+//      in (opts.shippableFence — the gate stage and the standalone stage CLI
+//      pass true; fixture rigs omit it so their assertions stay about their
+//      own checks — the fence is falsifier-tested in shippable-fence.test.ts).
 // Pure file reads + manifest parses; never boots anything. Wired as the
 // `compositions` stage of omega:gate; D-332 extends this net in V2.5.
 import { readdirSync, readFileSync, existsSync } from "node:fs";
@@ -39,6 +49,70 @@ interface SpecEntry {
   source: string;
   bootPhase: number;
   grant: { capabilities: string[]; contracts: string[] };
+}
+
+// ---- Check 8 · the D-420 shippability fence (pure — hand-built in tests) ----
+
+/** The note marker that NAMES a composition shippable-v1 (D-420). Lives in
+ *  _matrix.json's note for the spec (the D-377 source of truth) and renders
+ *  into the spec's `_note` on regeneration. */
+export const SHIPPABLE_MARKER = "SHIPPABLE-V1 (D-420)";
+
+/** The composition D-420 names shippable-v1 (browser.json, D-357's M0 GATE).
+ *  Succeeding it is an amendment to D-420, not a note edit. */
+export const SHIPPABLE_V1_NAME = "browser";
+
+/** AI-API realizations (D-420 data): a shippable-tagged composition refuses
+ *  them — no AI-API realization ships in v1 (D-418). provider.browser is
+ *  BROWSER_MEDIATED, not an AI-API — it is what the shippable composition
+ *  EXISTS to boot. A new AI-API realization joins this set by amendment. */
+export const AI_API_REALIZATIONS: readonly string[] = ["provider.llm"];
+
+export interface ShippableSpecInput {
+  name: string;
+  note: string;
+  entryIds: string[];
+}
+
+export interface ShippableFenceIssue {
+  check: string;
+  subject: string;
+  reason: string;
+  fix: string;
+}
+
+export function checkShippableFence(specs: ShippableSpecInput[]): ShippableFenceIssue[] {
+  const issues: ShippableFenceIssue[] = [];
+  const tagged = specs.filter((s) => s.note.includes(SHIPPABLE_MARKER));
+  if (tagged.length === 0) {
+    issues.push({
+      check: "SHIPPABLE_V1_MISSING",
+      subject: "compositions/*.json",
+      reason: `no composition carries the ${SHIPPABLE_MARKER} marker — the shippable-v1 boundary is unnamed`,
+      fix: `restore the marker to ${SHIPPABLE_V1_NAME}'s note in _matrix.json and regenerate (D-377), or amend D-420 to name a successor`,
+    });
+  }
+  if (!tagged.some((s) => s.name === SHIPPABLE_V1_NAME)) {
+    issues.push({
+      check: "SHIPPABLE_V1_UNTAGGED",
+      subject: `${SHIPPABLE_V1_NAME}.json`,
+      reason: `the shippable-v1 composition named by D-420 (${SHIPPABLE_V1_NAME}) does not carry the ${SHIPPABLE_MARKER} marker`,
+      fix: `restore the marker in _matrix.json's ${SHIPPABLE_V1_NAME} note and regenerate, or amend D-420 to name a successor`,
+    });
+  }
+  for (const s of tagged) {
+    for (const id of s.entryIds) {
+      if (AI_API_REALIZATIONS.includes(id)) {
+        issues.push({
+          check: "AI_API_IN_SHIPPABLE",
+          subject: `${s.name}.json/${id}`,
+          reason: `shippable-tagged composition boots AI-API realization ${id} — no AI-API realization ships in v1 (D-418/D-420)`,
+          fix: `drop the entry from the shippable composition, or untag it if it is internal proving (amend D-420 if the shippable-v1 name changed)`,
+        });
+      }
+    }
+  }
+  return issues;
 }
 
 /** pluginId → why its cross-composition grant variance is intentional. */
@@ -96,7 +170,7 @@ function manifestOps(specDir: string, entry: SpecEntry): { ops: string[]; found:
 
 export async function checkCompositions(
   ROOT: string,
-  opts: { compositionsDir?: string } = {},
+  opts: { compositionsDir?: string; shippableFence?: boolean } = {},
 ): Promise<CompositionsResult> {
   const issues: string[] = [];
   const dir = opts.compositionsDir ?? join(ROOT, "compositions");
@@ -253,6 +327,38 @@ export async function checkCompositions(
     }
   }
 
+  // Check 8 · D-420 shippability fence: the shippable-v1 composition is named
+  // by its note marker; AI-API realizations refuse to boot in tagged specs.
+  // Pure check over the shipped specs (tests hand-build red/green inputs).
+  // Opt-in: production callers (the gate stage, the standalone CLI) pass
+  // shippableFence: true — fixture rigs skip it so their assertions stay
+  // scoped to their own checks.
+  let fenceTagged: string[] = [];
+  if (opts.shippableFence === true) {
+    try {
+      const shipSpecs: ShippableSpecInput[] = [];
+      for (const f of files) {
+        try {
+          const raw = JSON.parse(readFileSync(join(dir, f), "utf-8")) as {
+            _note?: string;
+            entries?: Array<{ id?: string }>;
+          };
+          shipSpecs.push({
+            name: f.replace(/\.json$/, ""),
+            note: raw._note ?? "",
+            entryIds: (raw.entries ?? []).map((e) => e.id ?? "").filter(Boolean),
+          });
+        } catch { continue; } // unreadable spec already flagged in the main loop
+      }
+      for (const fi of checkShippableFence(shipSpecs)) {
+        issues.push(`[${fi.check}] ${fi.subject}: ${fi.reason} (fix: ${fi.fix})`);
+      }
+      fenceTagged = shipSpecs.filter((s) => s.note.includes(SHIPPABLE_MARKER)).map((s) => s.name);
+    } catch (e) {
+      issues.push(`shippable fence check failed to run: ${String(e)}`);
+    }
+  }
+
   // Check 5 · D-332: exported contracts/ vocabulary with zero tree-wide
   // call sites (vocabulary without a writer/reader). Merged into this net's
   // issues so the gate's `compositions` stage backstops the plan's top risk.
@@ -262,6 +368,7 @@ export async function checkCompositions(
     driftAllowlisted: drifted,
     riskParityOps: parityChecked,
     matrixConformance: hasMatrix ? (matrixOk ? "green" : "red") : "absent (scaffold)",
+    shippableFence: { marker: SHIPPABLE_MARKER, tagged: fenceTagged, aiApiRealizations: AI_API_REALIZATIONS },
   };
   try {
     const { checkContractCallSites } = await import("./contract-sites.ts");
@@ -282,7 +389,7 @@ export async function checkCompositions(
 
 if (import.meta.main) {
   const ROOT = join(import.meta.dir, "../..");
-  checkCompositions(ROOT).then((r) => {
+  checkCompositions(ROOT, { shippableFence: true }).then((r) => {
     console.log(JSON.stringify(r.ok ? { ok: true, ...r.detail } : { ok: false, issues: r.issues }, null, 2));
     process.exit(r.ok ? 0 : 1);
   });

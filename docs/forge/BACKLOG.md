@@ -46,6 +46,27 @@ implementation.
   speculative artifact) and a wave counter. Until then the code is honest
   about being soft.
 
+### Parallel lane — provider.browser CDP substrate (D-419) — OPEN, sequenced ALONGSIDE the mine wave
+
+- **`provider.browser`'s CDP substrate** — attach-only first; identified and
+  sequenced by D-419, design lands as the lane's own records when it opens.
+  Entry falsifier (ARCHITECTURE-NEXT-STEPS §G5, adopted whole): write down
+  what "byte-identical" means for live-vs-fixture captures BEFORE the
+  substitution test is coded — a live capture substitutes for
+  `webmail-inbox/page.json` with zero classifier changes, or the fixture
+  format is what's wrong, not the provider. The D-338 authority bar and the
+  D-386 containment gate condition govern first live use. v1 ships Chrome
+  master/slave (D-418) — this lane is the scheduled path from
+  core-omega-ready to a real Chrome session.
+
+### Wave 2 (the assembly plugin) — design opens with Wave 2, never before
+
+- **The assembly plugin (the mind-spine carrier)** — identified by D-417;
+  **distinct from `vivim.mind` (Ω10, self-knowledge/WorldModel, live)** —
+  this plugin owns context assembly for the intelligence fabric (the F12
+  byte-identical context window, evidence refs + named epistemic kinds), not
+  world-model grounding.
+
 ## Structural debts recorded, not owed
 
 - **Comparison walker excludes `node_modules`** under the host

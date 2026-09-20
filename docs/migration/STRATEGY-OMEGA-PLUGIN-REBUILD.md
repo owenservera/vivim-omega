@@ -1,5 +1,14 @@
 # STRATEGY: Rebuild a Better Vivim Purely on the Plugin Architecture
 
+> **SUPERSEDED IN PART 2026-09-20** — the sequencing-era numbers and ordering
+> below are stale, kept for the record: host budget is **1500/1500 flat** since
+> D-391 (B5 re-frozen; zero headroom), the composition freeze is the
+> **18-spec matrix era** (D-391/D-406, D-377 generator), and the **W2
+> "API_NATIVE first, Ollama-class pilot" ordering is void** — v1 ships Chrome
+> master/slave (`provider.browser`), no AI-API realization (D-418; the
+> core-first re-sequencing is D-410, the open lanes D-417/D-419 +
+> `docs/forge/BACKLOG.md`). The plugin-pure strategy content stands.
+
 **Directive:** build the new core first, shape the end state on Omega — never shape it
 with old Vivim code. Legacy (`vivim-old-repos/`) is a **frozen mine** (read-only,
 SHA-pinned per `FACT-BASE-2026-09-16.md`). Omega (`clone-omega`) is the **sole target

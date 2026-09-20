@@ -1,14 +1,14 @@
 # Current Invariants — the one-page law snapshot
 
-<!-- invariants: pass 2 · as-of D-415 · regenerated 2026-09-20 (D-415) · stages: anvil-loc anvil-surface attest bun-surface compositions decisions forge-surface fresh-tree host-loc import-surface invariants-freshness os-surface tests -->
+<!-- invariants: pass 3 · as-of D-421 · regenerated 2026-09-20 (D-418..D-421, the course-correction round; pass 2 was as-of D-415) · stages: anvil-loc anvil-surface attest bun-surface compositions decisions forge-surface fresh-tree host-loc import-surface invariants-freshness os-surface tests -->
 
-**Pass #2 (D-415, the A3 invariants round).** Regenerated from the decision
-records D-360…D-415 — pass #1 covered D-364 + the D-365…D-370 owner wave and
-sat a full constitutional layer behind (Wave 0's forge constitution, the Core
-Phase seams, the generated-row era: the B5 gap the acceleration review
-registered). The full decision log (`docs/BUILD-DECISIONS.md`) remains the
-audit trail; this page is what a fresh reader (human or agent) reads INSTEAD
-of it to state present-day law.
+**Pass #3 (2026-09-20, the course-correction round).** Refreshed on its own
+D-415 trigger — a wave closed (the Core Phase: D-416), the identification
+pass landed and lifted the register (D-417), a gate check was added
+(SHIPPABLE_FENCE, D-420), and four directive records landed (D-418..D-421).
+Pass #2 covered D-364 + the D-365…D-415 records; the full decision log
+(`docs/BUILD-DECISIONS.md`) remains the audit trail; this page is what a
+fresh reader (human or agent) reads INSTEAD of it to state present-day law.
 
 **Refresh policy (D-415): on trigger, not calendar** — regenerate when a wave
 closes, a B-law or gate stage is added or amended, or 30 ratifications
@@ -34,7 +34,8 @@ yet — implement when the first forge wave closure lands with one.
 
 - `bootPhase 0` belongs to `vivim.law`, enforced at verify time.
 - Every routed op has exactly one implementation (duplicate routed op refused at boot).
-- Risk gating is DATA (manifest CONTRACT risk declarations → law.check@1); the host embeds no policy. Manifest risk and LAW_POLICY classification must agree — catalog parity, never default-riding (D-351's drift class, mechanized by the conformance net D-376; LAW_POLICY_V1 now at 1.7.0).
+- Risk gating is DATA (manifest CONTRACT risk declarations → law.check@1); the host embeds no policy. Manifest risk and LAW_POLICY classification must agree — catalog parity, never default-riding (D-351's drift class, mechanized by the conformance net D-376; LAW_POLICY_V1 now at 1.8.0).
+- **Shippable-v1 fence (D-420):** the shippable-v1 composition named by D-420 (`browser`, the D-357 M0 GATE composition — succeeding it is a D-420 amendment) carries the `SHIPPABLE-V1 (D-420)` marker, and NO composition carrying that marker boots an AI-API realization; v1 is fully Chrome master/slave (D-418).
 - Data lives in the user's vault; persistence goes through the vault's namespaces with same-commit registry rows (`VAULT-NAMESPACES.md`); forbidden persistence is refused (D-325). **Compaction never deletes a revision, period** — explicit namespace law (D-410's item C, the stronger F9 prerequisite).
 - Computation is routed, never vendored: resolution ≠ execution (D-323/D-337/D-359).
 - Everything else is a plugin. The host is transport, not policy.
@@ -50,14 +51,20 @@ yet — implement when the first forge wave closure lands with one.
 - **The generality axis (D-405):** `GeneralityStamp` in contracts (speculative/harvested/generic; mine, originPaths, harvestClass, evidence) + validators in the sdk with four named codes — zod carries the SHAPE, the validators carry the LAW; **mandatory (hard)** for forge.* and pack.builder.
 - **The frozen wire (D-406):** `FORGE_OP_CATALOG` — 24 forge.* ops → risk, frozen; manifest ↔ catalog EXACT match (drift fails); **one risk class per forge PLUGIN** (packs span classes by design — `FORGE_CLASS_SPAN` exempts packs, a decision not a gap); ns `proposal` + scratch only for Class-2 emission; every forge.* op refusal-tested (`FORGE_NO_REFUSAL_TEST`); refusals are refusal-as-data (ok:true carrying {refused, rule, detail} — the D-379 pattern).
 - **Self-hosting stance (D-406):** `forge.author.init@1` serves pluginId `forge.author` only (a deliberate refusal, not a TODO); AUTHORED files = 4 with recorded justification (a recorder cannot emit its own recording; a falsifier emitted by the defendant is not a falsifier).
-- **The mine (D-406):** `fixtures/mines/synthetic-v0/` — 42 offline hash-pinned files (MANIFEST.json rootHash), un-Vivim-shaped by charter, waiting for `forge.mine.capture@1` (Wave 1, parked per D-410).
+- **The mine (D-406):** `fixtures/mines/synthetic-v0/` — 42 offline hash-pinned files (MANIFEST.json rootHash), un-Vivim-shaped by charter, waiting for `forge.mine.capture@1` (Wave 1, OPEN — the register lifted per D-417; first receipts are the mine wave's work).
 - The gate's `forge-surface` stage polices the boundary (5 checks + generality); red/green falsifiers live in `tooling/gates/test/forge-surface.test.ts`. The comparison walker excludes `node_modules` under the host `contentHashDir` precedent — machine state, not plugin bytes (recorded, revisit only if plugin dirs ever ship vendored deps that ARE plugin bytes).
 
-## The program law (D-408…D-415 — vision, partition, sequencing, tooling)
+## The program law (D-408…D-421 — vision, partition, sequencing, tooling, the course-correction round)
 
 - **The Sovereign Environment (D-408, ratified):** the amended end-state vision is law — the governed event as atom, the NL control plane a constitutional peer (probabilistic perception, deterministic intent, deterministic execution; no raw model output crosses the law gate; the LLM is a replaceable realization, never the resolver of record), Part II (the civilization) + Part III (the physics) added, the arc amended. The vision is direction: waves land through the constitution as ever.
-- **The capture-vs-READ partition (D-409, DECIDED):** split-plugin — `forge-mine-capture` is EXTERNAL_MUTATION in its own directory; READ siblings live separately. Implementation parked per D-410; the decided shape stays decided.
-- **Core-first re-sequencing (D-410):** the Core Phase (S1 → S2 → S3) precedes ALL plugin work; **all plugin design is parked until core-omega-ready** (register: `docs/forge/annex/OMEGA-CORE-FIRST-RESEQUENCE.md` §3); a plugin-identification pass runs at core-ready, before parallel work opens. S1 (D-411) and S2 (D-412) landed; **S3 (the evidence-store choicepoint) is the owner's call — the last Core Phase item**, pre-analyzed lift-ready in the annex fork file.
+- **The capture-vs-READ partition (D-409, DECIDED):** split-plugin — `forge-mine-capture` is EXTERNAL_MUTATION in its own directory; READ siblings live separately. Implementation lands with Wave 1 (OPEN — the register lifted per D-417); the decided shape stays decided.
+- **Core-first re-sequencing (D-410):** the Core Phase (S1 → S2 → S3) preceded all plugin work; plugin design was parked until core-omega-ready. **S3 was called and landed (D-416) — THE CORE PHASE IS CLOSED; core-omega-ready reached; the plugin-identification pass (D-417) enumerated the lanes and LIFTED the register — parallel work is OPEN.** (The pass-2 text here said S3 awaited the owner — resolved 2026-09-20.)
+- **The evidence-store fold (D-416, ratified):** law's narrative journal rows ride vault ns `law` (id family `journal:<boot>-<seq>`) wherever `port:vault.append@1` is granted; the legacy host sidecar is the transition artifact; best-effort either way (a law decision is never blocked by a journal failure — the row is lost loudly); the recursion guard: the journal never narrates its own writes; `law.audit.drain@1` persists the kernel's signed audit chain whole into ns `audit` (the console drains at close); the registry absorbs vault journal rows live; zero host LOC.
+- **The parallel era (D-417, ratified):** the core needed ZERO new plugins (the seams rode existing machinery); the lanes are 8 forge plugins covering the 23 unimplemented frozen-catalog ops (Wave 1: forge-mine-capture + forge-mine, the DECIDED D-409 shapes; Wave 1+: survey, assay, shape, emit, proof, tier) plus the Wave-2 assembly plugin (the mind-spine carrier — **distinct from `vivim.mind` (Ω10, self-knowledge/WorldModel, live)**: it owns context assembly, not world-model grounding). Identify, never design; the catalog stays frozen.
+- **The v1 substrate call (D-418, directive — the owner's verbatim call, 2026-09-20: "We need to remove the ollama references everywhere its not how we will build this the shipable first product has no ai api connected and is fully chrome master slave"):** Chrome master/slave (`provider.browser`) is the shippable-v1 substrate; **no AI-API realization ships in v1**; the vision doc's Ollama-first passages (§28 row 3, §24's Frank badge, §31's Wave-1 boundary) are superseded with D-418 markers; `provider.llm`'s code and D-338/D-380/D-381 stand as historical record.
+- **The CDP-substrate lane (D-419, directive):** `provider.browser`'s CDP substrate is an explicit parallel lane, attach-only first, sequenced ALONGSIDE the forge mine wave; entry falsifier = ARCHITECTURE-NEXT-STEPS §G5 adopted whole (write down what "byte-identical" means for live-vs-fixture captures BEFORE the substitution test is coded — a live capture substitutes for `webmail-inbox/page.json` with zero classifier changes, or the fixture format is what's wrong, not the provider).
+- **The shippable-composition fence (D-420, directive):** `compositions/browser.json` is formally the shippable-v1 composition (tagged `SHIPPABLE-V1 (D-420)` in its matrix note); the compositions gate stage enforces the fence (three named refusals: SHIPPABLE_V1_MISSING / SHIPPABLE_V1_UNTAGGED / AI_API_IN_SHIPPABLE — no AI-API realization boots in a shippable-tagged composition; the AI-API set is data: `provider.llm` today). The proving compositions (console/llm/chat/discovery-mind) keep `provider.llm` untouched and untagged.
+- **The governor scoping (D-421, directive, Blocks Wave 4):** tile-lifecycle scheduling (§18 ghost/dormant/hydrated/suspended, the 2-second unplug duty) presumes plugin-side living over existing `platform/` process-lifecycle capabilities + the out-of-tree watchdog placement (D-329) — the host does nothing new; a Wave-4 design record claiming a host primitive must name the equal-or-greater removal BEFORE code (B5, unconditional). F8 stays the judge.
 - **The generated-row era (D-413):** records from D-413 on carry `## Index` and their BUILD-DECISIONS row is GENERATED and byte-checked; `omega:new-decision` scaffolds contract-passing records; the `Blocks:` field (checker-validated vocabulary) + blocking-first board; cross-track citations carry the naming law (bare `D-NNN` = THIS ledger; foreign ids track-qualified, `akb:D-389`; report-only lint).
 - **The round-close automator (D-414):** `omega:round-close` — the ceremony as one fail-closed command (named preflight refusals; bundle cut + verify + sha256; the ledger row generated from git data; the next-round entry block derived from BACKLOG + the board). `build/status.json` carries the toolchain pin (`toolchain {bun, node, os, arch}`); `verify-status` reports drift, never fails on runner-shape. The close sequence: PROPOSED → gates ×2 → ratify → board refresh → close-out → `omega:round-close`.
 - **This page's own law (D-415):** the trigger-based refresh policy in the header marker above; the report-only `invariants-freshness` stage.
@@ -100,7 +107,7 @@ yet — implement when the first forge wave closure lands with one.
 
 - **Host LOC: 1500/1500 — AT the freeze, zero headroom.** Any host-touching change names its equal-or-greater removal BEFORE the code is written (B5: same-commit removal, never partial).
 - **Anvil: 856/860** — 4 lines of remove-to-add headroom, same rule.
-- **Tests: 1102+ (D-414 tip), sharding trigger long crossed** — the quick gate + lanes hold it; re-check wall-time as the suite grows past ~1,200.
+- **Tests: 1147 (the D-421 tree), sharding trigger long crossed** — the quick gate + lanes hold it; re-check wall-time as the suite grows past ~1,200.
 - **Single-principal boundary (L-11) is a fence, not a bug:** the first sharing-adjacent feature requires the GAP-4 ruling first (D-379's reopen rule).
 - **Calibration corpus + SLOs (L-12/L-13):** promotion thresholds remain unmeasured constants — not load-bearing for consequential decisions before Phase D / F-3.
 

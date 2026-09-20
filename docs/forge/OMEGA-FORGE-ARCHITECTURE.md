@@ -3,6 +3,17 @@
 **Full architectural design, v2.** Supersedes `OMEGA-PORT-ARCHITECTURE.md` (v1), which
 framed the builder tooling as an "SDK." That framing is retired here.
 
+> **Superseded in part 2026-09-20 by D-418 (the v1 substrate call):** the
+> round-one boundary table's row 4 (D-418) and the Ollama-pilot ordering
+> rationale below are superseded — v1 is fully Chrome master/slave
+> (`provider.browser`); no AI-API realization ships in v1. The design
+> content (partitions, risk classes, the Builder Contract, the catalog)
+> stands. **The measured numbers below are era-true snapshots** (written at
+> Wave-0's start): present law is host **1500/1500 flat, zero headroom**
+> (B5, D-391) and the **18-spec matrix freeze** (D-391/D-406) — the
+> "13 lines of headroom" claims below describe a budget state that no
+> longer exists.
+
 Written against `vivim-omega@b8ba57d` (git bundle) and `source-atlas` v2.0 (2,424-file
 Vivim inventory), both read in full. Every manifest shape, capability string, risk class
 and host capability below was checked against the tree rather than assumed.
@@ -33,7 +44,7 @@ and host capability below was checked against the tree rather than assumed.
 
 | Fact | Measured | Where |
 |---|---|---|
-| µhost size | **1,487 / 1,500 LOC** — 13 lines of headroom | `host/src/*.ts`, `gate.ts:55` |
+| µhost size | **1,487 / 1,500 LOC** — 13 lines of headroom *(era-true at writing; present law: 1500/1500 flat, zero headroom — B5, D-391)* | `host/src/*.ts`, `gate.ts:55` |
 | Capability grammar | `port:<op>@<v>` \| `host.*` — **nothing else parses** | `sdk/src/validate.ts:17` |
 | Host capabilities | Exactly **five**: `host.compartment.admin`, `host.journal.append`, `host.tokens.revoke`, `host.state.arbitration`, `host.kernel.lens` | `contracts/src/lifecycle.ts:23` |
 | Risk classes | `EXTERNAL_MUTATION` \| `MUTATION` \| `READ` — contract-kind only | `contracts/src/manifest.ts:15` |
@@ -46,7 +57,7 @@ and host capability below was checked against the tree rather than assumed.
 
 Two numbers and one collision drive everything below.
 
-- **13 LOC of host headroom.** No part of this may spend host code. Not "shouldn't" —
+- **13 LOC of host headroom.** No part of this may spend host code. Not "shouldn't" — *(era-true at writing; the freeze re-tightened to 1500/1500 flat with zero headroom at the Core Phase — B5, D-391. The rule below stands with zero, not 13.)*
   there is no room.
 - **201 → 67 → ~16.** The port is a ~12:1 compression. The work is not moving code; it
   is deciding what collapses into what.
@@ -250,14 +261,16 @@ through the law gate, ledgered and queryable.*
 | 1 | `pack.domain-conversation` | C3 | — (declares) | pack | `chat.open@1` `chat.append@1` `chat.history@1` |
 | 2 | `vivim.chat` | C3 impl, `conversation-store`, `stream-block-store` | ns `chat` | coarse; seams `index`, `retention`, `compaction` | implements ↑ |
 | 3 | `vivim.providers` | C1+C2 definitions, 16 manifests | ns `providers` | atomic | `providers.list@1` `providers.realize@1` `providers.status@1` |
-| 4 | `provider.llm-ollama` | C2, the named pilot | — (reads) | atomic | `provider.llm.complete@1` (streaming) |
+| 4 | `provider.browser` | C2's streaming pilot — **superseded by D-418**: the pilot boundary is re-pointed; v1 ships no AI-API realization | — (reads) | atomic | `browser.attach@1` · `message.send@1` (D-357's four fail-closed bars) |
 | 5 | parser pins (D-355) | C6, 7 harvested parsers | ns `parser` | data, non-routable | — |
 
-Ollama over ChatGPT for the pilot, for the reason your own strategy doc gives: local, no
-auth quirks, exercises streaming. The provider table confirms the alternative is worse —
-ChatGPT is `BROWSER_MEDIATED`, `per_account`, fleet ports 9252–9280, CDP selectors that
-rot. Proving the pipeline against a moving target proves two things at once and learns
-neither.
+**Superseded by D-418 (kept for the record):** the Ollama-over-ChatGPT pilot ordering
+was the sequencing era's reasoning — local, no auth quirks, exercises streaming. The
+provider table confirmed the alternative was worse — ChatGPT is `BROWSER_MEDIATED`,
+`per_account`, fleet ports 9252–9280, CDP selectors that rot; proving the pipeline
+against a moving target proves two things at once and learns neither. D-418 re-points
+the Wave-1 atom's realization boundary to `provider.browser`: v1 is fully Chrome
+master/slave, and the AI-API pilot ordering is void.
 
 **Round two — deferred, named, with triggers:** C1 capability graph (after realization rows
 have ≥2 writers) · C2 fleet/governor (after streaming proves out) · C4 memory (after
@@ -755,7 +768,7 @@ to the tooling rather than the features.
 | **Dev tools in product runtime** | A `forge.*` op routes in `chat.json` | `FORGE_IN_PRODUCT` gate |
 | **Vocabulary outruns implementation** (your G1) | Contracts with readers, no writers; `deriveRegistry()` typed, zero callers | `speculative` level + D-332 + `GEN_SPECULATIVE_STALE` |
 | **Forges only ever work on Vivim** | Every Forge's only test is the Vivim mine | Synthetic second mine (§5.4) — highest leverage item here |
-| **Host creep under port pressure** | Any `host/src` diff | 13 LOC headroom, hard gate. The constraint is physical |
+| **Host creep under port pressure** | Any `host/src` diff | 13 LOC headroom, hard gate (era-true at writing; present law: 1500/1500 flat, zero headroom — B5, D-391). The constraint is physical |
 | **Coarse plugins never extracted** | Seams declared, never cut | `kernel.centrality@1` as a standing per-wave report |
 | **Ceremony kills experimentation** | Nobody writes scratch tools any more | S0 requires nothing. Defend it (§6.4) |
 | **Doc drift** | `AGENTS.md` says host 1,100; gate enforces 1,500. D-370 says 16 compositions; there are 17 | Derive doc numbers from gate constants; re-amend or reduce. Silent drift in a *freeze* erodes every other freeze |
