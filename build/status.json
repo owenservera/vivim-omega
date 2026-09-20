@@ -1,12 +1,12 @@
 {
-  "generatedAt": "2026-09-20T15:39:33.252Z",
+  "generatedAt": "2026-09-20T22:27:25.165Z",
   "repo": "vivim-omega",
   "branch": "omega",
-  "head": "697096f",
+  "head": "d466161",
   "toolchain": {
     "bun": "1.3.14",
     "node": "24.3.0",
-    "os": "linux 6.18.44-fc-v37",
+    "os": "linux 5.10.134-013.15.kangaroo.al8.x86_64",
     "arch": "x64"
   },
   "waves": [
@@ -96,7 +96,7 @@
     }
   ],
   "gate": {
-    "startedAt": "2026-09-20T15:37:49.314Z",
+    "startedAt": "2026-09-20T22:25:53.123Z",
     "checks": {
       "host-loc": {
         "ok": true,
@@ -131,15 +131,21 @@
       "decisions": {
         "ok": true,
         "detail": {
-          "rows": 130,
-          "records": 104,
+          "rows": 135,
+          "records": 109,
           "ratified": 104,
           "grandfatherBelow": 313,
           "generatedFrom": 413,
           "trackWarnings": 0,
           "openQuestions": {
-            "count": 0,
-            "ids": [],
+            "count": 5,
+            "ids": [
+              425,
+              426,
+              427,
+              428,
+              429
+            ],
             "board": "stale"
           }
         }
@@ -272,10 +278,10 @@
         "ok": true,
         "detail": {
           "policy": "report-only (D-415, A3 — the flip to failing is a future record's call, after one green wave of reports)",
-          "pass": 4,
-          "asOf": "D-424",
+          "pass": 5,
+          "asOf": "D-429",
           "ratifiedSince": 0,
-          "gateStages": 14,
+          "gateStages": 15,
           "stale": false,
           "triggers": []
         }
@@ -285,19 +291,68 @@
         "detail": {
           "policy": "report-only (D-423 — mirrors D-415/D-368; the flip to failing, if ever, is a future record's call)",
           "gateGreen": true,
-          "gateStale": true,
-          "boardOpen": 0,
+          "gateStale": false,
+          "boardOpen": 5,
           "boardBlocking": 0,
           "boardFreshness": "stale",
           "docscanFindings": 0,
-          "ledgerResolved": false,
+          "ledgerResolved": true,
           "ratifiedCount": 129
+        }
+      },
+      "genome": {
+        "ok": true,
+        "detail": {
+          "policy": "mechanical (D-425): artifact integrity fails; record-status and the assumed directive are reported facts (the ratify ceremony and the owner own them)",
+          "counts": {
+            "layers": 31,
+            "implemented": 6,
+            "externalAssumed": 16,
+            "ratifiedUnimplemented": 1,
+            "queued": 8,
+            "decisions": 135,
+            "ratified": 129,
+            "proposed": 6,
+            "records": 109,
+            "testFiles": 117,
+            "gateStages": 15,
+            "plugins": 25,
+            "compositions": 19
+          },
+          "genomeBytes": 45209,
+          "briefBytes": 7036,
+          "inFlight": [
+            "Ω-DEV.1",
+            "Ω-DEV.2",
+            "Ω-DEV.3",
+            "Ω-DEV.4",
+            "Ω-DEV.5"
+          ],
+          "externalAssumed": 16,
+          "unresolvedFalsifiers": [
+            "F-BOOT (Ω-0)",
+            "F-DURABILITY (Ω-0.5)",
+            "F-WATCH (Ω-1)",
+            "F-GOV (Ω-2)",
+            "F-CTX (Ω-3)",
+            "F-TRUST (Ω-4)",
+            "F-ANALYTICS (Ω-5)",
+            "F-LAYOUT (Ω-6)",
+            "F-BADGE (Ω-7)",
+            "F-DISCLOSURE (Ω-9)",
+            "F-PARTIAL (Ω-10)",
+            "F-INVOKE (Ω-12)",
+            "F-STANDING (Ω-13)",
+            "F-LIVENESS (Ω-14)",
+            "F-DELEGATE (Ω-15)",
+            "F-ADAPT (Ω-16)"
+          ]
         }
       },
       "tests": {
         "ok": true,
         "detail": {
-          "pass": 1190,
+          "pass": 1232,
           "fail": 0,
           "maxConcurrency": 4
         }
@@ -305,8 +360,8 @@
       "attest": {
         "ok": true,
         "detail": {
-          "compileMs": 5,
-          "bootMs": 35,
+          "compileMs": 3,
+          "bootMs": 19,
           "echo": true,
           "counterBump": true,
           "counterValue": {
@@ -329,7 +384,7 @@
   },
   "hostLoc": 1500,
   "tests": {
-    "pass": 1190,
+    "pass": 1232,
     "fail": 0
   },
   "benchmarks": {

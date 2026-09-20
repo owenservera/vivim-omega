@@ -1,6 +1,21 @@
 # Current Invariants — the one-page law snapshot
 
-<!-- invariants: pass 4 · as-of D-424 · regenerated 2026-09-20 (D-422..D-424 ratified; the process gate stage added under D-423; pass 3 was as-of D-421) · stages: anvil-loc anvil-surface attest bun-surface compositions decisions forge-surface fresh-tree host-loc import-surface invariants-freshness os-surface process tests -->
+<!-- invariants: pass 5 · as-of D-429 · regenerated 2026-09-20 (D-425..D-429, the Ω-DEV agent-multiplier wave; the genome gate stage added under D-425; pass 4 was as-of D-424) · stages: anvil-loc anvil-surface attest bun-surface compositions decisions forge-surface fresh-tree genome host-loc import-surface invariants-freshness os-surface process tests -->
+
+**Pass #5 (2026-09-20, the agent multipliers).** Refreshed on the D-415
+stage-drift trigger — a gate stage was added: `genome` (MECHANICAL, unlike
+its report-only neighbors), the system genome of `D-425`(`tooling/gates/
+genome.ts`, `omega:genome`). The wave landed five records, `D-425`..`D-429`
+(Ω-DEV.1..5, all evidence-class, falsifiers green before the flip): the
+genome (the machine-readable constitution — one fold, committed artifacts,
+byte-verified), the falsifier-first loop (`omega:loop`), the orchestration
+graph (`omega:orchestrate`), the development vault (`omega:devault`,
+environment-local), and the design simulation sandbox (`omega:simulate`,
+advisory). The layer registry (`genome/layers.json`) maps the two numbering
+lineages (this ledger vs the external spec paper ids) and records the
+owner's assume-implemented directive for Ω-1..Ω-16 as DATA — the genome
+reports both the directive and the absent tree evidence, never silently
+either. Pass #4 below stands unchanged.
 
 **Pass #4 (2026-09-20, the process self-model).** Refreshed on the D-415
 stage-drift trigger — a gate stage was added: `process` (report-only, placed
@@ -65,6 +80,14 @@ yet — implement when the first forge wave closure lands with one.
 - **The mine (D-406):** `fixtures/mines/synthetic-v0/` — 42 offline hash-pinned files (MANIFEST.json rootHash), un-Vivim-shaped by charter, waiting for `forge.mine.capture@1` (Wave 1, OPEN — the register lifted per D-417; first receipts are the mine wave's work).
 - The gate's `forge-surface` stage polices the boundary (5 checks + generality); red/green falsifiers live in `tooling/gates/test/forge-surface.test.ts`. The comparison walker excludes `node_modules` under the host `contentHashDir` precedent — machine state, not plugin bytes (recorded, revisit only if plugin dirs ever ship vendored deps that ARE plugin bytes).
 
+## The agent multipliers (D-425..D-429 — the Ω-DEV family)
+
+- **The system genome (D-425):** `genome/layers.json` is the only hand-authored input (the layer registry — 31 layers, the two-lineage map, the DAG); `omega:genome` folds it with the ledger and the test tree into `build/genome.json` + `build/genome.md`, committed and byte-verified. The `genome` gate stage is MECHANICAL: hand edits, stale folds, registry shape lies, cycles, unresolved falsifiers on implemented layers, and budget breaches FAIL; record status and the assume-implemented directive are reported facts. Implemented layers declare their evidence kind — `record` (one tree record + one falsifier file) or `program` (CORE: the built program is its own witness). Any wave touching decisions or the registry re-emits the genome in the same commit.
+- **The falsifier-first loop (D-426):** records declare named falsifiers as clause lines (`- F-XXX.N (title) — …`; prose mentions are mentions, never declarations); `omega:loop --stub` generates the RED stub (deterministic, one throwing test per clause) and REFUSES to clobber implemented files (LOOP_STUB_OVERWRITE); `--status` audits tree-wide coverage. Done-ness is mechanical: green falsifier or not done.
+- **The orchestration graph (D-427):** `omega:orchestrate` reads the genome's DAG as buckets (done / in-flight / verify-queue / build-queue / spec-queue / blocked, deps named); the constitutional merge check IS the full gate (`--merge`), refusing with the failing stages on red. Assumed deps satisfy planning and never become tree evidence.
+- **The development vault (D-428):** `ns.dev` as environment-local tooling state (`dev-vault/`, gitignored by pre-existing reservation): append-only, hash-chained (tamper-evident, not tamper-proof — stated), evidence-required, fold-derived. Law is committed; memory is local.
+- **The design simulation sandbox (D-429):** `omega:simulate <layer>` rehearses the red path — a fixed mutation catalog through the genome verifier, receipted to `build/sim-receipts/` with inputHash determinism. ADVISORY always; runtime behavioral simulation stays with Ω-8 (paper `D-432`).
+
 ## The program law (D-408…D-421 — vision, partition, sequencing, tooling, the course-correction round)
 
 - **The Sovereign Environment (D-408, ratified):** the amended end-state vision is law — the governed event as atom, the NL control plane a constitutional peer (probabilistic perception, deterministic intent, deterministic execution; no raw model output crosses the law gate; the LLM is a replaceable realization, never the resolver of record), Part II (the civilization) + Part III (the physics) added, the arc amended. The vision is direction: waves land through the constitution as ever.
@@ -118,7 +141,7 @@ yet — implement when the first forge wave closure lands with one.
 
 - **Host LOC: 1500/1500 — AT the freeze, zero headroom.** Any host-touching change names its equal-or-greater removal BEFORE the code is written (B5: same-commit removal, never partial).
 - **Anvil: 856/860** — 4 lines of remove-to-add headroom, same rule.
-- **Tests: 1147 (the D-421 tree), sharding trigger long crossed** — the quick gate + lanes hold it; re-check wall-time as the suite grows past ~1,200.
+- **Tests: 1232 (the D-425 tree), sharding trigger long crossed** — the quick gate + lanes hold it; re-check wall-time as the suite grows past ~1,300.
 - **Single-principal boundary (L-11) is a fence, not a bug:** the first sharing-adjacent feature requires the GAP-4 ruling first (D-379's reopen rule).
 - **Calibration corpus + SLOs (L-12/L-13):** promotion thresholds remain unmeasured constants — not load-bearing for consequential decisions before Phase D / F-3.
 

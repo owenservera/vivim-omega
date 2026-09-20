@@ -287,12 +287,26 @@ describe("F-8 — A17 the ledger home (resolver order, searched paths, row conti
     expect(ledgerContiguity([])).toEqual([]);
   });
   test("the delivery-ledger shape end-to-end: pruned files, last-row bundle present, dry-run preflight path", () => {
-    // the _11 bundle IS on disk in this environment (the delivery folder) —
-    // the resolver must find it via the pin or default without hand-holding
+    // The authoring environment's delivery folder carried the _11 bundle and
+    // the ledger README; the resolver finds it via the pin or default without
+    // hand-holding. The guard is the LEDGER README (a README carrying bundle
+    // table rows), never any README.md — a fresh delivery folder with an
+    // unrelated placeholder README is NOT an established ledger, and demanding
+    // its last-row bundle there was a portable-environment false positive
+    // (found in the Ω-DEV wave's first full gate, 2026-09-20; repaired
+    // additively under the bb7a1b8 precedent — the tooling catching its own
+    // program). When a real ledger README is present, A17's law holds exactly:
+    // bundle FILES are demanded only for the LAST row (pruned history is
+    // lawful; the table is the ledger of record).
     const r = resolveLedgerDir(ROOT);
-    const bundle = join(r.dir, "vivim-omega-wave0-omega-forge_11.bundle");
-    if (existsSync(join(r.dir, "README.md"))) {
-      expect(existsSync(bundle)).toBe(true);
+    const readmePath = join(r.dir, "README.md");
+    if (existsSync(readmePath)) {
+      const readme = readFileSync(readmePath, "utf-8");
+      const rows = [...readme.matchAll(/_(\d+)\.bundle/g)].map((m) => Number(m[1]));
+      if (rows.length > 0) {
+        const last = Math.max(...rows);
+        expect(existsSync(join(r.dir, `vivim-omega-wave0-omega-forge_${last}.bundle`))).toBe(true);
+      }
     }
   });
 });

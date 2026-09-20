@@ -279,6 +279,24 @@ try {
   else fail("process", pr.issues.join("; "));
 } catch (e) { fail("process", String(e)); }
 
+// 5g · genome (D-425 — MECHANICAL, unlike its report-only neighbors): the
+// system genome's artifact integrity. The committed fold (build/genome.json
+// + build/genome.md) must be the byte-exact fold of THIS tree — a hand edit,
+// a stale genome after a ledger change, a registry shape lie, a dependency
+// cycle, an unresolved falsifier on an implemented layer, or a budget breach
+// is breakage the same way an index/record mismatch breaks the decisions
+// stage. What stays REPORTED (never failing): the record status of
+// implemented layers (the ratify ceremony owns the PROPOSED→RATIFIED flip,
+// D-364) and the external-assumed count (the owner's directive, data not
+// trust). Re-emit with `bun run omega:genome` in the same commit as any
+// decision or registry change — the artifact is content-addressed.
+try {
+  const { checkGenome } = await import("./genome.ts");
+  const g = checkGenome(ROOT);
+  if (g.ok) pass("genome", g.detail);
+  else fail("genome", g.issues.join("; "));
+} catch (e) { fail("genome", String(e)); }
+
 // 6 · tests (gate evidence)
 // Concurrency is capped by box size (D-317): past core count, worker-heavy test
 // files thrash instead of parallelizing — measured 64s green at 4-wide vs

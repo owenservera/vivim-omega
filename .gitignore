@@ -8,3 +8,6 @@ testkit/test/fixtures/ghosts/.gen/
 
 # D-422 (A17): the environment-local ledger pin (absolute or root-relative path to the bundle ledger)
 .ledger-path
+
+# D-427 (Ω-DEV.3): the orchestration plan is a derived LENS, regenerate on demand — the genome is the law
+build/orchestration-plan.json

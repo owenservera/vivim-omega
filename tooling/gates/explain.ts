@@ -64,6 +64,11 @@ export const STAGE_DOCS: Record<string, { scans: string; allowlist: string; rule
     allowlist: "REPORT-ONLY (D-423, mirrors D-415/D-368): an open board, a stale status.json, or live docscan findings report in the detail and stay green — the judgment stays with the ratify/round-close ceremony; only mechanical breakage (a derivation throw) fails",
     rule: "tooling/gates/process.ts (D-423), falsifiers in tooling/gates/test/process.test.ts",
   },
+  "genome": {
+    scans: "genome/layers.json (the authored registry — the only hand-written input) folded against docs/BUILD-DECISIONS.md, docs/decisions/*, and the *.test.ts inventory, vs the committed artifacts build/genome.json + build/genome.md",
+    allowlist: "none — the committed genome must be the byte-exact fold of this tree (re-emit with `bun run omega:genome` in the same commit as any decision/registry change); registry shape, DAG validity, budgets, orphan/incomplete decision sets, and falsifier resolution for implemented layers are MECHANICAL failures; record status and the external-assumed directive are reported facts",
+    rule: "tooling/gates/genome.ts (D-425, Ω-DEV.1), falsifiers in tooling/gates/test/f-genome.test.ts",
+  },
   "tests": {
     scans: "full bun test suite (capped concurrency, 60s per-test budget)",
     allowlist: "none — every test must pass",

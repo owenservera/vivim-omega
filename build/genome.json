@@ -1,0 +1,1628 @@
+{
+  "genomeVersion": 1,
+  "kind": "the vivim-omega system genome — the machine-readable constitution (D-425); derived, committed, byte-verified; hand edits are gate failures",
+  "lineage": {
+    "note": "Two numbering systems, never conflated. treeId = THIS repo's ledger (docs/decisions/D-<n>-*.md, contiguous, authoritative for record files). specId = the external upgrade-spec lineage (paper ids; cite them backticked in prose). Where a paper id collides with a tree id the fields keep them distinct — the runbook's build-time renumbering rule, made mechanical.",
+    "specLineage": "Ω-0 paper D-449 (upgrade doc delivered 2026-09-21); Ω-DEV.1..5 paper D-450..D-454 (this wave); Ω-1..Ω-8 paper D-425..D-432; Ω-9 paper D-433; Ω-10..Ω-16 paper D-442..D-448; builder-gap reservations paper D-434..D-440 (D-441 unassigned reserve); Ω-0.5 candidate D-455. The tree ledger assigns D-425..D-429 to the Ω-DEV family — the collision is recorded here, not hidden.",
+    "assumedDirective": "The owner directed (2026-09-21): the Ω-1..Ω-16 layers are assume-implemented for continuation purposes per their ratified external specs. The genome records BOTH facts honestly: the directive (this field) and the tree evidence (null record / null falsifier file per layer, reported by the fold). external-assumed is a claim about paper, never about this tree."
+  },
+  "counts": {
+    "layers": 31,
+    "implemented": 6,
+    "externalAssumed": 16,
+    "ratifiedUnimplemented": 1,
+    "queued": 8,
+    "decisions": 135,
+    "ratified": 129,
+    "proposed": 6,
+    "records": 109,
+    "testFiles": 117,
+    "gateStages": 15,
+    "plugins": 25,
+    "compositions": 19
+  },
+  "layers": [
+    {
+      "id": "CORE",
+      "name": "The constitutional core program",
+      "status": "implemented",
+      "dependsOn": [],
+      "note": "µhost, law, vault, run, sdk/testkit, surfaces, discovery, mind, nlcl, director — the built program (status.json wave registry Ω0..Ω13; the gate itself is the falsifier)",
+      "specId": null,
+      "evidence": {
+        "treeId": null,
+        "recordFile": null,
+        "recordStatus": null,
+        "falsifier": null,
+        "falsifierFile": null,
+        "falsifierClauses": [],
+        "evidenceKind": "program"
+      }
+    },
+    {
+      "id": "Ω-0",
+      "name": "Hermetic bootstrap",
+      "status": "ratified-unimplemented",
+      "dependsOn": [
+        "CORE"
+      ],
+      "note": "the boot chain (archive hash → manifest walk → toolchain pin → hermeticity → gate digest); upgrade doc delivered 2026-09-21 (omega-upgrades/OMEGA-0-HERMETIC-BOOTSTRAP.md); no hash, no boot — no proof, no verify",
+      "specId": "D-449",
+      "evidence": {
+        "treeId": null,
+        "recordFile": null,
+        "recordStatus": null,
+        "falsifier": "F-BOOT",
+        "falsifierFile": null,
+        "falsifierClauses": [],
+        "evidenceKind": "record"
+      }
+    },
+    {
+      "id": "Ω-DEV.1",
+      "name": "System genome",
+      "status": "implemented",
+      "dependsOn": [
+        "CORE"
+      ],
+      "note": "the machine-readable constitution: one fold over the registry + the ledger + the test tree, emitted as build/genome.json + build/genome.md, byte-verified by the genome gate stage",
+      "specId": "D-450",
+      "evidence": {
+        "treeId": 425,
+        "recordFile": "docs/decisions/D-425-genome-fold.md",
+        "recordStatus": "PROPOSED",
+        "falsifier": "F-GENOME",
+        "falsifierFile": "tooling/gates/test/f-genome.test.ts",
+        "falsifierClauses": [
+          "F-GENOME.1 (fold-completeness)",
+          "F-GENOME.2 (no-hand-edits)",
+          "F-GENOME.3 (falsifier-resolution)",
+          "F-GENOME.4 (dag-validity)",
+          "F-GENOME.5 (budget)",
+          "F-GENOME.6 (live-lock)"
+        ],
+        "evidenceKind": "record"
+      }
+    },
+    {
+      "id": "Ω-DEV.2",
+      "name": "Falsifier-first loop",
+      "status": "implemented",
+      "dependsOn": [
+        "Ω-DEV.1"
+      ],
+      "note": "records declare named falsifiers; omega:loop generates RED stubs at scaffold time, never clobbers implemented files, and audits coverage",
+      "specId": "D-451",
+      "evidence": {
+        "treeId": 426,
+        "recordFile": "docs/decisions/D-426-falsifier-first-loop.md",
+        "recordStatus": "PROPOSED",
+        "falsifier": "F-LOOP",
+        "falsifierFile": "tooling/gates/test/f-loop.test.ts",
+        "falsifierClauses": [
+          "F-LOOP.1 (determinism)",
+          "F-LOOP.2 (red-by-construction)",
+          "F-LOOP.3 (coverage-audit)",
+          "F-LOOP.4 (no-clobber)"
+        ],
+        "evidenceKind": "record"
+      }
+    },
+    {
+      "id": "Ω-DEV.3",
+      "name": "Orchestration graph",
+      "status": "implemented",
+      "dependsOn": [
+        "Ω-DEV.1"
+      ],
+      "note": "the layer DAG made loadable: omega:orchestrate plans done/inFlight/verifyQueue/buildQueue/specQueue/blocked; the constitutional merge check IS the full gate",
+      "specId": "D-452",
+      "evidence": {
+        "treeId": 427,
+        "recordFile": "docs/decisions/D-427-orchestration-graph.md",
+        "recordStatus": "PROPOSED",
+        "falsifier": "F-ORCH",
+        "falsifierFile": "tooling/gates/test/f-orch.test.ts",
+        "falsifierClauses": [
+          "F-ORCH.1 (plan-determinism)",
+          "F-ORCH.2 (bucket-correctness)",
+          "F-ORCH.3 (assumed-deps-honesty)",
+          "F-ORCH.4 (merge-is-the-gate)"
+        ],
+        "evidenceKind": "record"
+      }
+    },
+    {
+      "id": "Ω-DEV.4",
+      "name": "Development vault",
+      "status": "implemented",
+      "dependsOn": [
+        "Ω-DEV.1"
+      ],
+      "note": "ns.dev as environment-local agent memory (dev-vault/, gitignored by pre-existing reservation): append-only, hash-chained, evidence-required, never committed — law is committed, memory is local",
+      "specId": "D-453",
+      "evidence": {
+        "treeId": 428,
+        "recordFile": "docs/decisions/D-428-development-vault.md",
+        "recordStatus": "PROPOSED",
+        "falsifier": "F-DEVAULT",
+        "falsifierFile": "tooling/gates/test/f-devault.test.ts",
+        "falsifierClauses": [
+          "F-DEVAULT.1 (append-only-witness)",
+          "F-DEVAULT.2 (evidence-required)",
+          "F-DEVAULT.3 (fold-derived)",
+          "F-DEVAULT.4 (query-precision)"
+        ],
+        "evidenceKind": "record"
+      }
+    },
+    {
+      "id": "Ω-DEV.5",
+      "name": "Design simulation sandbox",
+      "status": "implemented",
+      "dependsOn": [
+        "Ω-DEV.1"
+      ],
+      "note": "try-before-you-build as falsifier red-case rehearsal: omega:simulate mutates a layer's registry entry through the genome verifier and receipts which clauses bite; advisory, never blocking; runtime behavioral simulation stays with Ω-8 (paper D-432)",
+      "specId": "D-454",
+      "evidence": {
+        "treeId": 429,
+        "recordFile": "docs/decisions/D-429-design-simulation-sandbox.md",
+        "recordStatus": "PROPOSED",
+        "falsifier": "F-PRESIM",
+        "falsifierFile": "tooling/gates/test/f-presim.test.ts",
+        "falsifierClauses": [
+          "F-PRESIM.1 (determinism)",
+          "F-PRESIM.2 (mutation-coverage)",
+          "F-PRESIM.3 (advisory-never-blocking)",
+          "F-PRESIM.4 (unknown-layer-refusal)"
+        ],
+        "evidenceKind": "record"
+      }
+    },
+    {
+      "id": "Ω-0.5",
+      "name": "Vault durability, compaction and migration",
+      "status": "queued",
+      "dependsOn": [
+        "Ω-0"
+      ],
+      "note": "crash-consistent WAL, migration dry-runs, compaction-never-deletes (D-410 item C mechanized), selective namespace export; candidate paper id D-455; spec pending, sequenced behind the Ω-DEV wave by the owner's 2026-09-21 directive",
+      "specId": null,
+      "evidence": {
+        "treeId": null,
+        "recordFile": null,
+        "recordStatus": null,
+        "falsifier": "F-DURABILITY",
+        "falsifierFile": null,
+        "falsifierClauses": [],
+        "evidenceKind": "record"
+      }
+    },
+    {
+      "id": "Ω-1",
+      "name": "Substrate: watch (namespaced process/signal watch)",
+      "status": "external-assumed",
+      "dependsOn": [
+        "CORE"
+      ],
+      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; no tree evidence — the verify queue owns the porting",
+      "specId": "D-425",
+      "evidence": {
+        "treeId": null,
+        "recordFile": null,
+        "recordStatus": null,
+        "falsifier": "F-WATCH",
+        "falsifierFile": null,
+        "falsifierClauses": [],
+        "evidenceKind": "record"
+      }
+    },
+    {
+      "id": "Ω-2",
+      "name": "Substrate: governance",
+      "status": "external-assumed",
+      "dependsOn": [
+        "CORE"
+      ],
+      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; no tree evidence — the verify queue owns the porting",
+      "specId": "D-426",
+      "evidence": {
+        "treeId": null,
+        "recordFile": null,
+        "recordStatus": null,
+        "falsifier": "F-GOV",
+        "falsifierFile": null,
+        "falsifierClauses": [],
+        "evidenceKind": "record"
+      }
+    },
+    {
+      "id": "Ω-3",
+      "name": "Substrate: context",
+      "status": "external-assumed",
+      "dependsOn": [
+        "Ω-1",
+        "Ω-2",
+        "Ω-4"
+      ],
+      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; no tree evidence — the verify queue owns the porting",
+      "specId": "D-427",
+      "evidence": {
+        "treeId": null,
+        "recordFile": null,
+        "recordStatus": null,
+        "falsifier": "F-CTX",
+        "falsifierFile": null,
+        "falsifierClauses": [],
+        "evidenceKind": "record"
+      }
+    },
+    {
+      "id": "Ω-4",
+      "name": "Substrate: trust",
+      "status": "external-assumed",
+      "dependsOn": [
+        "CORE"
+      ],
+      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; key rotation folded here per the resequencing; no tree evidence — the verify queue owns the porting",
+      "specId": "D-428",
+      "evidence": {
+        "treeId": null,
+        "recordFile": null,
+        "recordStatus": null,
+        "falsifier": "F-TRUST",
+        "falsifierFile": null,
+        "falsifierClauses": [],
+        "evidenceKind": "record"
+      }
+    },
+    {
+      "id": "Ω-5",
+      "name": "Substrate: analytics",
+      "status": "external-assumed",
+      "dependsOn": [
+        "CORE"
+      ],
+      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; no tree evidence — the verify queue owns the porting",
+      "specId": "D-429",
+      "evidence": {
+        "treeId": null,
+        "recordFile": null,
+        "recordStatus": null,
+        "falsifier": "F-ANALYTICS",
+        "falsifierFile": null,
+        "falsifierClauses": [],
+        "evidenceKind": "record"
+      }
+    },
+    {
+      "id": "Ω-6",
+      "name": "Substrate: layout",
+      "status": "external-assumed",
+      "dependsOn": [
+        "Ω-5"
+      ],
+      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; no tree evidence — the verify queue owns the porting",
+      "specId": "D-430",
+      "evidence": {
+        "treeId": null,
+        "recordFile": null,
+        "recordStatus": null,
+        "falsifier": "F-LAYOUT",
+        "falsifierFile": null,
+        "falsifierClauses": [],
+        "evidenceKind": "record"
+      }
+    },
+    {
+      "id": "Ω-7",
+      "name": "Substrate: badge",
+      "status": "external-assumed",
+      "dependsOn": [
+        "Ω-6"
+      ],
+      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; no tree evidence — the verify queue owns the porting",
+      "specId": "D-431",
+      "evidence": {
+        "treeId": null,
+        "recordFile": null,
+        "recordStatus": null,
+        "falsifier": "F-BADGE",
+        "falsifierFile": null,
+        "falsifierClauses": [],
+        "evidenceKind": "record"
+      }
+    },
+    {
+      "id": "Ω-8",
+      "name": "Substrate: simulation (the rehearsal engine)",
+      "status": "external-assumed",
+      "dependsOn": [
+        "Ω-7"
+      ],
+      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; Ω-DEV.5's runtime-behavioral half lands here when this layer ports; no tree evidence — the verify queue owns the porting",
+      "specId": "D-432",
+      "evidence": {
+        "treeId": null,
+        "recordFile": null,
+        "recordStatus": null,
+        "falsifier": "F-SIM",
+        "falsifierFile": "tooling/gates/test/f-genome.test.ts",
+        "falsifierClauses": [],
+        "evidenceKind": "record"
+      }
+    },
+    {
+      "id": "Ω-9",
+      "name": "The aperture (progressive disclosure)",
+      "status": "external-assumed",
+      "dependsOn": [
+        "Ω-2",
+        "Ω-3",
+        "Ω-5"
+      ],
+      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; no tree evidence — the verify queue owns the porting",
+      "specId": "D-433",
+      "evidence": {
+        "treeId": null,
+        "recordFile": null,
+        "recordStatus": null,
+        "falsifier": "F-DISCLOSURE",
+        "falsifierFile": null,
+        "falsifierClauses": [],
+        "evidenceKind": "record"
+      }
+    },
+    {
+      "id": "Ω-10",
+      "name": "Boundary: partial evaluation",
+      "status": "external-assumed",
+      "dependsOn": [
+        "Ω-9"
+      ],
+      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; no tree evidence — the verify queue owns the porting",
+      "specId": "D-442",
+      "evidence": {
+        "treeId": null,
+        "recordFile": null,
+        "recordStatus": null,
+        "falsifier": "F-PARTIAL",
+        "falsifierFile": null,
+        "falsifierClauses": [],
+        "evidenceKind": "record"
+      }
+    },
+    {
+      "id": "Ω-11",
+      "name": "Boundary: aperture privacy",
+      "status": "external-assumed",
+      "dependsOn": [
+        "Ω-10"
+      ],
+      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; no tree evidence — the verify queue owns the porting",
+      "specId": "D-443",
+      "evidence": {
+        "treeId": null,
+        "recordFile": null,
+        "recordStatus": null,
+        "falsifier": "F-APERTURE-PRIVACY",
+        "falsifierFile": "tooling/gates/test/f-loop.test.ts",
+        "falsifierClauses": [],
+        "evidenceKind": "record"
+      }
+    },
+    {
+      "id": "Ω-12",
+      "name": "Boundary: invocation",
+      "status": "external-assumed",
+      "dependsOn": [
+        "Ω-11"
+      ],
+      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; no tree evidence — the verify queue owns the porting",
+      "specId": "D-444",
+      "evidence": {
+        "treeId": null,
+        "recordFile": null,
+        "recordStatus": null,
+        "falsifier": "F-INVOKE",
+        "falsifierFile": null,
+        "falsifierClauses": [],
+        "evidenceKind": "record"
+      }
+    },
+    {
+      "id": "Ω-13",
+      "name": "Boundary: standing",
+      "status": "external-assumed",
+      "dependsOn": [
+        "Ω-12"
+      ],
+      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; no tree evidence — the verify queue owns the porting",
+      "specId": "D-445",
+      "evidence": {
+        "treeId": null,
+        "recordFile": null,
+        "recordStatus": null,
+        "falsifier": "F-STANDING",
+        "falsifierFile": null,
+        "falsifierClauses": [],
+        "evidenceKind": "record"
+      }
+    },
+    {
+      "id": "Ω-14",
+      "name": "Boundary: liveness",
+      "status": "external-assumed",
+      "dependsOn": [
+        "Ω-13"
+      ],
+      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; no tree evidence — the verify queue owns the porting",
+      "specId": "D-446",
+      "evidence": {
+        "treeId": null,
+        "recordFile": null,
+        "recordStatus": null,
+        "falsifier": "F-LIVENESS",
+        "falsifierFile": null,
+        "falsifierClauses": [],
+        "evidenceKind": "record"
+      }
+    },
+    {
+      "id": "Ω-15",
+      "name": "Boundary: delegation",
+      "status": "external-assumed",
+      "dependsOn": [
+        "Ω-14"
+      ],
+      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; no tree evidence — the verify queue owns the porting",
+      "specId": "D-447",
+      "evidence": {
+        "treeId": null,
+        "recordFile": null,
+        "recordStatus": null,
+        "falsifier": "F-DELEGATE",
+        "falsifierFile": null,
+        "falsifierClauses": [],
+        "evidenceKind": "record"
+      }
+    },
+    {
+      "id": "Ω-16",
+      "name": "Boundary: adaptation governance",
+      "status": "external-assumed",
+      "dependsOn": [
+        "Ω-15"
+      ],
+      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; no tree evidence — the verify queue owns the porting",
+      "specId": "D-448",
+      "evidence": {
+        "treeId": null,
+        "recordFile": null,
+        "recordStatus": null,
+        "falsifier": "F-ADAPT",
+        "falsifierFile": null,
+        "falsifierClauses": [],
+        "evidenceKind": "record"
+      }
+    },
+    {
+      "id": "Ω-2.5",
+      "name": "Builder gap: policy conflict / safety scan",
+      "status": "queued",
+      "dependsOn": [
+        "Ω-2"
+      ],
+      "note": "reserved paper id; spec pending — fill before building",
+      "specId": "D-434",
+      "evidence": {
+        "treeId": null,
+        "recordFile": null,
+        "recordStatus": null,
+        "falsifier": null,
+        "falsifierFile": null,
+        "falsifierClauses": [],
+        "evidenceKind": "record"
+      }
+    },
+    {
+      "id": "Ω-2.6",
+      "name": "Builder gap: intent debugging / personalization",
+      "status": "queued",
+      "dependsOn": [
+        "Ω-2"
+      ],
+      "note": "reserved paper id; spec pending — fill before building",
+      "specId": "D-435",
+      "evidence": {
+        "treeId": null,
+        "recordFile": null,
+        "recordStatus": null,
+        "falsifier": null,
+        "falsifierFile": null,
+        "falsifierClauses": [],
+        "evidenceKind": "record"
+      }
+    },
+    {
+      "id": "Ω-3.5",
+      "name": "Builder gap: execution debugging / capability deprecation",
+      "status": "queued",
+      "dependsOn": [
+        "Ω-3"
+      ],
+      "note": "reserved paper id; spec pending — fill before building",
+      "specId": "D-436",
+      "evidence": {
+        "treeId": null,
+        "recordFile": null,
+        "recordStatus": null,
+        "falsifier": null,
+        "falsifierFile": null,
+        "falsifierClauses": [],
+        "evidenceKind": "record"
+      }
+    },
+    {
+      "id": "Ω-4.5",
+      "name": "Builder gap: surface sync / drift",
+      "status": "queued",
+      "dependsOn": [
+        "Ω-4"
+      ],
+      "note": "reserved paper id; spec pending — fill before building",
+      "specId": "D-437",
+      "evidence": {
+        "treeId": null,
+        "recordFile": null,
+        "recordStatus": null,
+        "falsifier": null,
+        "falsifierFile": null,
+        "falsifierClauses": [],
+        "evidenceKind": "record"
+      }
+    },
+    {
+      "id": "Ω-5.5",
+      "name": "Builder gap: auto-librarian verification / doc drift",
+      "status": "queued",
+      "dependsOn": [
+        "Ω-5"
+      ],
+      "note": "reserved paper id; spec pending — fill before building (docscan/D-403 covers part of the surface already)",
+      "specId": "D-438",
+      "evidence": {
+        "treeId": null,
+        "recordFile": null,
+        "recordStatus": null,
+        "falsifier": null,
+        "falsifierFile": null,
+        "falsifierClauses": [],
+        "evidenceKind": "record"
+      }
+    },
+    {
+      "id": "Ω-6.5",
+      "name": "Builder gap: performance / benchmarks",
+      "status": "queued",
+      "dependsOn": [
+        "Ω-6"
+      ],
+      "note": "reserved paper id; spec pending — fill before building (tooling/bench covers part of the surface already)",
+      "specId": "D-439",
+      "evidence": {
+        "treeId": null,
+        "recordFile": null,
+        "recordStatus": null,
+        "falsifier": null,
+        "falsifierFile": null,
+        "falsifierClauses": [],
+        "evidenceKind": "record"
+      }
+    },
+    {
+      "id": "Ω-7.5",
+      "name": "Builder gap: decision-record validation / architecture metrics",
+      "status": "queued",
+      "dependsOn": [
+        "Ω-7"
+      ],
+      "note": "reserved paper id; spec pending — fill before building (decisions/docscan tooling covers part of the surface already)",
+      "specId": "D-440",
+      "evidence": {
+        "treeId": null,
+        "recordFile": null,
+        "recordStatus": null,
+        "falsifier": null,
+        "falsifierFile": null,
+        "falsifierClauses": [],
+        "evidenceKind": "record"
+      }
+    }
+  ],
+  "decisions": [
+    {
+      "n": 210,
+      "status": "RATIFIED",
+      "file": null
+    },
+    {
+      "n": 211,
+      "status": "RATIFIED",
+      "file": null
+    },
+    {
+      "n": 212,
+      "status": "RATIFIED",
+      "file": null
+    },
+    {
+      "n": 213,
+      "status": "PROPOSED",
+      "file": null
+    },
+    {
+      "n": 214,
+      "status": "RATIFIED",
+      "file": null
+    },
+    {
+      "n": 215,
+      "status": "RATIFIED",
+      "file": null
+    },
+    {
+      "n": 216,
+      "status": "RATIFIED",
+      "file": null
+    },
+    {
+      "n": 217,
+      "status": "RATIFIED",
+      "file": null
+    },
+    {
+      "n": 218,
+      "status": "RATIFIED",
+      "file": null
+    },
+    {
+      "n": 219,
+      "status": "RATIFIED",
+      "file": null
+    },
+    {
+      "n": 220,
+      "status": "RATIFIED",
+      "file": null
+    },
+    {
+      "n": 221,
+      "status": "RATIFIED",
+      "file": null
+    },
+    {
+      "n": 222,
+      "status": "RATIFIED",
+      "file": null
+    },
+    {
+      "n": 300,
+      "status": "RATIFIED",
+      "file": null
+    },
+    {
+      "n": 301,
+      "status": "RATIFIED",
+      "file": null
+    },
+    {
+      "n": 302,
+      "status": "RATIFIED",
+      "file": null
+    },
+    {
+      "n": 303,
+      "status": "RATIFIED",
+      "file": null
+    },
+    {
+      "n": 304,
+      "status": "RATIFIED",
+      "file": null
+    },
+    {
+      "n": 305,
+      "status": "RATIFIED",
+      "file": null
+    },
+    {
+      "n": 306,
+      "status": "RATIFIED",
+      "file": null
+    },
+    {
+      "n": 307,
+      "status": "RATIFIED",
+      "file": null
+    },
+    {
+      "n": 308,
+      "status": "RATIFIED",
+      "file": null
+    },
+    {
+      "n": 309,
+      "status": "RATIFIED",
+      "file": null
+    },
+    {
+      "n": 310,
+      "status": "RATIFIED",
+      "file": null
+    },
+    {
+      "n": 311,
+      "status": "RATIFIED",
+      "file": null
+    },
+    {
+      "n": 312,
+      "status": "RATIFIED",
+      "file": null
+    },
+    {
+      "n": 313,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-313-agent-runtime.md"
+    },
+    {
+      "n": 314,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-314-db-conformance.md"
+    },
+    {
+      "n": 315,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-315-quarantine-semantics.md"
+    },
+    {
+      "n": 316,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-316-composition-flagship.md"
+    },
+    {
+      "n": 317,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-317-test-budget.md"
+    },
+    {
+      "n": 318,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-318-phase-a-placement.md"
+    },
+    {
+      "n": 319,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-319-g1-spike.md"
+    },
+    {
+      "n": 320,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-320-ci-workflow.md"
+    },
+    {
+      "n": 321,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-321-resource-limits.md"
+    },
+    {
+      "n": 322,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-322-daemon-warm-path.md"
+    },
+    {
+      "n": 323,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-323-computation-routing.md"
+    },
+    {
+      "n": 324,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-324-provenance-linkage.md"
+    },
+    {
+      "n": 325,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-325-forbidden-durability.md"
+    },
+    {
+      "n": 326,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-326-healing-writes.md"
+    },
+    {
+      "n": 327,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-327-agent-execution.md"
+    },
+    {
+      "n": 328,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-328-control-plane.md"
+    },
+    {
+      "n": 329,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-329-worker-pool.md"
+    },
+    {
+      "n": 330,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-330-content-hash-cache.md"
+    },
+    {
+      "n": 331,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-331-lazy-activation.md"
+    },
+    {
+      "n": 332,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-332-contract-call-sites.md"
+    },
+    {
+      "n": 333,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-333-migration-substrate.md"
+    },
+    {
+      "n": 334,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-334-freshtree-pin.md"
+    },
+    {
+      "n": 335,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-335-storage-scale.md"
+    },
+    {
+      "n": 336,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-336-human-principal.md"
+    },
+    {
+      "n": 337,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-337-resolution-rule.md"
+    },
+    {
+      "n": 338,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-338-browser-realization.md"
+    },
+    {
+      "n": 339,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-339-streaming-primitive.md"
+    },
+    {
+      "n": 340,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-340-kernel-layer-placement.md"
+    },
+    {
+      "n": 341,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-341-boot-reverify-at-scale.md"
+    },
+    {
+      "n": 350,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-350-self-portrait.md"
+    },
+    {
+      "n": 351,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-351-risk-parity.md"
+    },
+    {
+      "n": 352,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-352-streaming-reland.md"
+    },
+    {
+      "n": 353,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-353-human-principal-reland.md"
+    },
+    {
+      "n": 354,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-354-parser-isolation.md"
+    },
+    {
+      "n": 355,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-355-parser-governance.md"
+    },
+    {
+      "n": 356,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-356-credentials-spine.md"
+    },
+    {
+      "n": 357,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-357-browser-realization.md"
+    },
+    {
+      "n": 358,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-358-chat-storage.md"
+    },
+    {
+      "n": 359,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-359-chat-resolution.md"
+    },
+    {
+      "n": 360,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-360-watchdog.md"
+    },
+    {
+      "n": 361,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-361-bun-surface-containment.md"
+    },
+    {
+      "n": 362,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-362-gate-reproducibility.md"
+    },
+    {
+      "n": 363,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-363-boot-event-wiring.md"
+    },
+    {
+      "n": 364,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-364-decision-process.md"
+    },
+    {
+      "n": 365,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-365-host-budget.md"
+    },
+    {
+      "n": 366,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-366-watchdog-hardening.md"
+    },
+    {
+      "n": 367,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-367-decision-simplification.md"
+    },
+    {
+      "n": 368,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-368-test-lanes.md"
+    },
+    {
+      "n": 369,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-369-small-hardening.md"
+    },
+    {
+      "n": 370,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-370-node-boot-plan.md"
+    },
+    {
+      "n": 371,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-371-windows-takeover.md"
+    },
+    {
+      "n": 372,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-372-multi-os-platform-seam.md"
+    },
+    {
+      "n": 373,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-373-db-agnostic-storage-core.md"
+    },
+    {
+      "n": 374,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-374-polyglot-process-tier.md"
+    },
+    {
+      "n": 375,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-375-foundation-drafts-arbitration.md"
+    },
+    {
+      "n": 376,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-376-conformance-net.md"
+    },
+    {
+      "n": 377,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-377-authoring-generator.md"
+    },
+    {
+      "n": 378,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-378-vault-index-probe.md"
+    },
+    {
+      "n": 379,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-379-sharing-boundary.md"
+    },
+    {
+      "n": 380,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-380-provider-bar.md"
+    },
+    {
+      "n": 381,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-381-parser-bar.md"
+    },
+    {
+      "n": 382,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-382-observability-spine.md"
+    },
+    {
+      "n": 383,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-383-surface-pointer.md"
+    },
+    {
+      "n": 384,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-384-assessment-remediation.md"
+    },
+    {
+      "n": 385,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-385-w1-parser-carriers-fence.md"
+    },
+    {
+      "n": 386,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-386-containment-probe.md"
+    },
+    {
+      "n": 387,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-387-perf-remediation.md"
+    },
+    {
+      "n": 388,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-388-perf-remediation-2.md"
+    },
+    {
+      "n": 389,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-389-intent-mechanism.md"
+    },
+    {
+      "n": 390,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-390-history-reset-evidence-recitation.md"
+    },
+    {
+      "n": 391,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-391-lineage-unification-kernel-adoption.md"
+    },
+    {
+      "n": 392,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-392-port-admission-priority.md"
+    },
+    {
+      "n": 393,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-393-watchdog-memory-leg.md"
+    },
+    {
+      "n": 394,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-394-law-saturation-ceiling.md"
+    },
+    {
+      "n": 395,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-395-vault-saturation-ceiling.md"
+    },
+    {
+      "n": 396,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-396-threshold-tuning.md"
+    },
+    {
+      "n": 397,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-397-supervisor.md"
+    },
+    {
+      "n": 398,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-398-signal-bus.md"
+    },
+    {
+      "n": 399,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-399-steward.md"
+    },
+    {
+      "n": 400,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-400-proposal-only.md"
+    },
+    {
+      "n": 401,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-401-soak.md"
+    },
+    {
+      "n": 402,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-402-windows-test-hygiene.md"
+    },
+    {
+      "n": 403,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-403-doc-drift-gate-constants.md"
+    },
+    {
+      "n": 404,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-404-anvil-freeze.md"
+    },
+    {
+      "n": 405,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-405-generality-axis.md"
+    },
+    {
+      "n": 406,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-406-wave0-landing.md"
+    },
+    {
+      "n": 407,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-407-endstate-vision.md"
+    },
+    {
+      "n": 408,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-408-endstate-amendment.md"
+    },
+    {
+      "n": 409,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-409-capture-vs-read-split.md"
+    },
+    {
+      "n": 410,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-410-core-first-resequence.md"
+    },
+    {
+      "n": 411,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-411-intent-seam.md"
+    },
+    {
+      "n": 412,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-412-principal-seam.md"
+    },
+    {
+      "n": 413,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-413-program-tooling-round.md"
+    },
+    {
+      "n": 414,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-414-round-close-automator.md"
+    },
+    {
+      "n": 415,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-415-invariants-pass2-freshness.md"
+    },
+    {
+      "n": 416,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-416-evidence-store.md"
+    },
+    {
+      "n": 417,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-417-plugin-identification.md"
+    },
+    {
+      "n": 418,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-418-v1-substrate-chrome-first.md"
+    },
+    {
+      "n": 419,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-419-cdp-substrate-lane.md"
+    },
+    {
+      "n": 420,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-420-shippable-composition-fence.md"
+    },
+    {
+      "n": 421,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-421-governor-host-budget-scoping.md"
+    },
+    {
+      "n": 422,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-422-efficiency-tooling-round.md"
+    },
+    {
+      "n": 423,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-423-process-self-model.md"
+    },
+    {
+      "n": 424,
+      "status": "RATIFIED",
+      "file": "docs/decisions/D-424-process-publish-seam.md"
+    },
+    {
+      "n": 425,
+      "status": "PROPOSED",
+      "file": "docs/decisions/D-425-genome-fold.md"
+    },
+    {
+      "n": 426,
+      "status": "PROPOSED",
+      "file": "docs/decisions/D-426-falsifier-first-loop.md"
+    },
+    {
+      "n": 427,
+      "status": "PROPOSED",
+      "file": "docs/decisions/D-427-orchestration-graph.md"
+    },
+    {
+      "n": 428,
+      "status": "PROPOSED",
+      "file": "docs/decisions/D-428-development-vault.md"
+    },
+    {
+      "n": 429,
+      "status": "PROPOSED",
+      "file": "docs/decisions/D-429-design-simulation-sandbox.md"
+    }
+  ],
+  "falsifiers": [
+    {
+      "id": "F-BOOT",
+      "layer": "Ω-0",
+      "file": null,
+      "clauses": []
+    },
+    {
+      "id": "F-GENOME",
+      "layer": "Ω-DEV.1",
+      "file": "tooling/gates/test/f-genome.test.ts",
+      "clauses": [
+        "F-GENOME.1 (fold-completeness)",
+        "F-GENOME.2 (no-hand-edits)",
+        "F-GENOME.3 (falsifier-resolution)",
+        "F-GENOME.4 (dag-validity)",
+        "F-GENOME.5 (budget)",
+        "F-GENOME.6 (live-lock)"
+      ]
+    },
+    {
+      "id": "F-LOOP",
+      "layer": "Ω-DEV.2",
+      "file": "tooling/gates/test/f-loop.test.ts",
+      "clauses": [
+        "F-LOOP.1 (determinism)",
+        "F-LOOP.2 (red-by-construction)",
+        "F-LOOP.3 (coverage-audit)",
+        "F-LOOP.4 (no-clobber)"
+      ]
+    },
+    {
+      "id": "F-ORCH",
+      "layer": "Ω-DEV.3",
+      "file": "tooling/gates/test/f-orch.test.ts",
+      "clauses": [
+        "F-ORCH.1 (plan-determinism)",
+        "F-ORCH.2 (bucket-correctness)",
+        "F-ORCH.3 (assumed-deps-honesty)",
+        "F-ORCH.4 (merge-is-the-gate)"
+      ]
+    },
+    {
+      "id": "F-DEVAULT",
+      "layer": "Ω-DEV.4",
+      "file": "tooling/gates/test/f-devault.test.ts",
+      "clauses": [
+        "F-DEVAULT.1 (append-only-witness)",
+        "F-DEVAULT.2 (evidence-required)",
+        "F-DEVAULT.3 (fold-derived)",
+        "F-DEVAULT.4 (query-precision)"
+      ]
+    },
+    {
+      "id": "F-PRESIM",
+      "layer": "Ω-DEV.5",
+      "file": "tooling/gates/test/f-presim.test.ts",
+      "clauses": [
+        "F-PRESIM.1 (determinism)",
+        "F-PRESIM.2 (mutation-coverage)",
+        "F-PRESIM.3 (advisory-never-blocking)",
+        "F-PRESIM.4 (unknown-layer-refusal)"
+      ]
+    },
+    {
+      "id": "F-DURABILITY",
+      "layer": "Ω-0.5",
+      "file": null,
+      "clauses": []
+    },
+    {
+      "id": "F-WATCH",
+      "layer": "Ω-1",
+      "file": null,
+      "clauses": []
+    },
+    {
+      "id": "F-GOV",
+      "layer": "Ω-2",
+      "file": null,
+      "clauses": []
+    },
+    {
+      "id": "F-CTX",
+      "layer": "Ω-3",
+      "file": null,
+      "clauses": []
+    },
+    {
+      "id": "F-TRUST",
+      "layer": "Ω-4",
+      "file": null,
+      "clauses": []
+    },
+    {
+      "id": "F-ANALYTICS",
+      "layer": "Ω-5",
+      "file": null,
+      "clauses": []
+    },
+    {
+      "id": "F-LAYOUT",
+      "layer": "Ω-6",
+      "file": null,
+      "clauses": []
+    },
+    {
+      "id": "F-BADGE",
+      "layer": "Ω-7",
+      "file": null,
+      "clauses": []
+    },
+    {
+      "id": "F-SIM",
+      "layer": "Ω-8",
+      "file": "tooling/gates/test/f-genome.test.ts",
+      "clauses": []
+    },
+    {
+      "id": "F-DISCLOSURE",
+      "layer": "Ω-9",
+      "file": null,
+      "clauses": []
+    },
+    {
+      "id": "F-PARTIAL",
+      "layer": "Ω-10",
+      "file": null,
+      "clauses": []
+    },
+    {
+      "id": "F-APERTURE-PRIVACY",
+      "layer": "Ω-11",
+      "file": "tooling/gates/test/f-loop.test.ts",
+      "clauses": []
+    },
+    {
+      "id": "F-INVOKE",
+      "layer": "Ω-12",
+      "file": null,
+      "clauses": []
+    },
+    {
+      "id": "F-STANDING",
+      "layer": "Ω-13",
+      "file": null,
+      "clauses": []
+    },
+    {
+      "id": "F-LIVENESS",
+      "layer": "Ω-14",
+      "file": null,
+      "clauses": []
+    },
+    {
+      "id": "F-DELEGATE",
+      "layer": "Ω-15",
+      "file": null,
+      "clauses": []
+    },
+    {
+      "id": "F-ADAPT",
+      "layer": "Ω-16",
+      "file": null,
+      "clauses": []
+    }
+  ],
+  "tests": {
+    "files": [
+      "examples/plugin-notes/test/notes.test.ts",
+      "host/test/adversarial.test.ts",
+      "host/test/canon.test.ts",
+      "host/test/ghost-deep.test.ts",
+      "host/test/ghost.test.ts",
+      "host/test/kernel.test.ts",
+      "host/test/lazy.test.ts",
+      "host/test/pool.test.ts",
+      "host/test/runtime.test.ts",
+      "host/test/steward.test.ts",
+      "packs/builder/test/schema.test.ts",
+      "packs/domain-email/test/pack.test.ts",
+      "packs/domain-import/test/pack.test.ts",
+      "platform/test/containment.test.ts",
+      "platform/test/platform.test.ts",
+      "plugins/discovery-healing/test/heal.test.ts",
+      "plugins/discovery-healing/test/integration.test.ts",
+      "plugins/discovery-healing/test/realization-writes.test.ts",
+      "plugins/discovery-inference/test/infer.test.ts",
+      "plugins/discovery-inference/test/integration.test.ts",
+      "plugins/discovery-mapping/test/map.test.ts",
+      "plugins/discovery-mapping/test/variations.test.ts",
+      "plugins/discovery-observation/test/observe.test.ts",
+      "plugins/discovery-perception/test/perceive.test.ts",
+      "plugins/discovery-verification/test/verify.test.ts",
+      "plugins/forge-author/test/happy/self-host.test.ts",
+      "plugins/forge-author/test/refusal/init-refusals.test.ts",
+      "plugins/provider-browser/test/browser-falsifier.test.ts",
+      "plugins/provider-browser/test/m13-containment.test.ts",
+      "plugins/provider-browser/test/parsers.test.ts",
+      "plugins/provider-email-file/test/integration.test.ts",
+      "plugins/provider-email-file/test/pack-provider.test.ts",
+      "plugins/provider-llm/test/llm.test.ts",
+      "plugins/vivim-agent/test/agent.test.ts",
+      "plugins/vivim-agent/test/control.test.ts",
+      "plugins/vivim-agent/test/decision-ref.test.ts",
+      "plugins/vivim-agent/test/exec.test.ts",
+      "plugins/vivim-chat/test/chat.test.ts",
+      "plugins/vivim-chat/test/harvest.test.ts",
+      "plugins/vivim-chat/test/pilot.test.ts",
+      "plugins/vivim-chat/test/resolve.test.ts",
+      "plugins/vivim-credentials/test/credentials.test.ts",
+      "plugins/vivim-director/test/d388-tick-batching.test.ts",
+      "plugins/vivim-director/test/director.test.ts",
+      "plugins/vivim-director/test/lang-mirror.test.ts",
+      "plugins/vivim-director/test/resolve.test.ts",
+      "plugins/vivim-intent/test/intent-phase3-4.test.ts",
+      "plugins/vivim-intent/test/intent-seam.test.ts",
+      "plugins/vivim-intent/test/intent.test.ts",
+      "plugins/vivim-kernel-lens/test/signals.test.ts",
+      "plugins/vivim-law/test/d387-policy.test.ts",
+      "plugins/vivim-law/test/d411-citation.test.ts",
+      "plugins/vivim-law/test/d412-principal.test.ts",
+      "plugins/vivim-law/test/d416-evidence-store.test.ts",
+      "plugins/vivim-law/test/forbidden-durability.test.ts",
+      "plugins/vivim-law/test/integration.test.ts",
+      "plugins/vivim-law/test/law.test.ts",
+      "plugins/vivim-law/test/policy-parity.test.ts",
+      "plugins/vivim-mind/test/mind.test.ts",
+      "plugins/vivim-mind/test/portrait.test.ts",
+      "plugins/vivim-nlcl/test/nlcl.test.ts",
+      "plugins/vivim-providers/test/providers.test.ts",
+      "plugins/vivim-run/test/integration.test.ts",
+      "plugins/vivim-run/test/process-broker.test.ts",
+      "plugins/vivim-run/test/run.test.ts",
+      "plugins/vivim-vault/test/d387-perf.test.ts",
+      "plugins/vivim-vault/test/driver-conformance.test.ts",
+      "plugins/vivim-vault/test/integration.test.ts",
+      "plugins/vivim-vault/test/vault.test.ts",
+      "sdk/test/client.test.ts",
+      "sdk/test/generality.test.ts",
+      "sdk/test/provider-vocab.test.ts",
+      "sdk/test/schema.test.ts",
+      "sdk/test/sign.test.ts",
+      "sdk/test/stream-boot.test.ts",
+      "sdk/test/stream.test.ts",
+      "sdk/test/validate.test.ts",
+      "surfaces/cli/test/cli.test.ts",
+      "surfaces/daemon/test/cache.test.ts",
+      "surfaces/daemon/test/daemon.test.ts",
+      "surfaces/daemon/test/pool.test.ts",
+      "surfaces/mcp/test/mcp.test.ts",
+      "surfaces/web/test/d387-perf.test.ts",
+      "surfaces/web/test/web.test.ts",
+      "testkit/test/conformance.test.ts",
+      "testkit/test/differential.test.ts",
+      "testkit/test/fake-host.test.ts",
+      "tooling/builder/test/builder.test.ts",
+      "tooling/ci/canon-canary.test.mjs",
+      "tooling/gates/test/anvil.test.ts",
+      "tooling/gates/test/compositions.test.ts",
+      "tooling/gates/test/contract-sites.test.ts",
+      "tooling/gates/test/decisions.test.ts",
+      "tooling/gates/test/efficiency-tooling.test.ts",
+      "tooling/gates/test/explain.test.ts",
+      "tooling/gates/test/f-devault.test.ts",
+      "tooling/gates/test/f-genome.test.ts",
+      "tooling/gates/test/f-loop.test.ts",
+      "tooling/gates/test/f-orch.test.ts",
+      "tooling/gates/test/f-presim.test.ts",
+      "tooling/gates/test/forge-surface.test.ts",
+      "tooling/gates/test/generate.test.ts",
+      "tooling/gates/test/import-surface.test.ts",
+      "tooling/gates/test/invariants-freshness.test.ts",
+      "tooling/gates/test/new-decision.test.ts",
+      "tooling/gates/test/plugin-identification.test.ts",
+      "tooling/gates/test/process.test.ts",
+      "tooling/gates/test/round-close.test.ts",
+      "tooling/gates/test/shippable-fence.test.ts",
+      "tooling/gates/test/v1-substrate-sweep.test.ts",
+      "tooling/harvest/test/harvest.test.ts",
+      "tooling/portrait/test/posture.test.ts",
+      "tooling/propose/test/propose.test.ts",
+      "tooling/supervise/test/supervise.test.ts",
+      "tooling/test/spine.test.ts",
+      "tooling/watchdog/test/watchdog-hog-spike.test.ts",
+      "tooling/watchdog/test/watchdog.test.ts"
+    ]
+  },
+  "gate": {
+    "stages": [
+      "host-loc",
+      "anvil-loc",
+      "anvil-surface",
+      "fresh-tree",
+      "decisions",
+      "compositions",
+      "bun-surface",
+      "os-surface",
+      "import-surface",
+      "forge-surface",
+      "invariants-freshness",
+      "process",
+      "genome",
+      "tests",
+      "attest"
+    ]
+  }
+}

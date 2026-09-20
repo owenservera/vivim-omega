@@ -1,0 +1,323 @@
+{
+  "registryVersion": 1,
+  "kind": "the layer registry — the ONLY hand-authored input to the genome fold (D-425). Everything else in build/genome.json is derived and byte-verified; drift here is a registry edit, drift there is a gate failure.",
+  "lineage": {
+    "note": "Two numbering systems, never conflated. treeId = THIS repo's ledger (docs/decisions/D-<n>-*.md, contiguous, authoritative for record files). specId = the external upgrade-spec lineage (paper ids; cite them backticked in prose). Where a paper id collides with a tree id the fields keep them distinct — the runbook's build-time renumbering rule, made mechanical.",
+    "specLineage": "Ω-0 paper D-449 (upgrade doc delivered 2026-09-21); Ω-DEV.1..5 paper D-450..D-454 (this wave); Ω-1..Ω-8 paper D-425..D-432; Ω-9 paper D-433; Ω-10..Ω-16 paper D-442..D-448; builder-gap reservations paper D-434..D-440 (D-441 unassigned reserve); Ω-0.5 candidate D-455. The tree ledger assigns D-425..D-429 to the Ω-DEV family — the collision is recorded here, not hidden.",
+    "assumedDirective": "The owner directed (2026-09-21): the Ω-1..Ω-16 layers are assume-implemented for continuation purposes per their ratified external specs. The genome records BOTH facts honestly: the directive (this field) and the tree evidence (null record / null falsifier file per layer, reported by the fold). external-assumed is a claim about paper, never about this tree."
+  },
+  "statuses": ["implemented", "external-assumed", "ratified-unimplemented", "queued"],
+  "layers": [
+    {
+      "id": "CORE",
+      "name": "The constitutional core program",
+      "status": "implemented",
+      "treeId": null,
+      "specId": null,
+      "falsifier": null,
+      "dependsOn": [],
+      "evidence": "program",
+      "note": "µhost, law, vault, run, sdk/testkit, surfaces, discovery, mind, nlcl, director — the built program (status.json wave registry Ω0..Ω13; the gate itself is the falsifier)"
+    },
+    {
+      "id": "Ω-0",
+      "name": "Hermetic bootstrap",
+      "status": "ratified-unimplemented",
+      "treeId": null,
+      "specId": "D-449",
+      "falsifier": "F-BOOT",
+      "dependsOn": ["CORE"],
+      "note": "the boot chain (archive hash → manifest walk → toolchain pin → hermeticity → gate digest); upgrade doc delivered 2026-09-21 (omega-upgrades/OMEGA-0-HERMETIC-BOOTSTRAP.md); no hash, no boot — no proof, no verify"
+    },
+    {
+      "id": "Ω-DEV.1",
+      "name": "System genome",
+      "status": "implemented",
+      "treeId": 425,
+      "specId": "D-450",
+      "falsifier": "F-GENOME",
+      "dependsOn": ["CORE"],
+      "note": "the machine-readable constitution: one fold over the registry + the ledger + the test tree, emitted as build/genome.json + build/genome.md, byte-verified by the genome gate stage"
+    },
+    {
+      "id": "Ω-DEV.2",
+      "name": "Falsifier-first loop",
+      "status": "implemented",
+      "treeId": 426,
+      "specId": "D-451",
+      "falsifier": "F-LOOP",
+      "dependsOn": ["Ω-DEV.1"],
+      "note": "records declare named falsifiers; omega:loop generates RED stubs at scaffold time, never clobbers implemented files, and audits coverage"
+    },
+    {
+      "id": "Ω-DEV.3",
+      "name": "Orchestration graph",
+      "status": "implemented",
+      "treeId": 427,
+      "specId": "D-452",
+      "falsifier": "F-ORCH",
+      "dependsOn": ["Ω-DEV.1"],
+      "note": "the layer DAG made loadable: omega:orchestrate plans done/inFlight/verifyQueue/buildQueue/specQueue/blocked; the constitutional merge check IS the full gate"
+    },
+    {
+      "id": "Ω-DEV.4",
+      "name": "Development vault",
+      "status": "implemented",
+      "treeId": 428,
+      "specId": "D-453",
+      "falsifier": "F-DEVAULT",
+      "dependsOn": ["Ω-DEV.1"],
+      "note": "ns.dev as environment-local agent memory (dev-vault/, gitignored by pre-existing reservation): append-only, hash-chained, evidence-required, never committed — law is committed, memory is local"
+    },
+    {
+      "id": "Ω-DEV.5",
+      "name": "Design simulation sandbox",
+      "status": "implemented",
+      "treeId": 429,
+      "specId": "D-454",
+      "falsifier": "F-PRESIM",
+      "dependsOn": ["Ω-DEV.1"],
+      "note": "try-before-you-build as falsifier red-case rehearsal: omega:simulate mutates a layer's registry entry through the genome verifier and receipts which clauses bite; advisory, never blocking; runtime behavioral simulation stays with Ω-8 (paper D-432)"
+    },
+    {
+      "id": "Ω-0.5",
+      "name": "Vault durability, compaction and migration",
+      "status": "queued",
+      "treeId": null,
+      "specId": null,
+      "falsifier": "F-DURABILITY",
+      "dependsOn": ["Ω-0"],
+      "note": "crash-consistent WAL, migration dry-runs, compaction-never-deletes (D-410 item C mechanized), selective namespace export; candidate paper id D-455; spec pending, sequenced behind the Ω-DEV wave by the owner's 2026-09-21 directive"
+    },
+    {
+      "id": "Ω-1",
+      "name": "Substrate: watch (namespaced process/signal watch)",
+      "status": "external-assumed",
+      "treeId": null,
+      "specId": "D-425",
+      "falsifier": "F-WATCH",
+      "dependsOn": ["CORE"],
+      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; no tree evidence — the verify queue owns the porting"
+    },
+    {
+      "id": "Ω-2",
+      "name": "Substrate: governance",
+      "status": "external-assumed",
+      "treeId": null,
+      "specId": "D-426",
+      "falsifier": "F-GOV",
+      "dependsOn": ["CORE"],
+      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; no tree evidence — the verify queue owns the porting"
+    },
+    {
+      "id": "Ω-3",
+      "name": "Substrate: context",
+      "status": "external-assumed",
+      "treeId": null,
+      "specId": "D-427",
+      "falsifier": "F-CTX",
+      "dependsOn": ["Ω-1", "Ω-2", "Ω-4"],
+      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; no tree evidence — the verify queue owns the porting"
+    },
+    {
+      "id": "Ω-4",
+      "name": "Substrate: trust",
+      "status": "external-assumed",
+      "treeId": null,
+      "specId": "D-428",
+      "falsifier": "F-TRUST",
+      "dependsOn": ["CORE"],
+      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; key rotation folded here per the resequencing; no tree evidence — the verify queue owns the porting"
+    },
+    {
+      "id": "Ω-5",
+      "name": "Substrate: analytics",
+      "status": "external-assumed",
+      "treeId": null,
+      "specId": "D-429",
+      "falsifier": "F-ANALYTICS",
+      "dependsOn": ["CORE"],
+      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; no tree evidence — the verify queue owns the porting"
+    },
+    {
+      "id": "Ω-6",
+      "name": "Substrate: layout",
+      "status": "external-assumed",
+      "treeId": null,
+      "specId": "D-430",
+      "falsifier": "F-LAYOUT",
+      "dependsOn": ["Ω-5"],
+      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; no tree evidence — the verify queue owns the porting"
+    },
+    {
+      "id": "Ω-7",
+      "name": "Substrate: badge",
+      "status": "external-assumed",
+      "treeId": null,
+      "specId": "D-431",
+      "falsifier": "F-BADGE",
+      "dependsOn": ["Ω-6"],
+      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; no tree evidence — the verify queue owns the porting"
+    },
+    {
+      "id": "Ω-8",
+      "name": "Substrate: simulation (the rehearsal engine)",
+      "status": "external-assumed",
+      "treeId": null,
+      "specId": "D-432",
+      "falsifier": "F-SIM",
+      "dependsOn": ["Ω-7"],
+      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; Ω-DEV.5's runtime-behavioral half lands here when this layer ports; no tree evidence — the verify queue owns the porting"
+    },
+    {
+      "id": "Ω-9",
+      "name": "The aperture (progressive disclosure)",
+      "status": "external-assumed",
+      "treeId": null,
+      "specId": "D-433",
+      "falsifier": "F-DISCLOSURE",
+      "dependsOn": ["Ω-2", "Ω-3", "Ω-5"],
+      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; no tree evidence — the verify queue owns the porting"
+    },
+    {
+      "id": "Ω-10",
+      "name": "Boundary: partial evaluation",
+      "status": "external-assumed",
+      "treeId": null,
+      "specId": "D-442",
+      "falsifier": "F-PARTIAL",
+      "dependsOn": ["Ω-9"],
+      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; no tree evidence — the verify queue owns the porting"
+    },
+    {
+      "id": "Ω-11",
+      "name": "Boundary: aperture privacy",
+      "status": "external-assumed",
+      "treeId": null,
+      "specId": "D-443",
+      "falsifier": "F-APERTURE-PRIVACY",
+      "dependsOn": ["Ω-10"],
+      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; no tree evidence — the verify queue owns the porting"
+    },
+    {
+      "id": "Ω-12",
+      "name": "Boundary: invocation",
+      "status": "external-assumed",
+      "treeId": null,
+      "specId": "D-444",
+      "falsifier": "F-INVOKE",
+      "dependsOn": ["Ω-11"],
+      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; no tree evidence — the verify queue owns the porting"
+    },
+    {
+      "id": "Ω-13",
+      "name": "Boundary: standing",
+      "status": "external-assumed",
+      "treeId": null,
+      "specId": "D-445",
+      "falsifier": "F-STANDING",
+      "dependsOn": ["Ω-12"],
+      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; no tree evidence — the verify queue owns the porting"
+    },
+    {
+      "id": "Ω-14",
+      "name": "Boundary: liveness",
+      "status": "external-assumed",
+      "treeId": null,
+      "specId": "D-446",
+      "falsifier": "F-LIVENESS",
+      "dependsOn": ["Ω-13"],
+      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; no tree evidence — the verify queue owns the porting"
+    },
+    {
+      "id": "Ω-15",
+      "name": "Boundary: delegation",
+      "status": "external-assumed",
+      "treeId": null,
+      "specId": "D-447",
+      "falsifier": "F-DELEGATE",
+      "dependsOn": ["Ω-14"],
+      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; no tree evidence — the verify queue owns the porting"
+    },
+    {
+      "id": "Ω-16",
+      "name": "Boundary: adaptation governance",
+      "status": "external-assumed",
+      "treeId": null,
+      "specId": "D-448",
+      "falsifier": "F-ADAPT",
+      "dependsOn": ["Ω-15"],
+      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; no tree evidence — the verify queue owns the porting"
+    },
+    {
+      "id": "Ω-2.5",
+      "name": "Builder gap: policy conflict / safety scan",
+      "status": "queued",
+      "treeId": null,
+      "specId": "D-434",
+      "falsifier": null,
+      "dependsOn": ["Ω-2"],
+      "note": "reserved paper id; spec pending — fill before building"
+    },
+    {
+      "id": "Ω-2.6",
+      "name": "Builder gap: intent debugging / personalization",
+      "status": "queued",
+      "treeId": null,
+      "specId": "D-435",
+      "falsifier": null,
+      "dependsOn": ["Ω-2"],
+      "note": "reserved paper id; spec pending — fill before building"
+    },
+    {
+      "id": "Ω-3.5",
+      "name": "Builder gap: execution debugging / capability deprecation",
+      "status": "queued",
+      "treeId": null,
+      "specId": "D-436",
+      "falsifier": null,
+      "dependsOn": ["Ω-3"],
+      "note": "reserved paper id; spec pending — fill before building"
+    },
+    {
+      "id": "Ω-4.5",
+      "name": "Builder gap: surface sync / drift",
+      "status": "queued",
+      "treeId": null,
+      "specId": "D-437",
+      "falsifier": null,
+      "dependsOn": ["Ω-4"],
+      "note": "reserved paper id; spec pending — fill before building"
+    },
+    {
+      "id": "Ω-5.5",
+      "name": "Builder gap: auto-librarian verification / doc drift",
+      "status": "queued",
+      "treeId": null,
+      "specId": "D-438",
+      "falsifier": null,
+      "dependsOn": ["Ω-5"],
+      "note": "reserved paper id; spec pending — fill before building (docscan/D-403 covers part of the surface already)"
+    },
+    {
+      "id": "Ω-6.5",
+      "name": "Builder gap: performance / benchmarks",
+      "status": "queued",
+      "treeId": null,
+      "specId": "D-439",
+      "falsifier": null,
+      "dependsOn": ["Ω-6"],
+      "note": "reserved paper id; spec pending — fill before building (tooling/bench covers part of the surface already)"
+    },
+    {
+      "id": "Ω-7.5",
+      "name": "Builder gap: decision-record validation / architecture metrics",
+      "status": "queued",
+      "treeId": null,
+      "specId": "D-440",
+      "falsifier": null,
+      "dependsOn": ["Ω-7"],
+      "note": "reserved paper id; spec pending — fill before building (decisions/docscan tooling covers part of the surface already)"
+    }
+  ]
+}
