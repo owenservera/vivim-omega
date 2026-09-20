@@ -1,9 +1,24 @@
 # Current Invariants — the one-page law snapshot
 
-**D-364 consolidation pass #1 + D-365/367/370 owner amendments.** Generated as-of the remediation wave (D-360…D-364) plus the owner wave PROPOSED (D-365…D-370), branch
-`owner-wave-001`. The full decision log (`docs/BUILD-DECISIONS.md`) remains the audit trail;
-this page is what a fresh reader (human or agent) reads INSTEAD of it to state present-day law.
-Regenerated every ~30 ratified decisions (or one per wave-set, whichever comes first).
+<!-- invariants: pass 2 · as-of D-415 · regenerated 2026-09-20 (D-415) · stages: anvil-loc anvil-surface attest bun-surface compositions decisions forge-surface fresh-tree host-loc import-surface invariants-freshness os-surface tests -->
+
+**Pass #2 (D-415, the A3 invariants round).** Regenerated from the decision
+records D-360…D-415 — pass #1 covered D-364 + the D-365…D-370 owner wave and
+sat a full constitutional layer behind (Wave 0's forge constitution, the Core
+Phase seams, the generated-row era: the B5 gap the acceleration review
+registered). The full decision log (`docs/BUILD-DECISIONS.md`) remains the
+audit trail; this page is what a fresh reader (human or agent) reads INSTEAD
+of it to state present-day law.
+
+**Refresh policy (D-415): on trigger, not calendar** — regenerate when a wave
+closes, a B-law or gate stage is added or amended, or 30 ratifications
+accumulate, whichever comes first. The gate's `invariants-freshness` stage
+computes staleness (the marker's as-of vs ratified rows past it; the marker's
+stage inventory vs the gate's registry) and **reports** — report-only by
+design; the flip to failing is a future record's call after one green wave of
+reports (the D-368→D-402 adopt-observe-enforce pattern). The wave-closure
+trigger is deferred with a named trigger: no mechanical wave registry exists
+yet — implement when the first forge wave closure lands with one.
 
 ## The boot-security laws (B1–B5)
 
@@ -13,133 +28,84 @@ Regenerated every ~30 ratified decisions (or one per wave-set, whichever comes f
 | **B2** | One `worker_threads` compartment per plugin — separate V8 isolates, shared-nothing. Every message crosses the Port Protocol. Isolation is against **coupling, not exhaustion** (D-321: `resourceLimits` are NOT enforced on Bun — re-verified on Linux, 130MB in a 32MB cap). The D-360 watchdog bounds *detection* time of a consuming compartment (adversarial 13/14); exhaustion within a sample window remains open until a process-per-compartment tier exists (flagged, not built — D-360). | host/src/worker.ts header, gate `bun-surface` (runtime-neutral prod tree), adversarial 13/14 |
 | **B3** | Capability tokens are verified host-side, outside every compartment. Token records are order-independent (alias keys and guarding caps resolve to the same effective cap). Revocation is a generation bump (attributable REVOKED register). | host/src/ports.ts `checkToken`, token-law tests |
 | **B4** | Any verification failure refuses the composition; boot falls back to the pinned recipe; the rename is the atomic durability boundary (stale tmp cleaned, mid-swap crash drills green). | recovery.ts, adversarial 8/9/12, B4 drill |
-| **B5** | The µhost is boring and may not grow: `host/src` ≤ 1,500 LOC, hard gate, re-frozen by D-391 (the D-365 1,100 freeze was amended ONCE, loudly, for the D-340 genesis kernel's host-critical subset — graph/genesis/state/audit/contract, 411 lines, itemized in the record; the same no-exceptions rule carries: no new host surface without removing old surface in the same commit). Creep moves into plugins or out-of-tree tooling (the watchdog and the pool both live outside, injected). | gate `host-loc` (1,450/1,500 at this snapshot) |
+| **B5** | The µhost is boring and may not grow: `host/src` ≤ 1,500 LOC, hard gate, re-frozen by D-391 (the D-365 1,100 freeze was amended ONCE, loudly, for the D-340 genesis kernel's host-critical subset — the same no-exceptions rule carries: no new host surface without removing old surface in the same commit). **At the freeze since the Core Phase: 1500/1500 flat, zero headroom** — any host-touching change names its equal-or-greater removal BEFORE the code is written. Creep moves into plugins or out-of-tree tooling. | gate `host-loc` (1500/1500 at this snapshot) |
 
 ## The architecture laws (Ω)
 
 - `bootPhase 0` belongs to `vivim.law`, enforced at verify time.
 - Every routed op has exactly one implementation (duplicate routed op refused at boot).
-- Risk gating is DATA (manifest CONTRACT risk declarations → law.check@1); the host embeds no policy.
-- Data lives in the user's vault; persistence goes through the vault's namespaces with same-commit
-  registry rows (`VAULT-NAMESPACES.md`); forbidden persistence is refused (D-325).
+- Risk gating is DATA (manifest CONTRACT risk declarations → law.check@1); the host embeds no policy. Manifest risk and LAW_POLICY classification must agree — catalog parity, never default-riding (D-351's drift class, mechanized by the conformance net D-376; LAW_POLICY_V1 now at 1.7.0).
+- Data lives in the user's vault; persistence goes through the vault's namespaces with same-commit registry rows (`VAULT-NAMESPACES.md`); forbidden persistence is refused (D-325). **Compaction never deletes a revision, period** — explicit namespace law (D-410's item C, the stronger F9 prerequisite).
 - Computation is routed, never vendored: resolution ≠ execution (D-323/D-337/D-359).
 - Everything else is a plugin. The host is transport, not policy.
 
+## The Core Phase seam laws (D-411/D-412 — canonical intent + principal identity)
+
+- **Canonical intent (D-411):** intents persist through one canonical writer path with a **real sha256 payloadHash** and the interpretation summary on the row; `intent.resolution@1` writes the four-state rows (UNDERSTOOD = the intent row; AMBIGUOUS/REFUSED/EXECUTED = `:res` rows in ns `intent`, `amb:<hex>:res` for ambiguous attempts); **law decisions cite `{intentRef, payloadHash}`** — evidence binding, not new policy; callers without citations journal exactly as before. The console live path routes interpret → persist → gate-with-citation → execute → resolve. `intent.cancel` reports its compensation write (never silently swallowed).
+- **Principal identity (D-412):** ns `principal` identity rows, **retention forever** — retired is forever (`PRINCIPAL_REUSED` on re-registering a retired id; the string can never become a different record). The consent ceremony resolves through the record when law holds vault caps (fail-closed rollback, the D-325 pattern); existing keyed history is NOT re-typed — the record is the indirection, not a migration.
+
+## The Omega Forge constitution (Wave 0, D-403…D-406)
+
+- **The anvil freeze (D-404):** `sdk/src` ≤ 860 LOC + a 45-name frozen export surface (the five: parseManifest, validateManifest, signPluginDir, contentHashDir, createPortClient + support) — remove-to-add after Wave 0; a new or removed export needs a decision record + snapshot amendment in the same commit. 856/860 at this snapshot; the gate dynamic-imports the sdk every run to prove the anvil still loads.
+- **The generality axis (D-405):** `GeneralityStamp` in contracts (speculative/harvested/generic; mine, originPaths, harvestClass, evidence) + validators in the sdk with four named codes — zod carries the SHAPE, the validators carry the LAW; **mandatory (hard)** for forge.* and pack.builder.
+- **The frozen wire (D-406):** `FORGE_OP_CATALOG` — 24 forge.* ops → risk, frozen; manifest ↔ catalog EXACT match (drift fails); **one risk class per forge PLUGIN** (packs span classes by design — `FORGE_CLASS_SPAN` exempts packs, a decision not a gap); ns `proposal` + scratch only for Class-2 emission; every forge.* op refusal-tested (`FORGE_NO_REFUSAL_TEST`); refusals are refusal-as-data (ok:true carrying {refused, rule, detail} — the D-379 pattern).
+- **Self-hosting stance (D-406):** `forge.author.init@1` serves pluginId `forge.author` only (a deliberate refusal, not a TODO); AUTHORED files = 4 with recorded justification (a recorder cannot emit its own recording; a falsifier emitted by the defendant is not a falsifier).
+- **The mine (D-406):** `fixtures/mines/synthetic-v0/` — 42 offline hash-pinned files (MANIFEST.json rootHash), un-Vivim-shaped by charter, waiting for `forge.mine.capture@1` (Wave 1, parked per D-410).
+- The gate's `forge-surface` stage polices the boundary (5 checks + generality); red/green falsifiers live in `tooling/gates/test/forge-surface.test.ts`. The comparison walker excludes `node_modules` under the host `contentHashDir` precedent — machine state, not plugin bytes (recorded, revisit only if plugin dirs ever ship vendored deps that ARE plugin bytes).
+
+## The program law (D-408…D-415 — vision, partition, sequencing, tooling)
+
+- **The Sovereign Environment (D-408, ratified):** the amended end-state vision is law — the governed event as atom, the NL control plane a constitutional peer (probabilistic perception, deterministic intent, deterministic execution; no raw model output crosses the law gate; the LLM is a replaceable realization, never the resolver of record), Part II (the civilization) + Part III (the physics) added, the arc amended. The vision is direction: waves land through the constitution as ever.
+- **The capture-vs-READ partition (D-409, DECIDED):** split-plugin — `forge-mine-capture` is EXTERNAL_MUTATION in its own directory; READ siblings live separately. Implementation parked per D-410; the decided shape stays decided.
+- **Core-first re-sequencing (D-410):** the Core Phase (S1 → S2 → S3) precedes ALL plugin work; **all plugin design is parked until core-omega-ready** (register: `docs/forge/annex/OMEGA-CORE-FIRST-RESEQUENCE.md` §3); a plugin-identification pass runs at core-ready, before parallel work opens. S1 (D-411) and S2 (D-412) landed; **S3 (the evidence-store choicepoint) is the owner's call — the last Core Phase item**, pre-analyzed lift-ready in the annex fork file.
+- **The generated-row era (D-413):** records from D-413 on carry `## Index` and their BUILD-DECISIONS row is GENERATED and byte-checked; `omega:new-decision` scaffolds contract-passing records; the `Blocks:` field (checker-validated vocabulary) + blocking-first board; cross-track citations carry the naming law (bare `D-NNN` = THIS ledger; foreign ids track-qualified, `akb:D-389`; report-only lint).
+- **The round-close automator (D-414):** `omega:round-close` — the ceremony as one fail-closed command (named preflight refusals; bundle cut + verify + sha256; the ledger row generated from git data; the next-round entry block derived from BACKLOG + the board). `build/status.json` carries the toolchain pin (`toolchain {bun, node, os, arch}`); `verify-status` reports drift, never fails on runner-shape. The close sequence: PROPOSED → gates ×2 → ratify → board refresh → close-out → `omega:round-close`.
+- **This page's own law (D-415):** the trigger-based refresh policy in the header marker above; the report-only `invariants-freshness` stage.
+
 ## Runtime surfaces and the adapter inventory (D-361 as rewritten by D-373)
 
-- The production tree (`host`, `shim`, `contracts`, `sdk`, `testkit`, `plugins/*`, `surfaces/*`)
-  contains **zero** runtime-specific APIs except the vault DRIVER LANE:
-  `plugins/vivim-vault/src/drivers/bun-sqlite.ts` (`bun:sqlite`). A Node build swaps the ONE
-  lane import (`./db.ts` → `./db.node.ts`, which binds `node:sqlite`) — proven byte-identical
-  by the cross-runtime conformance parity suite, not by trust (D-373).
-- Sync sleep is `Atomics.wait`-based (`sleepSync` exported from the shim; host-local in canon.ts).
-- The daemon listens via `node:net`; spawns via `node:child_process`; surfaces read specs via `node:fs`.
-- Dev/test toolchain is Bun (≥ 1.3.14 pinned), stated in README's Run section. The gate's
-  `bun-surface` stage enforces the inventory mechanically; the node `--test` canon canary proves
-  the core logic stays runtime-neutral (CI, D-362).
+- The production tree (`host`, `shim`, `contracts`, `platform`, `sdk`, `testkit`, `plugins/*`, `surfaces/*`) contains **zero** runtime-specific APIs except the vault DRIVER LANE: `plugins/vivim-vault/src/drivers/bun-sqlite.ts` (`bun:sqlite`). A Node build swaps the ONE lane import (`./db.ts` → `./db.node.ts`, `node:sqlite`) — proven byte-identical by the cross-runtime conformance parity suite, not by trust (D-373).
+- Sync sleep is `Atomics.wait`-based; the daemon listens via `node:net`, spawns via `node:child_process`; surfaces read specs via `node:fs`. Dev/test toolchain is Bun (≥ 1.3.14 pinned) — recorded per-run in status.json's toolchain pin (D-414). The `bun-surface` stage enforces the inventory; the node `--test` canon canary proves runtime-neutrality (CI, D-362).
 
-## Watchdog policy (D-360, hardened D-366 PROPOSED)
+## Watchdog policy (D-360, hardened D-366)
 
-- Lives in `tooling/watchdog` (out-of-tree, D-329 placement law), attaches to a booted router,
-  probes raw workers on an interval. Termination goes through the sanctioned host op
-  `host.compartment.terminate@1` as root (`{fast}` flag: unresponsive→fast hard-kill 500ms cap via `terminateFast`; memory→graceful); evictions journal (principal `watchdog`).
-- Two-signal enforcement per compartment: **unresponsive** (N consecutive unanswered probes — NON-SPOOFABLE, a wedged loop cannot answer) and **memory** (N consecutive answered samples over the manifest's declared `runtime.budget.memMB` — COOPERATIVE-ADVISORY, self-reported heap can be lied about; see D-366 spoof note).
-- Thresholds are manifest data, not code. Missing budgets fall back to `defaultMemMB` with journal audit (`requireBudget`/`onDefaultBudget`) — declare budgets fail-closed. Honest bounds: detection is interval×N bounded;
-  this is containment, not a security boundary.
+- Lives in `tooling/watchdog` (out-of-tree, D-329 placement law); attaches to a booted router, probes raw workers on an interval; termination through the sanctioned `host.compartment.terminate@1` as root; evictions journal (principal `watchdog`).
+- Two-signal enforcement per compartment: **unresponsive** (N consecutive unanswered probes — NON-SPOOFABLE) and **memory** (N consecutive answered samples over the manifest's declared `runtime.budget.memMB` — COOPERATIVE-ADVISORY). Thresholds are manifest data; missing budgets fall back fail-closed with journal audit. Containment, not a security boundary — stated honestly.
 
 ## Boot readiness (D-363)
 
-- Readiness rides the router's `ready` message: `PortRouter.waitActive(id, timeout)` resolves
-  the event path (immediate if already active; rejects on degraded/timeout). Boot polls nothing.
-  Demo boot: 27ms (polling) → 10ms (event-driven).
+- Readiness rides the router's `ready` message: `PortRouter.waitActive(id, timeout)`. Boot polls nothing.
 
-## Process law (D-364, simplified D-367 PROPOSED)
+## Process law (D-364, simplified D-367; extended D-413/D-414)
 
-- Every decision ≥ D-313 has a record (six sections, options matrix, Decision line, evidence);
-  statuses agree between index and record; RATIFIED requires a resolvable commit SHA.
-- Index rows from **D-360** on carry a class tag: `· evidence` (backed by a probe/test falsifier)
-  or `· directive` (owner call) — the gate checker enforces the tag.
-- **Cooling-off for B1–B4 evidence-class decisions**: the falsifier (named test/probe) must be
-  IN the record before RATIFIED, and a second gate run must follow ratification (same-day
-  ratification stays legal for directive-class rows — solo-owner speed, honestly labeled).
-- **Directive fast-path (D-367):** directive rows ratify same-day on gate green by default; evidence B1–B4 keeps full cooling-off.
-- **Composition freeze (D-370, amended D-391):** 17 specs (the kernel witness rig joined via the
-  D-377 matrix path — the freeze's target was hand-maintained drift, and matrix rows carry none),
-  no new spec except through the matrix/generator (mechanized
-  by the D-376 conformance net + D-377 matrix/generator). Composition stance (D-316, closed
-  2026-09-18): **N first-class compositions — no flagship**; grant variance is handled per-row
-  by DRIFT_ALLOWLIST with D-pointers, never by a privileged spec.
-- Consolidation pass: every ~30 ratified decisions, refresh this page. The full log is never
-  pruned or rewritten (append-only, supersede never edit).
+- Every decision ≥ D-313 has a record (six sections, options matrix, Decision line, evidence); statuses agree between index and record; RATIFIED requires a resolvable commit SHA. Index rows from D-360 on carry a class tag (`· evidence` / `· directive`); from **D-413 on rows are generated** from the record's `## Index` (byte-equality enforced — the eras: `< D-313` index-only, `D-313..D-412` hand-typed, `D-413+` generated).
+- **Cooling-off for B1–B4 evidence-class decisions:** the named falsifier IN the record BEFORE RATIFIED + a second gate run after; directive rows ratify same-day on gate green, honestly labeled.
+- **Composition freeze (D-370, amended D-391/D-406):** **18 specs** — new specs only through `_matrix.json` + `omega:generate composition` (hand-edited specs fail the gate; the conformance net D-376 + matrix D-377 mechanize it). Composition stance (D-316): N first-class compositions, no flagship; grant variance per-row via DRIFT_ALLOWLIST with D-pointers.
+- **Round protocol:** PROPOSED commit (code + records + index) → full gate green ×2 → Ratify (flip + regenerate row/board, cite landing SHA + gate numbers) → board refresh at the ratified tip → close-out (HANDOFF + BACKLOG) → `omega:round-close` (D-414) — the bundle, its sha256, and the ledger row are tool-generated from git data.
+- Consolidation: this page regenerates **on trigger** (see the header policy). The full log is never pruned or rewritten — append-only, supersede never edit.
+
+## The W0 close-out layer (D-376…D-383, the migration-readiness laws)
+
+- **Conformance net (D-376):** the `compositions` gate stage — grant-vs-manifest, bootPhase-0 law, D-325 pairing, allowlisted drift, zero-call-site contracts, risk parity, matrix conformance (specs regenerate byte-identical from `compositions/_matrix.json`).
+- **Authoring path (D-377):** the matrix is the source of truth; `omega:generate plugin|pack` scaffolds with the authoring checklist. New readers author via the generator, never by hand.
+- **Vault index + retention (D-378):** per-conversation index rows bounded by CHAT_HISTORY_CAP; retention windows per ns DECLARED (numbers in the D-378 record + VAULT-NAMESPACES rows); mechanical enforcement is Wave3.
+- **Single-principal fence (D-379):** one principal per conversation; cross-principal reads REFUSE as verdict + LEDGER; sharing reopens only by a new decision record. Provider bar (D-380), parser bar (D-381), observability spine (D-382), surface pointer default (D-383) are the Wave1+ bars — read those records before harvesting anything.
+
+## The storage driver lane (D-373) and the polyglot tier (D-374)
+
+- The vault's byte-persistence sits behind one structural `SqliteDriver` seam; drivers are dumb byte stores — the spine owns CAS, Merkle changelog, refs, compaction. A driver that decides what is live, or prunes history, is not a driver — it is a fork of the spine.
+- Compartments are worker-threads OR declared process pools (signed composition config only; the broker refuses unknown pools and undeclared ops). B2 holds literally at the OS boundary: shared-nothing, Port Protocol over ndjson stdio, fail-closed; malformed IPC is bounded (BUDGET, never a hang). The containment probe (`omega:containment`, D-386) claims enforcement ONLY from kernel-side measurements. `wasm` is forward-declared vocabulary only (D-354).
+
+## Budget watch
+
+- **Host LOC: 1500/1500 — AT the freeze, zero headroom.** Any host-touching change names its equal-or-greater removal BEFORE the code is written (B5: same-commit removal, never partial).
+- **Anvil: 856/860** — 4 lines of remove-to-add headroom, same rule.
+- **Tests: 1102+ (D-414 tip), sharding trigger long crossed** — the quick gate + lanes hold it; re-check wall-time as the suite grows past ~1,200.
+- **Single-principal boundary (L-11) is a fence, not a bug:** the first sharing-adjacent feature requires the GAP-4 ruling first (D-379's reopen rule).
+- **Calibration corpus + SLOs (L-12/L-13):** promotion thresholds remain unmeasured constants — not load-bearing for consequential decisions before Phase D / F-3.
 
 ## Acknowledged limits
 
 Every residual the tree knowingly carries lives on one page with its detector
 and revisit trigger: `docs/KNOWN-LIMITS.md`. A limit leaves that page only by
 being fixed (with its falsifier) or superseded (with a D-record pointer).
-
-## The storage driver lane (D-373)
-
-- The vault's byte-persistence sits behind one structural `SqliteDriver` seam (`sql.ts` +
-  `drivers/`); drivers are dumb byte stores — the spine owns CAS, Merkle changelog, refs and
-  compaction discipline, exactly as before. Every driver passes the SAME conformance workload;
-  a driver that diverges on the digest is broken by definition.
-- `(ns, id, rev)` and the refs edge list are load-bearing driver-contract fields; a driver
-  that decides what is live, or prunes history, is not a driver — it is a fork of the spine.
-
-## The polyglot process tier (D-374)
-
-- Compartments are worker-threads OR declared process pools. Process pools exist ONLY in
-  signed composition config (`config.processPools`); the broker REFUSES unknown pools and
-  undeclared ops; the caller can never name a command. B2 holds literally at the OS boundary:
-  shared-nothing, Port Protocol over ndjson stdio, fail-closed everywhere.
-- Malformed IPC is bounded (BUDGET, never a hang); deadlines fast-kill at 500ms cap (D-366
-  discipline); stderr is journaled, never inherited. Process budgets are advisory at spawn
-  (KNOWN-LIMITS) — the watchdog bounds detection; the OS-process boundary itself is the
-  containment upgrade over worker tiers (the D-360 exhaustion residual's sanctioned hatch).
-- `wasm` is forward-declared vocabulary only (D-354 reserve) — no shape, no implementation,
-  no trust claims until its own record.
-- **Containment probe (D-386):** `omega:containment` measures whether the kernel actually
-  bounds a process-tier child (cgroup v2 today; Windows Job Objects probe is the named next
-  slice). Enforcement is claimed ONLY from kernel-side measurements; `unavailable` is the
-  honest answer wherever the OS refuses the probe. GATE CONDITION: B1b and any Wave2 LAUNCHED
-  provider require verdict `enforced` on the target OS — or a recorded owner acceptance.
-
-## Budget watch (owner-directed, 2026-09-18 independent recommendation §8)
-
-Tracked explicitly so none of these is discovered late:
-
-- **Host LOC headroom is thin:** 1,450/1,500 (50 lines) under the re-frozen D-391 budget with
-  no-exceptions enforcement. Any host-touching change must name its equal-or-greater removal
-  BEFORE the code is written (B5: removal in the same commit — the removal cannot be partial).
-- **Test count crossed the sharding trigger** (D-317 ~700; D-368 lanes + quick gate were the
-  response). Per D-317's own discipline: re-check wall-time once the suite nears ~1,000
-  (currently 847).
-- **Single-principal boundary (L-11) is a fence, not a bug:** the first sharing-adjacent
-  feature requires the GAP-4 ruling first (D-379's reopen rule) — hold the line under scope
-  pressure.
-- **Calibration corpus + SLOs (L-12/L-13):** promotion thresholds remain unmeasured constants;
-  benchmarks carry walls, not envelopes. These must NOT become load-bearing for consequential
-  decisions (e.g., agent auto-routing) before Phase D / F-3 lands — sequence accordingly.
-
-## The W0 close-out layer (D-376…D-383, the migration-readiness laws)
-
-- **Conformance net (D-376):** the `compositions` gate stage is the one read-only net —
-  grant-vs-manifest, bootPhase-0 law, D-325 pairing, allowlisted grant drift, zero-call-site
-  contracts, risk parity (manifest-declared risk === LAW_POLICY classification, gate-layer),
-  and matrix conformance (specs regenerate byte-identical from `compositions/_matrix.json`).
-  Seeded drift fails with named diagnostics (`conformance-drift-seed.ts`).
-- **Authoring path (D-377):** `_matrix.json` is the source of truth for compositions; edit the
-  matrix, run `omega:generate composition`; hand-edited specs fail the gate. `omega:generate
-  plugin|pack` scaffolds with the authoring checklist (ns row, LAW_POLICY rows, matrix grant,
-  bun install, real-boot proof). New readers author via the generator, never by hand.
-- **Vault index + retention (D-378):** vivim.chat maintains per-conversation index rows
-  (`idx_<hex>`, bounded by CHAT_HISTORY_CAP); history/cap/seq ride the index (legacy scan is
-  the fallback; corrupt index refuses fail-closed). Retention windows per ns are DECLARED
-  (numbers in the D-378 record + VAULT-NAMESPACES chat row); mechanical enforcement is Wave3.
-  The probe (`omega:probe`) owns the append-latency + bounded-read numbers.
-- **Single-principal fence (D-379):** one principal per conversation; cross-principal reads
-  REFUSE as a verdict envelope and LEDGER (`refusal_*` rows, ns chat); sharing reopens only
-  by a new decision record. Provider bar (D-380), parser bar (D-381), observability spine
-  (D-382), and the surface pointer default (D-383) are the Wave1+ bars — read those records
-  before harvesting anything.

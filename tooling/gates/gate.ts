@@ -238,6 +238,20 @@ try {
   else fail("forge-surface", r.issues.map((i) => `${i.check} [${i.subject}]: ${i.reason} — fix: ${i.fix}`).join("; "));
 } catch (e) { fail("forge-surface", String(e)); }
 
+// 5e · invariants-freshness (D-415, A3 — report-only): the digest's staleness
+// on TRIGGER, not calendar — the marker's as-of vs ratified rows past it, the
+// marker's stage inventory vs this gate's stage registry. REPORT-ONLY by
+// design (the D-368→D-402 adopt-observe-enforce pattern): staleness lands in
+// the detail and the stage stays green; the flip to failing is a future
+// record's call after one green wave of reports. Mechanical breakage
+// (unreadable digest, malformed marker) fails — a gate stage, not a suggestion.
+try {
+  const { checkInvariantsFreshness } = await import("./invariants-freshness.ts");
+  const f = checkInvariantsFreshness(ROOT);
+  if (f.ok) pass("invariants-freshness", f.detail);
+  else fail("invariants-freshness", f.issues.join("; "));
+} catch (e) { fail("invariants-freshness", String(e)); }
+
 // 6 · tests (gate evidence)
 // Concurrency is capped by box size (D-317): past core count, worker-heavy test
 // files thrash instead of parallelizing — measured 64s green at 4-wide vs

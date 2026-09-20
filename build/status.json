@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-09-20T08:59:56.429Z",
+  "generatedAt": "2026-09-20T09:11:26.742Z",
   "repo": "vivim-omega",
   "branch": "omega",
-  "head": "2acb77e",
+  "head": "75c810b",
   "toolchain": {
     "bun": "1.3.14",
     "node": "24.3.0",
@@ -96,7 +96,7 @@
     }
   ],
   "gate": {
-    "startedAt": "2026-09-20T08:58:28.911Z",
+    "startedAt": "2026-09-20T09:09:58.608Z",
     "checks": {
       "host-loc": {
         "ok": true,
@@ -131,15 +131,17 @@
       "decisions": {
         "ok": true,
         "detail": {
-          "rows": 120,
-          "records": 94,
+          "rows": 121,
+          "records": 95,
           "ratified": 94,
           "grandfatherBelow": 313,
           "generatedFrom": 413,
           "trackWarnings": 0,
           "openQuestions": {
-            "count": 0,
-            "ids": [],
+            "count": 1,
+            "ids": [
+              415
+            ],
             "board": "stale"
           }
         }
@@ -259,10 +261,22 @@
           "packFixtures": 14
         }
       },
+      "invariants-freshness": {
+        "ok": true,
+        "detail": {
+          "policy": "report-only (D-415, A3 — the flip to failing is a future record's call, after one green wave of reports)",
+          "pass": 2,
+          "asOf": "D-415",
+          "ratifiedSince": 0,
+          "gateStages": 13,
+          "stale": false,
+          "triggers": []
+        }
+      },
       "tests": {
         "ok": true,
         "detail": {
-          "pass": 1102,
+          "pass": 1115,
           "fail": 0,
           "maxConcurrency": 4
         }
@@ -271,7 +285,7 @@
         "ok": true,
         "detail": {
           "compileMs": 3,
-          "bootMs": 19,
+          "bootMs": 23,
           "echo": true,
           "counterBump": true,
           "counterValue": {
@@ -294,7 +308,7 @@
   },
   "hostLoc": 1500,
   "tests": {
-    "pass": 1102,
+    "pass": 1115,
     "fail": 0
   },
   "benchmarks": {
