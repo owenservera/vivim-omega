@@ -1,0 +1,42 @@
+[
+  {
+    "item": "oats",
+    "qty": 1200,
+    "unit": "g"
+  },
+  {
+    "item": "flour",
+    "qty": 2000,
+    "unit": "g"
+  },
+  {
+    "item": "lentils",
+    "qty": 800,
+    "unit": "g"
+  },
+  {
+    "item": "rice",
+    "qty": 1500,
+    "unit": "g"
+  },
+  {
+    "item": "beans",
+    "qty": 600,
+    "unit": "g"
+  },
+  {
+    "item": "milk",
+    "qty": 1000,
+    "unit": "ml"
+  },
+  {
+    "item": "egg",
+    "qty": 6,
+    "unit": "pc"
+  },
+  {
+    "item": "carrot",
+    "qty": 5,
+    "unit": "pc"
+  }
+]

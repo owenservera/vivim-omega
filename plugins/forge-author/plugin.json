@@ -1,0 +1,51 @@
+{
+  "manifestVersion": "1",
+  "id": "forge.author",
+  "version": "0.1.0",
+  "description": "Class 2 — emits plugin scaffolds from recorded specs. Proposal-only: confers no authority, signs nothing, commits nothing.",
+  "entry": "src/index.ts",
+  "publisher": {
+    "keyId": "",
+    "signature": ""
+  },
+  "contributions": {
+    "contract": [
+      {
+        "kind": "contract",
+        "id": "forge.author.init",
+        "version": "1",
+        "risk": "MUTATION"
+      }
+    ]
+  },
+  "dependencies": [],
+  "capabilities": {
+    "requested": [
+      "port:vault.append@1",
+      "port:vault.get@1",
+      "port:law.check@1"
+    ],
+    "justification": "Reads recorded specs and writes provisional scaffold artifacts. Every write is law-gated; nothing is signed; boot never reads the proposal path."
+  },
+  "runtime": {
+    "tier": "worker-thread",
+    "budget": {
+      "cpuMs": 2000,
+      "memMB": 256
+    }
+  },
+  "granularity": "coarse",
+  "internalSeams": [
+    "spec",
+    "scaffold",
+    "self-host"
+  ],
+  "generality": {
+    "level": "speculative",
+    "mine": null,
+    "originPaths": [],
+    "harvestClass": null,
+    "evidence": []
+  },
+  "contentHash": ""
+}

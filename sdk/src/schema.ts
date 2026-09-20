@@ -4,8 +4,8 @@
 // here (tamper surface), while the host ceremony stamps defaults. Changing any shape
 // after Ω4 is an amendment-class event — mirrors contracts/src/port.ts header law.
 import { z } from "zod";
-import { CONTRIBUTION_KINDS } from "@vivim/omega-contracts";
-import type { PluginManifest, Recipe, CompositionEntry, CompositionSpec, PortMessage, PortResult, LawDecision, ConsentGrant, DependencyRef, Contribution, RuntimeTier } from "@vivim/omega-contracts";
+import { CONTRIBUTION_KINDS, HARVEST_CLASSES } from "@vivim/omega-contracts";
+import type { PluginManifest, Recipe, CompositionEntry, CompositionSpec, PortMessage, PortResult, LawDecision, ConsentGrant, DependencyRef, Contribution, RuntimeTier, GeneralityStamp, GeneralityLevel, HarvestClass } from "@vivim/omega-contracts";
 
 // ---- shared atoms -----------------------------------------------------------
 
@@ -21,6 +21,32 @@ export const OP_PATTERN = /^[a-z0-9.-]+@[0-9]+$/;
 export const RISK_CLASSES = ["EXTERNAL_MUTATION", "MUTATION", "READ"] as const;
 export const FRESHNESS_STATES = ["CURRENT", "LAGGING", "STALE"] as const;
 export const PORT_ERROR_CODES = ["REFUSED", "REVOKED", "SCOPE", "BUDGET", "DEGRADED"] as const;
+
+// D-405 (Omega Forge Wave 0): the generality axis — the evidence mirror of
+// contracts/manifest.ts::GeneralityStamp. STRICT object (same posture as the
+// manifest top level: a typo'd generality field is a real error). The SHAPE is
+// all zod owns: level is the enum, mine/originPaths/harvestClass/evidence are
+// plain typed fields. The LAW (mine pinning pattern, ref families, counts,
+// independence) lives in validate.ts::validateGenerality — the same
+// well-formed vs lawful split the rest of this package enforces.
+export const GENEROSITY_LEVELS = ["speculative", "harvested", "generic"] as const;
+export const MINE_PATTERN = /^[a-z0-9][a-z0-9.-]*@[0-9a-f]{7,64}$/;
+export const EVIDENCE_REF_PATTERN = /^(ledger:[a-z0-9-]+\/[a-z0-9:._-]+|fixture:[^@\s]+@[0-9a-f]{7,64}|mine:[a-z0-9][a-z0-9.-]*@[0-9a-f]{7,64}|composition:[a-z0-9-]+@[0-9a-f]{7,64}|decision:D-[0-9]+)$/;
+
+export const GeneralitySchema = z.strictObject({
+  level: z.enum(GENEROSITY_LEVELS),
+  mine: z.string().nullable().optional(),        // pinning PATTERN is law (validateGenerality) — shape is string
+  originPaths: z.array(z.string().min(1)).optional(),
+  harvestClass: z.enum(HARVEST_CLASSES).nullable().optional(), // vocabulary is pinned wire — a typo is malformed (same posture as risk)
+  evidence: z.array(z.string()).optional(),       // ref families are law (validateGenerality) — shape is string[]
+});
+
+// D-405 mirror-exactness guards (the house _contribution idiom): the zod enums
+// must exhaust the pinned contract unions — the sdk enum drifting from the
+// contracts union is a wire break the compiler catches.
+const _levelMirror: readonly GeneralityLevel[] = GENEROSITY_LEVELS;
+const _harvestMirror: readonly HarvestClass[] = HARVEST_CLASSES;
+void _levelMirror; void _harvestMirror;
 
 // ---- contributions / manifest ------------------------------------------------
 
@@ -115,6 +141,9 @@ export const PluginManifestSchema = z.strictObject({
     }).optional(),
   }),
   contentHash: z.union([z.literal(""), z.string().regex(HASH_PATTERN, { error: 'contentHash must be "sha256:<hex>" or "" (pre-compile)' })]),
+  granularity: z.enum(["atomic", "coarse"]).optional(), // D-340 mirror: data, not a schema fork — absent = atomic (host盖默认)
+  internalSeams: z.array(z.string().min(1)).optional(), // coarse plugins name the seams a later extraction cuts along
+  generality: GeneralitySchema.optional(), // D-405: additive evidence axis — absent = undeclared (validators decide who must declare)
 });
 
 // ---- recipe / composition ----------------------------------------------------
@@ -246,6 +275,7 @@ export type SchemaRecipe = z.infer<typeof RecipeSchema>;
 export type SchemaCompositionEntry = z.infer<typeof CompositionEntrySchema>;
 export type SchemaPortResult = z.infer<typeof PortResultSchema>;
 export type SchemaLawDecision = z.infer<typeof LawDecisionSchema>;
+export type SchemaGenerality = z.infer<typeof GeneralitySchema>;
 
 // Compile-time equality guards: the zod output types must be assignable BOTH ways
 // with the pinned contract interfaces — mirroring is exact or the build breaks.
@@ -259,4 +289,5 @@ const _dep: DependencyRef = null as unknown as z.infer<typeof DependencyRefSchem
 const _msg: PortMessage = null as unknown as z.infer<typeof PortMessageSchema>;
 const _grant: ConsentGrant = null as unknown as z.infer<typeof ConsentGrantSchema>;
 const _spec: CompositionSpec = null as unknown as z.infer<typeof CompositionSpecSchema>;
-void _contribution; void _manifest; void _recipe; void _entry; void _portResult; void _lawDecision; void _dep; void _msg; void _grant; void _spec;
+const _generality: GeneralityStamp = null as unknown as SchemaGenerality;
+void _contribution; void _manifest; void _recipe; void _entry; void _portResult; void _lawDecision; void _dep; void _msg; void _grant; void _spec; void _generality;

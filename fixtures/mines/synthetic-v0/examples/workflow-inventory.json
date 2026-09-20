@@ -1,0 +1,10 @@
+{
+  "name": "inventory",
+  "steps": [
+    {
+      "do": "note",
+      "note": "count what is left",
+      "recipe": "pantry"
+    }
+  ]
+}

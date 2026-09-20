@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "1",
+  "targetPath": "scratch/forge-author/plugin.json",
+  "artifactKind": "manifest",
+  "contentHash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "generatedBy": "forge.author.init@1",
+  "ledgerRef": null,
+  "authority": "none",
+  "justification": "self-hosting emission: the Author Forge reproduces its own manifest from spec/self.json"
+}

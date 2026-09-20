@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "1",
+  "path": "src/main.ts",
+  "hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "bytes": 120,
+  "language": 7,
+  "exports": [
+    "main"
+  ],
+  "imports": [
+    "node:path"
+  ],
+  "models": [],
+  "headings": []
+}

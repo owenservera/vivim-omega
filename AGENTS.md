@@ -24,7 +24,8 @@ Requires Bun ≥ 1.3.14. CI: `gate-ubuntu`, `gate-reproduce`, `node-canary` requ
 
 ## Laws that bite (B1–B5 + process)
 
-- **B5 frozen:** `host/src` ≤ **1100 LOC**, hard gate (D-365). No new host surface
+- **B5 frozen:** `host/src` ≤ **1500 LOC**, hard gate (D-365 froze 1100; D-391
+  re-amended once and loudly to 1500, re-frozen). No new host surface
   without removing old surface **in the same commit**. Policy lives out-of-tree.
 - **B1–B4 evidence rule (D-364):** evidence-class decisions touching boot security
   need the named falsifier IN the record BEFORE ratification + a second gate run
@@ -49,8 +50,11 @@ Requires Bun ≥ 1.3.14. CI: `gate-ubuntu`, `gate-reproduce`, `node-canary` requ
    option references. `(a)/(b)/(c)` only, matching the Options matrix.
 4. Every record: six sections in order (Status, Context, Options, Decision,
    Consequences, Evidence) + matrix table + `**Decision:** (x)` line.
-5. Composition cap: 16 specs (D-370 freeze) — no new spec without deleting or
-   generating one. Drift allowlists need a D-record pointer; new drift shapes fail.
+5. Composition count: **18 specs** (D-370 froze 16; D-391 raised to 17 via the
+   D-377 matrix path; Wave 0/D-406 adds `forge-author.json` the same way — 18).
+   New specs go through `compositions/_matrix.json` + `omega:generate
+   composition`, never by hand-editing a spec. Drift allowlists need a
+   D-record pointer; new drift shapes fail.
 
 ## Code surfaces with gate teeth
 

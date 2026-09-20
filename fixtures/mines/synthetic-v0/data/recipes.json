@@ -1,0 +1,100 @@
+[
+  {
+    "id": "oatmeal-bowl",
+    "ingredients": [
+      {
+        "item": "oats",
+        "qty": 60,
+        "unit": "g"
+      },
+      {
+        "item": "milk",
+        "qty": 200,
+        "unit": "ml"
+      }
+    ],
+    "minutes": 8,
+    "steps": 3,
+    "title": "Oatmeal bowl"
+  },
+  {
+    "id": "flatbread",
+    "ingredients": [
+      {
+        "item": "flour",
+        "qty": 250,
+        "unit": "g"
+      },
+      {
+        "item": "water",
+        "qty": 150,
+        "unit": "ml"
+      }
+    ],
+    "minutes": 25,
+    "steps": 5,
+    "title": "Skillet flatbread"
+  },
+  {
+    "id": "lentil-soup",
+    "ingredients": [
+      {
+        "item": "lentils",
+        "qty": 200,
+        "unit": "g"
+      },
+      {
+        "item": "carrot",
+        "qty": 2,
+        "unit": "pc"
+      }
+    ],
+    "minutes": 45,
+    "steps": 6,
+    "title": "Lentil soup"
+  },
+  {
+    "id": "pancake",
+    "ingredients": [
+      {
+        "item": "flour",
+        "qty": 120,
+        "unit": "g"
+      },
+      {
+        "item": "egg",
+        "qty": 1,
+        "unit": "pc"
+      }
+    ],
+    "minutes": 20,
+    "steps": 4,
+    "title": "Sunday pancake"
+  },
+  {
+    "id": "bean-salad",
+    "ingredients": [
+      {
+        "item": "beans",
+        "qty": 300,
+        "unit": "g"
+      }
+    ],
+    "minutes": 10,
+    "steps": 3,
+    "title": "Bean salad"
+  },
+  {
+    "id": "rice-pot",
+    "ingredients": [
+      {
+        "item": "rice",
+        "qty": 180,
+        "unit": "g"
+      }
+    ],
+    "minutes": 30,
+    "steps": 4,
+    "title": "Rice pot"
+  }
+]

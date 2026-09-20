@@ -1,0 +1,12 @@
+{
+  "manifestVersion": "1",
+  "id": "fixture.missing-level",
+  "version": "0.1.0",
+  "entry": "src/index.ts",
+  "publisher": { "keyId": "", "signature": "" },
+  "contributions": { "contract": [{ "kind": "contract", "id": "fixture.ping", "version": "1", "risk": "READ" }] },
+  "dependencies": [],
+  "capabilities": { "requested": [] },
+  "runtime": { "tier": "worker-thread", "budget": { "cpuMs": 100, "memMB": 64 } },
+  "contentHash": ""
+}

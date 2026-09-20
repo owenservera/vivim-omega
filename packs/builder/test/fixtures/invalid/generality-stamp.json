@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1",
+  "level": "harvested",
+  "mine": "unpinned",
+  "originPaths": [
+    "src/engines/parsers/chatgpt-import.ts"
+  ],
+  "harvestClass": "ALGORITHM",
+  "evidence": [
+    "fixture:import/chatgpt-conversations@bbbbbbb"
+  ]
+}

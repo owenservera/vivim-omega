@@ -1,0 +1,5 @@
+log/
+indexes/
+__pycache__/
+*.pyc
+docs/generated.md

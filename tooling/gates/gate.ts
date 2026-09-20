@@ -55,6 +55,24 @@ const hostLoc = countLoc(join(ROOT, "host/src"));
 if (hostLoc <= 1500) pass("host-loc", { loc: hostLoc, budget: 1500 });
 else fail("host-loc", `µhost is ${hostLoc} LOC (budget 1500, frozen D-391) — move the creep into a plugin`);
 
+// 1b · anvil-loc + anvil-surface (D-404, Omega Forge Wave 0): the frozen pre-boot
+// edge. sdk/src gets the same wall treatment as the host — a hard LOC budget
+// (remove-to-add after Wave 0) plus a frozen export surface (a new or removed
+// export needs a decision record in the same commit). The anvil holds the five
+// frozen functions (parseManifest, validateManifest, signPluginDir, contentHashDir,
+// createPortClient) and their support surface; it is not a Forge and it does not
+// grow. Importing the sdk here also proves the anvil still loads on every gate run.
+try {
+  const { checkAnvilLoc, checkAnvilSurface, ANVIL_EXPORT_SURFACE } = await import("./anvil.ts");
+  const loc = checkAnvilLoc(join(ROOT, "sdk/src"));
+  if (loc.ok) pass("anvil-loc", { loc: loc.loc, budget: loc.budget, frozenBy: "D-404" });
+  else fail("anvil-loc", loc.issues.join("; "));
+  const sdk = await import(join(ROOT, "sdk/src/index.ts"));
+  const surface = checkAnvilSurface(Object.keys(sdk));
+  if (surface.ok) pass("anvil-surface", { exports: ANVIL_EXPORT_SURFACE.length, frozenBy: "D-404" });
+  else fail("anvil-surface", surface.issues.join("; "));
+} catch (e) { fail("anvil-loc", String(e)); }
+
 // 2 · fresh-tree: legacy repos untouched + no legacy imports anywhere in the fresh tree
 // Clean-clone/CI honesty (D-320): with NO sibling repos present there is nothing to
 // verify untouched — skip loudly (○, recorded in status.json) rather than failing a
@@ -205,6 +223,20 @@ try {
   if (s.ok) pass("import-surface", s.detail);
   else fail("import-surface", s.issues.join("; "));
 } catch (e) { fail("import-surface", String(e)); }
+
+// 5d · forge-surface (Omega Forge Wave 0, D5): the Forge boundary — product
+// compositions never route forge.* ops; a forge plugin is one risk class, one
+// namespace (ns proposal), refuses by name (refusal tests), and matches
+// pack.builder's frozen op wire exactly; the generality axis is mandatory.
+// Pure checks over a loaded input — red/green falsifiers live in
+// tooling/gates/test/forge-surface.test.ts.
+try {
+  const { loadForgeSurfaceInput, checkForgeSurface } = await import("./forge-surface.ts");
+  const input = await loadForgeSurfaceInput(ROOT);
+  const r = checkForgeSurface(input);
+  if (r.ok) pass("forge-surface", { forgePlugins: input.forgePlugins.length, compositions: input.compositions.length, catalogOps: Object.keys(input.catalog).length, packFixtures: input.packFixtureValidation.length });
+  else fail("forge-surface", r.issues.map((i) => `${i.check} [${i.subject}]: ${i.reason} — fix: ${i.fix}`).join("; "));
+} catch (e) { fail("forge-surface", String(e)); }
 
 // 6 · tests (gate evidence)
 // Concurrency is capped by box size (D-317): past core count, worker-heavy test

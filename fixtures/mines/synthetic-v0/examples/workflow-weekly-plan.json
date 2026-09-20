@@ -1,0 +1,27 @@
+{
+  "name": "week",
+  "steps": [
+    {
+      "do": "note",
+      "note": "weekly plan starts",
+      "recipe": "pantry"
+    },
+    {
+      "do": "cook",
+      "recipe": "oatmeal-bowl"
+    },
+    {
+      "do": "cook",
+      "recipe": "lentil-soup"
+    },
+    {
+      "do": "cook",
+      "recipe": "rice-pot"
+    },
+    {
+      "do": "note",
+      "note": "weekly plan ends",
+      "recipe": "pantry"
+    }
+  ]
+}

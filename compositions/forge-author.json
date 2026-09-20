@@ -1,0 +1,53 @@
+{
+  "name": "forge-author",
+  "_note": "OMEGA FORGE W0 builder composition (D-406) — the self-hosting keystone boot: vivim.law (phase 0, gate + journal), vivim.vault (the proposal ledger + evidence ground), and forge.author loaded AS A PLUGIN with forge.author.init@1 routed normally. forge.author emits into the scratch proposal path only (config.scratchDir passthrough); every write is law-gated (MUTATION exact row, LAW_POLICY_V1 1.5.0), every emitted file is ledgered as an authority:'none' ProposalArtifact row in vault ns proposal. This is a builder composition: no product composition may route forge.* ops (FORGE_IN_PRODUCT).",
+  "entries": [
+    {
+      "id": "vivim.law",
+      "source": "../plugins/vivim-law",
+      "bootPhase": 0,
+      "grant": {
+        "capabilities": ["port:host.journal.append@1", "host.journal.append", "port:host.tokens.revoke@1", "host.tokens.revoke"],
+        "contracts": [
+          "law.check@1",
+          "law.registry@1",
+          "law.consent.grant@1",
+          "law.tokens.revoke@1",
+          "law.forbidden.set@1",
+          "law.amendment@1",
+          "law.describe@1"
+        ]
+      },
+      "config": { "journalPath": "" }
+    },
+    {
+      "id": "vivim.vault",
+      "source": "../plugins/vivim-vault",
+      "bootPhase": 1,
+      "grant": {
+        "capabilities": [],
+        "contracts": [
+          "vault.append@1",
+          "vault.get@1",
+          "vault.getmany@1",
+          "vault.query@1",
+          "vault.search@1",
+          "vault.verify@1",
+          "vault.compact@1",
+          "vault.roundtrip@1"
+        ]
+      },
+      "config": { "dataDir": "${TMP}/omega-forge-author/vault-data" }
+    },
+    {
+      "id": "forge.author",
+      "source": "../plugins/forge-author",
+      "bootPhase": 1,
+      "grant": {
+        "capabilities": ["port:vault.append@1", "port:vault.get@1", "port:law.check@1"],
+        "contracts": ["forge.author.init@1"]
+      },
+      "config": { "scratchDir": "${TMP}/omega-forge-author/emission" }
+    }
+  ]
+}

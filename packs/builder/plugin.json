@@ -1,0 +1,196 @@
+{
+  "manifestVersion": "1",
+  "id": "pack.builder",
+  "version": "0.1.0",
+  "description": "Omega Forge Wave 0 (D-406) — the Builder Contract as a PACK: SCHEMA (the seven Forge artifact shapes), CONTRACT (the frozen forge.* op wire — 24 ops across 8 Forges, risk per op), POLICY (proposal-only emission, refusal-tested ops, one risk class per plugin, boot never reads ns proposal), TEST (pack conformance). A pack DECLARES; the implementing forge plugins carry capabilities and grants. Passive v1: no ops routed, no capabilities — compositions/forge-*.json grant forge ops to IMPLEMENTING plugins, never to this pack. The catalog is mirrored in src/schemas.ts::FORGE_OP_CATALOG and the pack test proves the two are identical.",
+  "entry": "src/index.ts",
+  "publisher": { "keyId": "", "signature": "" },
+  "contributions": {
+    "schema": [
+      {
+        "kind": "schema",
+        "id": "builder.capture-receipt",
+        "version": "1",
+        "fields": [
+          { "name": "schemaVersion", "type": "string", "required": true, "doc": "literal \"1\"" },
+          { "name": "op", "type": "string", "required": true, "doc": "the producing op — forge.mine.capture@1" },
+          { "name": "mineId", "type": "string", "required": true, "doc": "<repo>@<sha> — the pinned mine this receipt attests" },
+          { "name": "mineRoot", "type": "string", "required": true, "doc": "declared mine root (paths in files[] resolve against it)" },
+          { "name": "capturedAt", "type": "string", "required": true, "doc": "UTC ISO timestamp of the read" },
+          { "name": "fileCount", "type": "integer", "required": true, "doc": "number of admitted files" },
+          { "name": "rootHash", "type": "string", "required": true, "doc": "sha256 over the ordered file list — the pin the mine is replayable against" },
+          { "name": "files", "type": "json", "required": true, "doc": "[{path, hash, bytes, casRef}] — every admitted file, content-addressed" },
+          { "name": "refusals", "type": "json", "required": true, "doc": "[{path, reason}] — every refused path with its named reason (symlink escape, root escape, unpinned tree…)" }
+        ],
+        "doc": "Capture receipt@1 — what forge.mine.capture@1 read, when, at what hash. Read-only by construction; the one filesystem seam's proof of restraint."
+      },
+      {
+        "kind": "schema",
+        "id": "builder.inventory-row",
+        "version": "1",
+        "fields": [
+          { "name": "schemaVersion", "type": "string", "required": true, "doc": "literal \"1\"" },
+          { "name": "path", "type": "string", "required": true, "doc": "path inside the pinned mine" },
+          { "name": "hash", "type": "string", "required": true, "doc": "sha256 of the file bytes" },
+          { "name": "bytes", "type": "integer", "required": true, "doc": "file size in bytes" },
+          { "name": "language", "type": "string", "required": true, "doc": "detected language tag or null" },
+          { "name": "exports", "type": "array", "required": true, "doc": "exported symbol names (may be empty)" },
+          { "name": "imports", "type": "array", "required": true, "doc": "imported module names (may be empty)" },
+          { "name": "models", "type": "array", "required": true, "doc": "data-model names declared in the file (Prisma models, zod schemas…; may be empty)" },
+          { "name": "headings", "type": "array", "required": true, "doc": "markdown headings (docs files; may be empty)" }
+        ],
+        "doc": "Inventory row@1 — one row per pinned file: the survey's atom. Optional arrays may be empty; do not invent required fields beyond this declaration."
+      },
+      {
+        "kind": "schema",
+        "id": "builder.assay-verdict",
+        "version": "1",
+        "fields": [
+          { "name": "schemaVersion", "type": "string", "required": true, "doc": "literal \"1\"" },
+          { "name": "subjectPath", "type": "string", "required": true, "doc": "the inventoried file this verdict binds to" },
+          { "name": "disposition", "type": "string", "required": true, "doc": "PORT | DISTILL | REMOVE | DEFER" },
+          { "name": "harvestClass", "type": "string", "required": true, "doc": "ALGORITHM|SHAPED|SCHEMA|FIXTURE|POLICY|TEST|TOOLING|OTHER, or null when the disposition implies no harvest" },
+          { "name": "clusters", "type": "array", "required": true, "doc": "cluster ids the subject belongs to" },
+          { "name": "boundaries", "type": "json", "required": true, "doc": "[{op, rationale, refusable, substitutable, provable}] — admissible ONLY when all three axes are true" },
+          { "name": "risks", "type": "array", "required": true, "doc": "named risks observed on the subject" },
+          { "name": "evidence", "type": "array", "required": true, "doc": "resolvable refs backing the verdict" }
+        ],
+        "doc": "Assay verdict@1 — the cluster/boundary/risk ruling over one subject. A boundary with any axis false must not be proposed as an op (the three-axis test is the admissibility law)."
+      },
+      {
+        "kind": "schema",
+        "id": "builder.shape-blueprint",
+        "version": "1",
+        "fields": [
+          { "name": "schemaVersion", "type": "string", "required": true, "doc": "literal \"1\"" },
+          { "name": "namespaces", "type": "json", "required": true, "doc": "[{name, writer, readers, retention}] — exactly ONE writer per namespace (the partition invariant)" },
+          { "name": "plugins", "type": "json", "required": true, "doc": "[{id, ops, writtenNamespace, generality}] — writtenNamespace null is legal only for lenses" },
+          { "name": "compositions", "type": "json", "required": true, "doc": "[{id, members}] — builder AND product compositions the shape declares" },
+          { "name": "mappings", "type": "json", "required": true, "doc": "[{source, targetOp, reason}] — mine path to op with the reviewer-checkable reason" }
+        ],
+        "doc": "Shape blueprint@1 — the namespaces/plugins/compositions plan emitted from an assay. Every namespace exactly one writer; lens plugins null."
+      },
+      {
+        "kind": "schema",
+        "id": "builder.proposal-artifact",
+        "version": "1",
+        "fields": [
+          { "name": "schemaVersion", "type": "string", "required": true, "doc": "literal \"1\"" },
+          { "name": "targetPath", "type": "string", "required": true, "doc": "where the artifact is proposed to land (scratch/proposal path — never canonical directly)" },
+          { "name": "artifactKind", "type": "string", "required": true, "doc": "manifest | package | source | fixture | composition | record | doc" },
+          { "name": "contentHash", "type": "string", "required": true, "doc": "sha256 over the proposed bytes" },
+          { "name": "generatedBy", "type": "string", "required": true, "doc": "the emitting op id, e.g. forge.author.init@1" },
+          { "name": "ledgerRef", "type": "string", "required": true, "doc": "resolvable ledger ref or null at write time (the row itself is the entry)" },
+          { "name": "authority", "type": "string", "required": true, "doc": "MUST be the literal \"none\" — any other value fails validation (emission confers no authority)" },
+          { "name": "justification", "type": "string", "required": true, "doc": "plain-language why this artifact should exist" }
+        ],
+        "doc": "Proposal artifact@1 — the emission ledger row. authority is \"none\" BY SCHEMA: an implementation emitting \"granted\" or anything else fails validation, not review."
+      },
+      {
+        "kind": "schema",
+        "id": "builder.proof-report",
+        "version": "1",
+        "fields": [
+          { "name": "schemaVersion", "type": "string", "required": true, "doc": "literal \"1\"" },
+          { "name": "subject", "type": "string", "required": true, "doc": "what was proven (plugin dir, op, fixture…)" },
+          { "name": "op", "type": "string", "required": true, "doc": "the proving op" },
+          { "name": "result", "type": "string", "required": true, "doc": "pass | fail" },
+          { "name": "checks", "type": "json", "required": true, "doc": "[{name, result, diff}] — one row per check, diff null unless it failed" },
+          { "name": "replayHash", "type": "string", "required": true, "doc": "hash over replayed output, or null when the check is not a replay" },
+          { "name": "refusalResults", "type": "json", "required": true, "doc": "[{name, result}] — every refusal path executed and its verdict" }
+        ],
+        "doc": "Proof report@1 — conformance/replay/refusal/second-mine evidence in one row-per-check shape."
+      },
+      {
+        "kind": "schema",
+        "id": "builder.generality-stamp",
+        "version": "1",
+        "fields": [
+          { "name": "schemaVersion", "type": "string", "required": true, "doc": "literal \"1\"" },
+          { "name": "level", "type": "string", "required": true, "doc": "speculative | harvested | generic (the evidence axis; promotion is a decision record)" },
+          { "name": "mine", "type": "string", "required": true, "doc": "<repo>@<sha> origin mine, or null" },
+          { "name": "originPaths", "type": "array", "required": true, "doc": "paths inside the pinned mine (empty for speculative)" },
+          { "name": "harvestClass", "type": "string", "required": true, "doc": "the harvest vocabulary value, or null" },
+          { "name": "evidence", "type": "array", "required": true, "doc": "resolvable refs — ledger:|fixture:|mine:|composition:|decision:" }
+        ],
+        "doc": "Generality stamp@1 — the standalone artifact form of the manifest generality block (stamps emitted by forge.tier.stamp@1 cite the same vocabulary as the manifest axis, D-405)."
+      }
+    ],
+    "contract": [
+      { "kind": "contract", "id": "forge.mine.capture", "version": "1", "risk": "EXTERNAL_MUTATION", "doc": "capture {mineRoot, mineId} → receipt — the ONE filesystem seam; read-only, refuses unpinned trees, symlink escape and root escape (Class 3 despite reading: reading a foreign tree is the highest-risk act in the system)" },
+      { "kind": "contract", "id": "forge.mine.verify", "version": "1", "risk": "READ", "doc": "verify {mineId} → proof report — receipt vs tree re-walk" },
+      { "kind": "contract", "id": "forge.mine.diff", "version": "1", "risk": "READ", "doc": "diff {mineA, mineB} → proof report — two pinned mines compared" },
+      { "kind": "contract", "id": "forge.mine.list", "version": "1", "risk": "READ", "doc": "list {} → pinned mines known to the vault" },
+      { "kind": "contract", "id": "forge.survey.run", "version": "1", "risk": "READ", "doc": "run {mineId} → inventory rows — pure: pinned snapshot → inventory" },
+      { "kind": "contract", "id": "forge.survey.render", "version": "1", "risk": "READ", "doc": "render {inventory} → atlas markdown — pure: inventory → report" },
+      { "kind": "contract", "id": "forge.assay.run", "version": "1", "risk": "READ", "doc": "run {inventory} → assay verdicts — clusters, boundaries, risks, harvest classes" },
+      { "kind": "contract", "id": "forge.assay.distill", "version": "1", "risk": "READ", "doc": "distill {verdicts} → PORT/DISTILL/REMOVE/DEFER rulings" },
+      { "kind": "contract", "id": "forge.shape.map", "version": "1", "risk": "READ", "doc": "map {verdicts} → shape blueprint — namespaces, ops, plugin boundaries, composition membership" },
+      { "kind": "contract", "id": "forge.shape.budget", "version": "1", "risk": "READ", "doc": "budget {blueprint} → sizing report against the house heuristics (op count band, one writer per ns, cap smells)" },
+      { "kind": "contract", "id": "forge.shape.validate", "version": "1", "risk": "READ", "doc": "validate {blueprint} → proof report — the three-axis test + one-writer invariant over a blueprint" },
+      { "kind": "contract", "id": "forge.emit.plugin", "version": "1", "risk": "MUTATION", "doc": "plugin {spec} → proposal artifacts — Class 2, writes ONLY ns proposal / the scratch proposal path; proposal-only: confers no authority, signs nothing" },
+      { "kind": "contract", "id": "forge.emit.pack", "version": "1", "risk": "MUTATION", "doc": "pack {spec} → proposal artifacts — Class 2, ns proposal only" },
+      { "kind": "contract", "id": "forge.emit.composition", "version": "1", "risk": "MUTATION", "doc": "composition {spec} → proposal artifacts — Class 2, ns proposal only" },
+      { "kind": "contract", "id": "forge.emit.fixture", "version": "1", "risk": "MUTATION", "doc": "fixture {spec} → proposal artifacts — Class 2, ns proposal only" },
+      { "kind": "contract", "id": "forge.emit.record", "version": "1", "risk": "MUTATION", "doc": "record {spec} → proposal artifacts — Class 2, ns proposal only" },
+      { "kind": "contract", "id": "forge.proof.conform", "version": "1", "risk": "READ", "doc": "conform {subject} → proof report — conformance fixtures vs pack.builder shapes" },
+      { "kind": "contract", "id": "forge.proof.replay", "version": "1", "risk": "READ", "doc": "replay {subject} → proof report — byte-identical regeneration outside AUTHORED regions" },
+      { "kind": "contract", "id": "forge.proof.refusal", "version": "1", "risk": "READ", "doc": "refusal {subject} → proof report — every refusal path executed and named" },
+      { "kind": "contract", "id": "forge.proof.secondmine", "version": "1", "risk": "READ", "doc": "secondmine {subject} → proof report — the same pipeline against the synthetic second mine" },
+      { "kind": "contract", "id": "forge.author.init", "version": "1", "risk": "MUTATION", "doc": "init {spec} → scaffold artifacts + ns-proposal ledger rows — Class 2, the self-hosting keystone: reproduces plugins/forge-author/ byte-identical from spec/self.json outside FORGE:AUTHORED regions; proposal-only (a human signs, boot never reads the proposal path)" },
+      { "kind": "contract", "id": "forge.tier.stamp", "version": "1", "risk": "MUTATION", "doc": "stamp {subject, level, evidence} → generality-stamp proposal — Class 4 governance shape, root-principal constraints (Wave 0 declares the wire only)" },
+      { "kind": "contract", "id": "forge.tier.promote", "version": "1", "risk": "MUTATION", "doc": "promote {subject, evidence} → promotion proposal — decision-record-class, never a flag edit; root principal only (wire declared, lands post-Wave 0)" },
+      { "kind": "contract", "id": "forge.tier.docs", "version": "1", "risk": "MUTATION", "doc": "docs {subjects} → both-axes listing proposal — provenance × generality in plain words (wire declared, lands post-Wave 0)" }
+    ],
+    "policy": [
+      {
+        "kind": "policy",
+        "id": "builder.policy",
+        "version": "1",
+        "policy": {
+          "policyId": "builder.policy",
+          "version": "1.0.0",
+          "description": "The Builder Contract policy — the ten Wave 0 rows from the construction packet, as data. The forge-surface gate stage (D-406) enforces the mechanically checkable subset; the rest is review discipline with refusal tests as proof.",
+          "rows": [
+            { "id": "proposal-only", "rule": "Emission is proposal-only. Forge-generated artifacts do not sign, commit, grant, or boot.", "enforced": "proposal-artifact.authority === 'none' (schema) + FORGE_EMIT_SCOPE (gate)" },
+            { "id": "no-authority", "rule": "Emission confers no authority. A human signs; nothing a Forge emits is trusted until signed.", "enforced": "same as proposal-only — the authority field is schema-pinned to 'none'" },
+            { "id": "capture-read-only", "rule": "Capture is read-only and refuses unpinned trees, root escapes, and symlink escapes.", "enforced": "capture-receipt refusals[] + refusal tests when forge.mine lands" },
+            { "id": "refusal-tested", "rule": "Every Forge op ships a refusal test — happy path alone is not coverage.", "enforced": "FORGE_NO_REFUSAL_TEST (gate)" },
+            { "id": "generality-declared", "rule": "Every plugin and pack declares generality.", "enforced": "GEN_LEVEL_MISSING hard for forge.*/pack.builder (forge-surface gate)" },
+            { "id": "no-forge-in-product", "rule": "No forge.* op may appear in a product composition.", "enforced": "FORGE_IN_PRODUCT (gate)" },
+            { "id": "one-risk-class", "rule": "No plugin may span multiple risk classes — grants are per-plugin.", "enforced": "FORGE_CLASS_SPAN (gate)" },
+            { "id": "emit-scope", "rule": "Class-2 emission writes only to ns proposal or the gate-designated scratch proposal path.", "enforced": "FORGE_EMIT_SCOPE (gate) + scope tests" },
+            { "id": "boot-blind-to-proposals", "rule": "Boot never reads the proposal path — provisional artifacts cannot boot themselves.", "enforced": "real-boot falsifier (forge-author self-host test) + D-400 precedent" },
+            { "id": "authored-exclusions-only", "rule": "Generated structure replays byte-identically; authored logic is excluded ONLY via explicit FORGE:AUTHORED markers or declared authored files.", "enforced": "self-hosting comparison rules 1-6 (gate-backed test)" }
+          ]
+        },
+        "doc": "builder.policy@1 — the Builder Contract's ten policy rows as declarative data."
+      }
+    ],
+    "test": [
+      {
+        "kind": "test",
+        "id": "builder.pack-test",
+        "version": "1",
+        "dir": "test",
+        "runner": "bun test",
+        "doc": "Pack conformance: the seven artifact schemas validate their fixtures (valid accept, invalid reject), the plugin.json contract catalog equals src/schemas.ts::FORGE_OP_CATALOG exactly, and fixtures are hash-pinned."
+      }
+    ]
+  },
+  "dependencies": [],
+  "capabilities": {
+    "requested": [],
+    "justification": "A pack is passive declarations: no ops to route, no ports to call, no host capabilities. The implementing Forge plugins carry the capabilities; compositions/forge-*.json grant forge ops to those plugins, never to this pack."
+  },
+  "runtime": { "tier": "worker-thread", "budget": { "cpuMs": 100, "memMB": 32 } },
+  "contentHash": "",
+  "granularity": "atomic",
+  "generality": {
+    "level": "speculative",
+    "mine": null,
+    "originPaths": [],
+    "harvestClass": null,
+    "evidence": []
+  }
+}

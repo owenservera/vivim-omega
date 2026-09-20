@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-09-19T19:44:02.857Z",
+  "generatedAt": "2026-09-20T00:13:28.008Z",
   "repo": "vivim-omega",
   "branch": "omega",
-  "head": "cafeebd",
+  "head": "a7b2306",
   "waves": [
     {
       "id": "Ω0",
@@ -90,13 +90,28 @@
     }
   ],
   "gate": {
-    "startedAt": "2026-09-19T19:41:44.117Z",
+    "startedAt": "2026-09-20T00:12:02.565Z",
     "checks": {
       "host-loc": {
         "ok": true,
         "detail": {
           "loc": 1500,
           "budget": 1500
+        }
+      },
+      "anvil-loc": {
+        "ok": true,
+        "detail": {
+          "loc": 856,
+          "budget": 860,
+          "frozenBy": "D-404"
+        }
+      },
+      "anvil-surface": {
+        "ok": true,
+        "detail": {
+          "exports": 45,
+          "frozenBy": "D-404"
         }
       },
       "fresh-tree": {
@@ -110,24 +125,17 @@
       "decisions": {
         "ok": true,
         "detail": {
-          "rows": 108,
-          "records": 82,
-          "ratified": 71,
+          "rows": 112,
+          "records": 86,
+          "ratified": 82,
           "grandfatherBelow": 313,
           "openQuestions": {
-            "count": 11,
+            "count": 4,
             "ids": [
-              389,
-              392,
-              393,
-              394,
-              395,
-              396,
-              397,
-              398,
-              399,
-              400,
-              401
+              403,
+              404,
+              405,
+              406
             ],
             "board": "stale"
           }
@@ -136,8 +144,8 @@
       "compositions": {
         "ok": true,
         "detail": {
-          "specs": 17,
-          "entries": 72,
+          "specs": 18,
+          "entries": 75,
           "driftAllowlisted": {
             "vivim.law": {
               "files": [
@@ -150,6 +158,7 @@
                 "discovery-mind.json",
                 "discovery.json",
                 "email.json",
+                "forge-author.json",
                 "healing.json",
                 "kernel.json",
                 "law.json",
@@ -192,9 +201,9 @@
               "reason": "alias-style variance run.json vs spine.json: same effective authority (HOST_OP_TO_CAP auto-mint); convergence deferred, see _note in run.json"
             }
           },
-          "riskParityOps": 42,
+          "riskParityOps": 46,
           "matrixConformance": "green",
-          "contractTypes": 127,
+          "contractTypes": 131,
           "callSiteAllowlisted": [
             "CompositionSpecEntry",
             "LangContribution",
@@ -204,7 +213,6 @@
             "PlanTemplate",
             "PlanTemplateV2",
             "PortErrorCode",
-            "ProvenanceTier",
             "SagaEvidenceRef",
             "StorageDriverContract",
             "StorageKey",
@@ -220,7 +228,7 @@
           "adapters": [
             "plugins/vivim-vault/src/drivers/bun-sqlite.ts"
           ],
-          "scan": "35 prod dirs (incl. every plugins/*/src)"
+          "scan": "36 prod dirs (incl. every plugins/*/src)"
         }
       },
       "os-surface": {
@@ -229,20 +237,29 @@
           "seam": [
             "platform/src/platform.ts"
           ],
-          "scan": "35 prod dirs (incl. every plugins/*/src)"
+          "scan": "36 prod dirs (incl. every plugins/*/src)"
         }
       },
       "import-surface": {
         "ok": true,
         "detail": {
-          "scanned": 145,
+          "scanned": 148,
           "rules": 5
+        }
+      },
+      "forge-surface": {
+        "ok": true,
+        "detail": {
+          "forgePlugins": 1,
+          "compositions": 18,
+          "catalogOps": 24,
+          "packFixtures": 14
         }
       },
       "tests": {
         "ok": true,
         "detail": {
-          "pass": 962,
+          "pass": 1056,
           "fail": 0,
           "maxConcurrency": 4
         }
@@ -250,8 +267,8 @@
       "attest": {
         "ok": true,
         "detail": {
-          "compileMs": 8,
-          "bootMs": 66,
+          "compileMs": 3,
+          "bootMs": 19,
           "echo": true,
           "counterBump": true,
           "counterValue": {
@@ -274,7 +291,7 @@
   },
   "hostLoc": 1500,
   "tests": {
-    "pass": 962,
+    "pass": 1056,
     "fail": 0
   },
   "benchmarks": {

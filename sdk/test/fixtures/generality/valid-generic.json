@@ -1,0 +1,23 @@
+{
+  "manifestVersion": "1",
+  "id": "fixture.generic",
+  "version": "0.1.0",
+  "entry": "src/index.ts",
+  "publisher": { "keyId": "", "signature": "" },
+  "contributions": { "contract": [{ "kind": "contract", "id": "fixture.ping", "version": "1", "risk": "READ" }] },
+  "dependencies": [],
+  "capabilities": { "requested": [] },
+  "runtime": { "tier": "worker-thread", "budget": { "cpuMs": 100, "memMB": 64 } },
+  "contentHash": "",
+  "generality": {
+    "level": "generic",
+    "mine": "vivim-final-program@4a5eb84",
+    "originPaths": ["src/engines/parsers/chatgpt-import.ts"],
+    "harvestClass": "ALGORITHM",
+    "evidence": [
+      "mine:vivim-final-program@4a5eb84",
+      "mine:synthetic-v0@1111111",
+      "composition:chat@9f8e7d6"
+    ]
+  }
+}

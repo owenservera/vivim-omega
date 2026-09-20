@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "1",
+  "op": "forge.mine.capture@1",
+  "mineId": "vivim-final-program@4a5eb84",
+  "mineRoot": "/srv/mines/vivim-final-program",
+  "capturedAt": "2026-09-20T00:00:00Z",
+  "fileCount": 1,
+  "rootHash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "files": [
+    {
+      "path": "src/main.ts",
+      "hash": "not-a-hash",
+      "bytes": 120,
+      "casRef": "cas:abc123"
+    }
+  ],
+  "refusals": [
+    {
+      "path": "node_modules/x",
+      "reason": "dependency tree outside the declared mine"
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+[
+  {
+    "recipe": "oatmeal-bowl",
+    "tag": "breakfast"
+  },
+  {
+    "recipe": "pancake",
+    "tag": "breakfast"
+  },
+  {
+    "recipe": "flatbread",
+    "tag": "bread"
+  },
+  {
+    "recipe": "lentil-soup",
+    "tag": "soup"
+  },
+  {
+    "recipe": "lentil-soup",
+    "tag": "dinner"
+  },
+  {
+    "recipe": "bean-salad",
+    "tag": "dinner"
+  },
+  {
+    "recipe": "rice-pot",
+    "tag": "dinner"
+  }
+]

@@ -55,10 +55,15 @@ export interface PolicyDoc {
  *  1.3.0 (D-358): the chat pilot enters the net — exact rows `chat.open@1`
  *  and `chat.append@1` → MUTATION (vault-internal conversation storage, the
  *  same class family as `vault.*`; never default-riding, D-351's lesson).
- *  `chat.history@1` / `chat.resolve@1` are READ (never gate-triggering). */
+ *  `chat.history@1` / `chat.resolve@1` are READ (never gate-triggering).
+ *  1.5.0 (Wave 0): the forge's bootstrap op enters the net — exact row
+ *  `forge.author.init@1` → MUTATION (vault-internal proposal emission: the
+ *  writes are proposal-namespace appends through granted vault ports, the
+ *  same class family as `vault.*`; catalog-declared MUTATION, never
+ *  default-riding — the parity net holds the two sources to one truth). */
 export const LAW_POLICY_V1: PolicyDoc = {
   policyId: "law.policy",
-  version: "1.4.0",
+  version: "1.5.0",
   description: "Ω1 baseline: risk-class defaults, mutation journaling, principal deny-list, credential-consent rule",
   riskTable: [
     { op: "risky.op@1", risk: "EXTERNAL_MUTATION" },
@@ -71,6 +76,7 @@ export const LAW_POLICY_V1: PolicyDoc = {
     { op: "chat.open@1", risk: "MUTATION" },                // D-358: vault-internal conversation storage (same class family as vault.*)
     { op: "chat.append@1", risk: "MUTATION" },              // D-358: vault-internal message append — exact rows, never default-riding
     { op: "run.process.call@1", risk: "MUTATION" },         // D-374: process-tier call — journaled; pools exist only in signed config, unknown pool REFUSED broker-side
+    { op: "forge.author.init@1", risk: "MUTATION" },        // Wave 0: forge bootstrap emission — vault-internal proposal appends (class family of vault.*), catalog-parity exact row
   ],
   defaultRisk: "EXTERNAL_MUTATION", // unknown ops are treated as the strictest class (fail-closed)
   riskDefaults: {

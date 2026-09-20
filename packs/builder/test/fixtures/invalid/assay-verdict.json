@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "1",
+  "subjectPath": "src/engines/parsers/chatgpt-import.ts",
+  "disposition": "KEEP",
+  "harvestClass": "ALGORITHM",
+  "clusters": [
+    "C6-parsing"
+  ],
+  "boundaries": [
+    {
+      "op": "parser.history.import@1",
+      "rationale": "pure transform over recorded bytes; refusable (bad input), substitutable (claude/gemini variants), provable (recorded fixtures)",
+      "refusable": true,
+      "substitutable": true,
+      "provable": true
+    }
+  ],
+  "risks": [
+    "timestamp source removed (ts:0 + tsEstimated)"
+  ],
+  "evidence": [
+    "fixture:import/chatgpt-conversations@bbbbbbb"
+  ]
+}

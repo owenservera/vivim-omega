@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "1",
+  "subject": "plugins/forge-author",
+  "op": "forge.proof.replay@1",
+  "result": "pass",
+  "checks": [
+    {
+      "name": "byte-identical outside AUTHORED regions",
+      "result": "pass",
+      "diff": null
+    }
+  ],
+  "replayHash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "refusalResults": [
+    {
+      "name": "SPEC_UNKNOWN_FIELD",
+      "result": "pass"
+    }
+  ]
+}

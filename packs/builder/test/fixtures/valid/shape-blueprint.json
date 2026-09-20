@@ -1,0 +1,64 @@
+{
+  "schemaVersion": "1",
+  "namespaces": [
+    {
+      "name": "chat",
+      "writer": "vivim.chat",
+      "readers": [
+        "vivim.mind"
+      ],
+      "retention": "conversations hot 180d; messages capped per D-378"
+    }
+  ],
+  "plugins": [
+    {
+      "id": "vivim.chat",
+      "ops": [
+        "chat.open@1",
+        "chat.append@1",
+        "chat.history@1"
+      ],
+      "writtenNamespace": "chat",
+      "generality": {
+        "level": "harvested",
+        "mine": "vivim-final-program@4a5eb84",
+        "originPaths": [
+          "src/engines/conversation-store.ts"
+        ],
+        "harvestClass": "SHAPED",
+        "evidence": []
+      }
+    },
+    {
+      "id": "vivim.mind",
+      "ops": [
+        "mind.snapshot@1"
+      ],
+      "writtenNamespace": null,
+      "generality": {
+        "level": "speculative",
+        "mine": null,
+        "originPaths": [],
+        "harvestClass": null,
+        "evidence": []
+      }
+    }
+  ],
+  "compositions": [
+    {
+      "id": "chat",
+      "members": [
+        "vivim.law",
+        "vivim.vault",
+        "vivim.chat"
+      ]
+    }
+  ],
+  "mappings": [
+    {
+      "source": "src/engines/conversation-store.ts",
+      "targetOp": "chat.append@1",
+      "reason": "the store's append path is the op's body; one writer of ns chat"
+    }
+  ]
+}

@@ -72,9 +72,41 @@ export interface PluginManifest {
   granularity?: Granularity;          // D-340 (kernel requirement #5): DATA, not a schema fork — a coarse legacy-wrapping plugin and a future atomic one declare the SAME shape. Defaults to "atomic".
   internalSeams?: string[];           // coarse plugins name the seams a later extraction would cut along
   extractionCandidate?: boolean;      // honest self-report; computed centrality (kernel.centrality@1) is the ground truth that checks it
+  generality?: GeneralityStamp;       // D-405 (Omega Forge Wave 0): the evidence axis — optional at the type level; the generality validators decide who MUST declare (forge.* plugins, pack.builder, new/modified manifests)
 }
 
 export type Granularity = "coarse" | "atomic";
+
+// ---- generality axis (Wave 0 / Omega Forge, D-405) ----------------------------
+// Orthogonal to ProvenanceTier (lifecycle.ts — WHO VOUCHES for this artifact):
+// generality answers WHAT IT HAS BEEN PROVEN AGAINST. A first-party plugin can
+// be harvested; an untrusted third-party plugin can be generic; neither implies
+// the other. Additive and optional like granularity (D-340 pattern): manifests
+// without it validate unchanged; the honesty validators decide who MUST declare.
+
+/** What an artifact has been proven against (the evidence axis, not trust). */
+export type GeneralityLevel = "speculative" | "harvested" | "generic";
+
+/** harvestClass vocabulary — what KIND of thing was harvested from the mine.
+ *  Extension requires a pack.builder amendment (the vocabulary is frozen wire). */
+export const HARVEST_CLASSES = [
+  "ALGORITHM", "SHAPED", "SCHEMA", "FIXTURE", "POLICY", "TEST", "TOOLING", "OTHER",
+] as const;
+export type HarvestClass = (typeof HARVEST_CLASSES)[number];
+
+/** The generality stamp: level plus the evidence that level claims.
+ *  - speculative: designed, no consumer yet (entry: a decision record).
+ *  - harvested: derived from a pinned mine — mine/originPaths/harvestClass REQUIRED.
+ *  - generic: >=2 independent consumers or conformance green with the
+ *    mine-specific fixture removed — evidence REQUIRED, one ref independent
+ *    of the declared mine. Promotion is a decision record, never a flag edit. */
+export interface GeneralityStamp {
+  level: GeneralityLevel;
+  mine?: string | null;          // "<repo>@<sha>" (7-64 hex); required for harvested
+  originPaths?: string[];        // non-empty for harvested: paths inside the pinned mine
+  harvestClass?: HarvestClass | null;
+  evidence?: string[];           // resolvable refs: ledger:|fixture:|mine:|composition:|decision:
+}
 
 /** Manifest honesty validation (kernel requirement #5, the manifest.rs::validate port).
  *  Catches self-reporting lies the structural parse cannot: an atomic plugin still

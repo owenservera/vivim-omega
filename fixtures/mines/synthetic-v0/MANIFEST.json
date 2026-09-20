@@ -1,0 +1,176 @@
+{
+  "description": "offline kitchen log \u2014 the Wave 0 synthetic second mine (un-Vivim-shaped by charter)",
+  "fileCount": 42,
+  "files": [
+    {
+      "path": ".gitignore",
+      "sha256": "35387e5925ffc0f7e8cae966ed6440eab1470455792d401e708aa77a95d4f470"
+    },
+    {
+      "path": "Makefile",
+      "sha256": "2bed5dc998d1df13c3301aae492fbca89ed2536381c0a01ba5586f982ebb9823"
+    },
+    {
+      "path": "README.md",
+      "sha256": "30ff6d9f73090fe2fa9cdd8e194caaacee89a85abe453a7a28a7dd6255423a23"
+    },
+    {
+      "path": "bin/run.sh",
+      "sha256": "2c695f9c4730c710de65f64b09e5ed983648387e3695b8a0f7b9ff0bca82252c"
+    },
+    {
+      "path": "bin/verify.sh",
+      "sha256": "5ba2f0e015b400aca0269e95d51214582200f8d3328f6c353e65dacf38e7639e"
+    },
+    {
+      "path": "data/config.json",
+      "sha256": "be6fc505bc97480926d046d9ef5b0da782c155021bb761b99b637da2efce0f25"
+    },
+    {
+      "path": "data/pantry.json",
+      "sha256": "9fcbe1c7f4764d5b9962d67cd933282457b9c87469a4f02d66596244f1adf8a0"
+    },
+    {
+      "path": "data/recipes.json",
+      "sha256": "19ae10c5540530f0a9b99cdad4e4d22ea6abaaa7da345d076384198c3c9c33e6"
+    },
+    {
+      "path": "data/tags.json",
+      "sha256": "045243763c93b23fe3dd9b2a5bd46f17a7e2aa77efc1e3b8ff7dc609bb849c4b"
+    },
+    {
+      "path": "data/units.json",
+      "sha256": "a55a1fcfc1663239215b9590aa9f1dc4bc57adaac2fc060d7903cf70740ddd26"
+    },
+    {
+      "path": "docs/decisions.md",
+      "sha256": "5f514103bd6b1a8077d076c915906f67efad0e58952cd26d94cf948f0191cea5"
+    },
+    {
+      "path": "docs/design.md",
+      "sha256": "f9eed533959324a8104d634ed92e5bee7afb913165ee7695ec531dc6647eda2c"
+    },
+    {
+      "path": "docs/faq.md",
+      "sha256": "28d8fe0792a2c49892d28384b4ec94813e012ea5bc39d250f37408a99d32db1b"
+    },
+    {
+      "path": "docs/schema.md",
+      "sha256": "0c559db62964596055565c59aa140e215e437a5a6693fba05e2ec7ac0190e9bb"
+    },
+    {
+      "path": "examples/recipe-bean-salad.json",
+      "sha256": "a95a2fc545edc54eed5a57029aef84e24799dc364ac0d1ace8422fad053f49a2"
+    },
+    {
+      "path": "examples/recipe-flatbread.json",
+      "sha256": "d1870fd0bc2d528f4074d847ca80ff7013f328e4ba0fc2ea30f844a0bd581b42"
+    },
+    {
+      "path": "examples/recipe-lentil-soup.json",
+      "sha256": "a0b2595578d959892f8beec3bd967192220378720944ada75cc7d22613ec6966"
+    },
+    {
+      "path": "examples/recipe-oatmeal.json",
+      "sha256": "09b79cafe9a4cec560077d403450065d745f738fd9fd805cf755bb0f762664a9"
+    },
+    {
+      "path": "examples/recipe-pancake.json",
+      "sha256": "8dc8a9f95ddd8ec090bd6c602180bbb03556424093757f03071a0e484ebdeec5"
+    },
+    {
+      "path": "examples/recipe-rice-pot.json",
+      "sha256": "f6f5eeb225af249e67d7cd2bc89860829d3e561a036d6d97e8eb913806e138d0"
+    },
+    {
+      "path": "examples/workflow-inventory.json",
+      "sha256": "b8dd9b656a3a33e5e4eaa94fcbd2b19f75baddb8f8bee33e0bc0c07ce91cca8a"
+    },
+    {
+      "path": "examples/workflow-weekly-plan.json",
+      "sha256": "341677b16eb4269bd6b52e941a6f271fd9add9947773f084c433c5a3e00f4159"
+    },
+    {
+      "path": "src/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "src/catalog.py",
+      "sha256": "1f552ea37847e2c921139d8893b57f6fd92b4279f0ad69317ce44aea295187a3"
+    },
+    {
+      "path": "src/config.py",
+      "sha256": "187fde55869887c360a1944a572118dd9cadb7569db9087e1107cd3e563b4c06"
+    },
+    {
+      "path": "src/errors.py",
+      "sha256": "ee700af3270b028fd63015ab55a7397d2ba0ef1cdb02fe8588ba077d73f74c8b"
+    },
+    {
+      "path": "src/hashutil.py",
+      "sha256": "a8c7e81a0fc746af920050ac6d4165f762f48bc730a0b751d592cb04b763217e"
+    },
+    {
+      "path": "src/ids.py",
+      "sha256": "1fc095e2caf1480d368c0fdcbf2632bcb4832f19cd5597c3ab7c13f209f33cec"
+    },
+    {
+      "path": "src/main.py",
+      "sha256": "8c2025863575177e2fd62f457700a493f7b88a65aa3fbe29017b081a5bc3d38e"
+    },
+    {
+      "path": "src/parse.py",
+      "sha256": "1b15de13c00c7a464625a7c7d59c046bbee7da56ea0a18c7f9984bba9dce632c"
+    },
+    {
+      "path": "src/query.py",
+      "sha256": "f76eb2ee8216abd2541fe8fe16080356071d557278abf089c52b5bdb08541445"
+    },
+    {
+      "path": "src/render.py",
+      "sha256": "8977e3a743d6367c0f19a843ea2dc9fd29f60ce5c9366916d31c82b507722a69"
+    },
+    {
+      "path": "src/store.py",
+      "sha256": "e3699c1b9a41f2451b9362c394e184f4921dc10f1f0f26ee0d2f5a56bc481aa8"
+    },
+    {
+      "path": "src/workflow.py",
+      "sha256": "09b9d276eab6bde148e55ae803f9c504b506c85c3463fbfeceab0ceb22be5f78"
+    },
+    {
+      "path": "tests/__init__.py",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "tests/test_catalog.py",
+      "sha256": "e31505216cf77bdaaebc15867fd7b7d72f421d56eae89441da4f4d88c5c4744a"
+    },
+    {
+      "path": "tests/test_ids.py",
+      "sha256": "ce18fee28c194f69c6a04b82c4b23dfc19df7f9c54676a11518552f30f476d7e"
+    },
+    {
+      "path": "tests/test_query.py",
+      "sha256": "5715d3330e38fc411bdaf2a9b9f16dc827062e217ea1c7ae6e9756c53049fb37"
+    },
+    {
+      "path": "tests/test_render.py",
+      "sha256": "3802a1ea4270edcbd39083ea664860f6a72e99cddd15012522443653760312b1"
+    },
+    {
+      "path": "tests/test_store.py",
+      "sha256": "bb60d35d0836f3673a10b870177a4abef67800ec166ef33fd03b76236c647860"
+    },
+    {
+      "path": "tests/test_workflow.py",
+      "sha256": "1c3b624a682a53414bbfeb43f0dbfc8906f2b1a64e2cd0aa8b4a905a006710a6"
+    },
+    {
+      "path": "tools/hash.py",
+      "sha256": "188dddecc819685d9ef2e824f2f6f741c0a31bdba8632600ec9b38ebbec78e73"
+    }
+  ],
+  "mineId": "pantrylog@synthetic-v0",
+  "rootHash": "a8a75d8e6bd47d503f1e9f08930da739a6c252c67435a1880515164e70499b1d"
+}

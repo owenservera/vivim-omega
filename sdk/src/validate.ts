@@ -4,7 +4,7 @@
 // ownership, dependency-ref grammar, capability-request grammar.
 import type { PluginManifest, CompositionSpec, ContributionKind } from "@vivim/omega-contracts";
 import { routableOps, HOST_CAPS } from "@vivim/omega-contracts";
-import { OP_PATTERN } from "./schema.ts";
+import { OP_PATTERN, MINE_PATTERN, EVIDENCE_REF_PATTERN } from "./schema.ts";
 
 export interface ValidationIssue {
   code: string;     // stable machine key, e.g. "RISK_NON_CONTRACT"
@@ -207,4 +207,108 @@ export function validateComposition(spec: CompositionSpec, opts: CompositionVali
 /** Grantable capability universe for a composition context: host caps + port: forms of its routed ops. */
 export function grantableFromOps(ops: string[]): string[] {
   return [...Object.values(HOST_CAPS), ...ops.map((op) => `port:${op}`)];
+}
+
+// ---- generality validators (Omega Forge Wave 0, D-405) ------------------------
+// The evidence axis: WHAT HAS THIS ARTIFACT BEEN PROVEN AGAINST. Orthogonal to
+// ProvenanceTier (who vouches). Four codes, all pure functions of the manifest
+// (+ caller-supplied context for the report-only stale check):
+//   GEN_LEVEL_MISSING      — no declared level (hard for forge.*/pack.builder/new
+//                            manifests; report-only for the legacy retrofit batch)
+//   GEN_MINE_UNPINNED      — harvested without a pinned <repo>@<sha>, empty
+//                            originPaths, or a missing/invalid harvestClass
+//   GEN_UNPROVEN           — generic without >=2 resolvable evidence refs, one
+//                            independent of the declared mine
+//   GEN_SPECULATIVE_STALE  — speculative with a live caller and no promotion
+//                            evidence, or caller-less past the wave threshold
+//                            (REPORT-ONLY in Wave 0 — no wave/caller tracking yet)
+
+export interface GeneralityContext {
+  /** Treat a missing level as an issue (forge.* plugins, pack.builder, new/modified manifests). */
+  hard?: boolean;
+  /** Caller tracking (report-only in Wave 0): does this artifact have a live consumer? */
+  liveCaller?: boolean;
+  /** Waves since first record with no caller (report-only in Wave 0). */
+  wavesWithoutCaller?: number;
+  /** Stale threshold in waves (default 3, packet §10). */
+  staleAfterWaves?: number;
+}
+
+/** Is one evidence ref independent of the declared mine `repo@sha`?
+ *  Dependent iff it IS that mine, or it is a fixture whose path carries the
+ *  mine's repo name as a segment (a fixture derived from that mine). Ledger,
+ *  composition, decision, second-mine, and foreign-path fixture refs are
+ *  independent — the consumer/decision families name consumers, not sources. */
+function evidenceIndependentOf(ref: string, mine: string | null | undefined): boolean {
+  if (!mine) return true; // no declared mine: every resolvable ref is independent
+  if (ref === `mine:${mine}`) return false;
+  const repo = mine.split("@")[0] ?? "";
+  if (repo && ref.startsWith("fixture:")) {
+    const path = ref.slice("fixture:".length).split("@")[0] ?? "";
+    if (path.split("/").includes(repo)) return false;
+  }
+  return true;
+}
+
+/** The four generality validators over one manifest. Pure; issue codes are stable machine keys. */
+export function validateGenerality(m: PluginManifest, ctx: GeneralityContext = {}): ValidationIssue[] {
+  const issues: ValidationIssue[] = [];
+  const g = m.generality;
+  const at = `${m.id}.generality`;
+
+  // GEN_LEVEL_MISSING — declared by every plugin and pack; the phase-in policy
+  // (hard for forge.*/pack.builder/new manifests) is the CALLER's stance, encoded
+  // by ctx.hard. Report-only callers list the finding without failing.
+  if (!g || typeof g.level !== "string") {
+    if (ctx.hard !== false) issues.push(issue("GEN_LEVEL_MISSING", at, `${m.id} declares no generality level (speculative | harvested | generic) — the evidence axis is mandatory for forge.* plugins, pack.builder, and new or modified manifests`));
+    return issues; // nothing else can be checked without a level
+  }
+
+  if (g.level === "speculative") {
+    // GEN_SPECULATIVE_STALE — report-only in Wave 0 (wave/caller tracking lands later).
+    if (ctx.liveCaller && (g.evidence ?? []).length === 0) {
+      issues.push(issue("GEN_SPECULATIVE_STALE", `${at}.level`, `${m.id} is speculative but has a live caller and no promotion evidence — promote (decision record) or remove the caller`));
+    }
+    const threshold = ctx.staleAfterWaves ?? 3;
+    if (typeof ctx.wavesWithoutCaller === "number" && ctx.wavesWithoutCaller >= threshold) {
+      issues.push(issue("GEN_SPECULATIVE_STALE", `${at}.level`, `${m.id} is speculative with no caller for ${ctx.wavesWithoutCaller} waves (threshold ${threshold}) — delete it or re-record the intent`));
+    }
+  }
+
+  if (g.level === "harvested") {
+    // GEN_MINE_UNPINNED — the full harvested discipline: pinned mine, real
+    // origin paths, a valid harvest class. Each gap is its own named issue so
+    // the fix is mechanical.
+    if (typeof g.mine !== "string" || !MINE_PATTERN.test(g.mine)) {
+      issues.push(issue("GEN_MINE_UNPINNED", `${at}.mine`, `${m.id} is harvested but mine is missing or unpinned (want "<repo>@<sha>", 7-64 hex)`));
+    }
+    if (!Array.isArray(g.originPaths) || g.originPaths.length === 0) {
+      issues.push(issue("GEN_MINE_UNPINNED", `${at}.originPaths`, `${m.id} is harvested but names no originPaths inside the pinned mine`));
+    }
+    if (typeof g.harvestClass !== "string" || !/^(ALGORITHM|SHAPED|SCHEMA|FIXTURE|POLICY|TEST|TOOLING|OTHER)$/.test(g.harvestClass)) {
+      issues.push(issue("GEN_MINE_UNPINNED", `${at}.harvestClass`, `${m.id} is harvested but harvestClass is missing or invalid (ALGORITHM|SHAPED|SCHEMA|FIXTURE|POLICY|TEST|TOOLING|OTHER)`));
+    }
+  }
+
+  if (g.level === "generic") {
+    // GEN_MINE_UNPINNED (generic + mine present): the origin mine, if declared,
+    // is still pinned — genericity never licenses a vague origin.
+    if (g.mine !== undefined && g.mine !== null && !MINE_PATTERN.test(g.mine)) {
+      issues.push(issue("GEN_MINE_UNPINNED", `${at}.mine`, `${m.id} declares generic with an unpinned origin mine (want "<repo>@<sha>", 7-64 hex)`));
+    }
+    // GEN_UNPROVEN — >=2 resolvable refs, >=1 independent of the declared mine.
+    const refs = Array.isArray(g.evidence) ? g.evidence : [];
+    const unresolvable = refs.filter((r) => !EVIDENCE_REF_PATTERN.test(r));
+    for (const bad of unresolvable) {
+      issues.push(issue("GEN_UNPROVEN", `${at}.evidence`, `${m.id} evidence ref "${bad}" is not a resolvable ref (ledger:ns/id | fixture:path@sha | mine:repo@sha | composition:id@sha | decision:D-NNN)`));
+    }
+    if (refs.length < 2) {
+      issues.push(issue("GEN_UNPROVEN", `${at}.evidence`, `${m.id} declares generic with ${refs.length} evidence ref(s) — generic requires >=2 resolvable refs`));
+    } else if (!refs.some((r) => evidenceIndependentOf(r, g.mine))) {
+      // independence is only decidable with the refs in hand — a count failure subsumes it
+      issues.push(issue("GEN_UNPROVEN", `${at}.evidence`, `${m.id} declares generic but every evidence ref depends on the declared mine (${g.mine ?? "n/a"}) — one independent consumer or second-mine ref is required`));
+    }
+  }
+
+  return issues;
 }

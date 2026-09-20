@@ -1,0 +1,19 @@
+{
+  "_note": "Hash-pinned pack.builder fixtures (Wave 0 / D-406). Regenerate with: bun run packs/builder/test/fixtures/pin.ts — any fixture edit must re-pin; schema.test.ts verifies every hash.",
+  "fixtures": {
+    "valid/assay-verdict.json": "sha256:c6bfb0b402ba017814aa3ef439443fd3c3c3367213bb9bb10aa17fb550b0ebe4",
+    "valid/capture-receipt.json": "sha256:0c971d482ce934f0484413844f56f3568d6c859463817f3a4b285710a3465772",
+    "valid/generality-stamp.json": "sha256:fe0af09378c4bfea4a56456a3362285226bd96f88cbfc7e9f8fd8f3a037b2061",
+    "valid/inventory-row.json": "sha256:8d8f1a88da9b6aff39ed534d382f30a48939fc92ad45f26f3ab3d84aaa18c7a2",
+    "valid/proof-report.json": "sha256:dd7e48315f9ee93f2ea620a82082ea0cf43d8deb7fcc7f420846a8fcfcddf9d7",
+    "valid/proposal-artifact.json": "sha256:18847a1bd65075ccd3e8d3f62e682215574fc64f20a87dec5e80364bf3d12443",
+    "valid/shape-blueprint.json": "sha256:813d5e504d451779b0da0d0f778aa3cb472548a7d9a2c6ef0e7cd5d97ac128cf",
+    "invalid/assay-verdict.json": "sha256:ffbbf15a071c867e1f65444f9760c7a177aaa4d6aa762945c19a472736acfc1b",
+    "invalid/capture-receipt.json": "sha256:6fad8dad33df052304396cc35e6ff3f31019b93dd60a5acbacaaa3ce7553f828",
+    "invalid/generality-stamp.json": "sha256:c0c6480afc5e05fb8cec4a9e3fddad896025f2c651d49330acfe9ad3286b4a02",
+    "invalid/inventory-row.json": "sha256:23d9147971c8cf893a51f8b55c1a4d49cc1f29ae653cac33f19b02982b404aa0",
+    "invalid/proof-report.json": "sha256:e7d77f125d74e324df3a912dfc90286ba47df5100e88686678a7632afd4ee5bc",
+    "invalid/proposal-artifact.json": "sha256:4d52fc8185f0ac85bc48e8c2e9b1673b42fb47505d1632bee3178b76b9af56b3",
+    "invalid/shape-blueprint.json": "sha256:745b63efdf9083ddd30be79008b7af7f94c7ccc06c77fb98e526eb7edc910dd1"
+  }
+}
