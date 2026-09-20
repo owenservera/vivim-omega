@@ -1,5 +1,12 @@
 # VIVIM-Ω — Roadmap (the road from setup day to cutover)
 
+> **Re-sequenced 2026-09-20 by D-410 (core-first):** the Core Phase (S1
+> canonical-intent seam → S2 principal-identity seam → S3 evidence-store
+> choicepoint) precedes all plugin work; all plugin design is parked until
+> core-omega-ready, then a plugin-identification pass precedes parallel work.
+> The phases below are the pre-re-sequencing map, kept for the record; the
+> authoritative sequencing is D-410 + `docs/forge/BACKLOG.md`.
+
 **Posture:** planning reference only. It ratifies nothing and builds nothing — every phase
 below lands through the normal path: PROPOSED wave commit → green `omega:gate` → falsifier
 evidence → RATIFIED D-rows (`docs/decisions/README.md`). Where a wave already has an
