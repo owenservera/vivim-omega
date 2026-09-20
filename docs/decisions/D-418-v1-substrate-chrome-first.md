@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -148,6 +148,8 @@ is the call. In substance:
   compositions-stage green together prove both halves.
 - Full gate green ×2 on this record's tree (numbers cited at ratification);
   quick gate green; host flat 1500/1500; zero host LOC; anvil untouched.
+
+- Ratified on greens (directive-class, same-day per D-364): landing commit e6c6b09; full gate green 1175/0 ×2 on the round's PROPOSED tree (2026-09-20T14:12:54Z, 14:14:34Z — 1126 + 49 new falsifiers since bundle _11: the course-correction sweeps + the efficiency-tooling suite); zero host LOC; anvil untouched; compositions 18.
 
 ## Index
 
