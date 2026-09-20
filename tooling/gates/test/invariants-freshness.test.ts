@@ -116,12 +116,12 @@ describe("F-4 — the live lock: the real digest is fresh against the real regis
     expect((r.detail as { stale: boolean }).stale).toBe(false);
     expect((r.detail as { triggers: string[] }).triggers).toEqual([]);
     // The pin tracks the page's current pass: pass 2 was as-of D-415 (D-415's
-    // own landing); pass 3 is the 2026-09-20 course-correction refresh
-    // (D-418..D-421) — lawful per the D-415 refresh policy (trigger: wave
-    // close + gate-check added + new law). A future refresh bumps this pin
-    // in the same commit as the page.
-    expect((r.detail as { pass: number }).pass).toBe(3);
-    expect((r.detail as { asOf: string }).asOf).toBe("D-421");
+    // own landing); pass 3 the 2026-09-20 course-correction refresh (D-418..D-421,
+    // as-of D-421); pass 4 the process-stage refresh (a gate stage added, D-423;
+    // as-of D-422, the latest ratified). Lawful per the D-415 refresh policy. A
+    // future refresh bumps this pin in the same commit as the page.
+    expect((r.detail as { pass: number }).pass).toBe(4);
+    expect((r.detail as { asOf: string }).asOf).toBe("D-422");
   });
 });
 

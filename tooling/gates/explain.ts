@@ -59,6 +59,11 @@ export const STAGE_DOCS: Record<string, { scans: string; allowlist: string; rule
     allowlist: "REPORT-ONLY (D-415, A3): staleness (30 ratified rows past as-of; stage drift either direction) reports in the detail and stays green — the flip to failing is a future record's call; mechanical breakage (unreadable digest, malformed marker) fails",
     rule: "tooling/gates/invariants-freshness.ts (D-415), falsifiers in tooling/gates/test/invariants-freshness.test.ts",
   },
+  "process": {
+    scans: "the process self-model: build/status.json (gate color, staleness vs HEAD), the decisions board (open/blocking), docscan findings, the ledger home — via decisions.ts / docscan.ts / round-close.ts, no second parser",
+    allowlist: "REPORT-ONLY (D-423, mirrors D-415/D-368): an open board, a stale status.json, or live docscan findings report in the detail and stay green — the judgment stays with the ratify/round-close ceremony; only mechanical breakage (a derivation throw) fails",
+    rule: "tooling/gates/process.ts (D-423), falsifiers in tooling/gates/test/process.test.ts",
+  },
   "tests": {
     scans: "full bun test suite (capped concurrency, 60s per-test budget)",
     allowlist: "none — every test must pass",

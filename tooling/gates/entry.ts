@@ -14,6 +14,7 @@ import { spawnSync as nodeSpawnSync } from "node:child_process";
 import { boardFreshness, listOpenQuestions } from "./decisions.ts";
 import { resolveLedgerDir } from "./round-close.ts";
 import { renderDocscanReport, scanDocs } from "./docscan.ts";
+import { checkProcess } from "./process.ts";
 
 const ROOT = join(import.meta.dir, "../..");
 
@@ -150,6 +151,18 @@ export function entryReport(root = ROOT): string[] {
     if (ds.findings.length > 5) lines.push(`  … (+${ds.findings.length - 5} more — bun run omega:docscan)`);
   } catch (e) {
     lines.push(`docscan: mechanical breakage — ${String(e instanceof Error ? e.message : e).slice(0, 120)}`);
+  }
+
+  // process self-model (D-423) — one consolidated line, sourced from the same
+  // derivation the `process` gate stage and `omega:process` use
+  try {
+    const pm = checkProcess(root);
+    const d = pm.detail;
+    lines.push(pm.ok
+      ? `Process: gate ${d["gateGreen"] === null ? "n/a" : d["gateGreen"] ? "GREEN" : "RED"}${d["gateStale"] ? " (STALE vs tip)" : ""} · board ${d["boardOpen"]} open/${d["boardBlocking"]} blocking · docscan ${d["docscanFindings"]} · ratified ${d["ratifiedCount"]} index rows (omega:process)`
+      : `Process: mechanical breakage — ${pm.issues.join("; ").slice(0, 120)}`);
+  } catch (e) {
+    lines.push(`Process: mechanical breakage — ${String(e instanceof Error ? e.message : e).slice(0, 120)}`);
   }
 
   // harness worklog law

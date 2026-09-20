@@ -31,6 +31,7 @@
     "omega:brief": "bun run tooling/gates/brief.ts",
     "omega:docscan": "bun run tooling/gates/docscan.ts",
     "omega:entry": "bun run tooling/gates/entry.ts",
+    "omega:process": "bun run tooling/gates/process.ts",
     "omega:bench": "bun run tooling/bench/bench.ts",
     "omega:probe": "bun run tooling/bench/vault-probe.ts",
     "omega:containment": "bun run platform/src/containment.ts",

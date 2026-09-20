@@ -266,6 +266,19 @@ try {
   else fail("invariants-freshness", f.issues.join("; "));
 } catch (e) { fail("invariants-freshness", String(e)); }
 
+// 5f · process (D-423 — report-only): the development genome's self-model —
+// gate color/staleness, board open/blocking, docscan findings, ledger home —
+// consolidated from the EXISTING readers (decisions.ts / docscan.ts /
+// round-close.ts), never a second parser. REPORT-ONLY, same split as
+// invariants-freshness: an open board or stale status.json is a fact in the
+// detail, never a failure; only mechanical breakage (a derivation throw) fails.
+try {
+  const { checkProcess } = await import("./process.ts");
+  const pr = checkProcess(ROOT);
+  if (pr.ok) pass("process", pr.detail);
+  else fail("process", pr.issues.join("; "));
+} catch (e) { fail("process", String(e)); }
+
 // 6 · tests (gate evidence)
 // Concurrency is capped by box size (D-317): past core count, worker-heavy test
 // files thrash instead of parallelizing — measured 64s green at 4-wide vs
