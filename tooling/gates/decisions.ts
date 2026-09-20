@@ -16,13 +16,41 @@ function spawnSync(cmd: string[], opts: { cwd: string }): { exitCode: number; st
 
 export const GRANDFATHER_BELOW = 313; // index rows below this are the index-only era (exempt from file rules)
 export const DECISION_CLASS_FROM = 360; // rows from here on declare a class tag: evidence (probe/test-backed) or directive (owner call)
+/** D-413 (A1): the generated-row era. Records from here on carry an `## Index`
+ *  section (summary/rationale/class) and their BUILD-DECISIONS row is GENERATED
+ *  from it — `omega:new-decision` appends it at scaffold time, `omega:questions
+ *  --write` regenerates it, and the checker requires byte-equality. The
+ *  hand-typed-row trap class (the D-410 first-word bite) becomes unexpressible.
+ *  Rows below stay as they are: < D-313 the index-only era, D-313..D-412 the
+ *  hand-typed era — append-only, untouched (RATIFIED rows never edited). */
+export const GENERATED_FROM = 413;
+/** D-413 (A4): the Blocks-line vocabulary — what an open decision may block.
+ *  Sources: the ROADMAP wave ids (W2..W7 → Wave 2..7, Wave 1 the mine wave) +
+ *  D-410's post-core sequence (Core Phase, parallel work). Checker-validated. */
+export const BLOCKS_VOCAB: string[] = [
+  "none", "Core Phase", "Wave 1", "Wave 2", "Wave 3", "Wave 4", "Wave 5", "Wave 6", "Wave 7", "parallel work",
+];
+/** D-413 (A7): known cross-track id collisions (the akb/Consolidated-Core
+ *  D-389 vs omega D-389 collision, de-collided as OD-9). Mirrored in
+ *  docs/decisions/CROSS-TRACK-REGISTRY.md — the test suite locks the two
+ *  together (the D-403 doc-drift class, caught by construction). Bare
+ *  citations of these ids warn (report-only) from the generated era on. */
+export const KNOWN_TRACK_COLLISIONS: Record<string, number[]> = { akb: [389] };
+export const LEGAL_CLASSES: string[] = ["evidence", "directive"];
 const REQUIRED_SECTIONS = ["Status", "Context", "Options", "Decision", "Consequences", "Evidence"];
 const LEGAL_STATUSES = ["PROPOSED", "RATIFIED", "SUPERSEDED", "REJECTED"];
+/** Case-insensitive on purpose: the index-row status parser uppercases the
+ *  whole line, so lowercase status words trap just as hard (the D-410 bite). */
+export const STATUS_WORD_RE = /\b(PROPOSED|RATIFIED|SUPERSEDED|REJECTED)\b/i;
 
 export interface IndexRow { n: number; status: string; line: number; raw: string }
+/** D-413 (A1): the `## Index` section — the generated row's single source. */
+export interface IndexMeta { summary: string; rationale: string; class: string }
 export interface RecordDoc {
   n: number; file: string; sections: string[]; status: string;
   optionsText: string; decisionLine: string; evidenceText: string; raw: string;
+  indexMeta: IndexMeta | null; // the ## Index section, when present
+  blocks: string | null;       // the `Blocks:` line, when present (A4)
 }
 
 /** Parse `| **D-NNN** | … | STATUS | … |` rows from BUILD-DECISIONS.md. */
@@ -37,6 +65,25 @@ export function parseIndexRows(text: string): IndexRow[] {
     out.push({ n: Number(m[1]), status: s ? s[1] : "", line: i + 1, raw: line });
   });
   return out;
+}
+
+/** Parse the `## Index` section body (D-413): `summary:` / `rationale:` /
+ *  `class:` lines. Null when the section is absent; empty strings when a line
+ *  is missing (the validator names it). */
+export function parseIndexMeta(body: string | undefined): IndexMeta | null {
+  if (body === undefined) return null;
+  return {
+    summary: /^summary:\s*(.+?)\s*$/m.exec(body)?.[1] ?? "",
+    rationale: /^rationale:\s*(.+?)\s*$/m.exec(body)?.[1] ?? "",
+    class: (/^class:\s*(.+?)\s*$/m.exec(body)?.[1] ?? "").trim().toLowerCase(),
+  };
+}
+
+/** D-413 (A1): the one true spelling of a generated-era index row. The checker
+ *  requires byte-equality, the writer regenerates it, the scaffold appends it —
+ *  one derivation, N surfaces (MAC-05). */
+export function generateIndexRow(n: number, status: string, meta: IndexMeta, file: string): string {
+  return `| **D-${n}** | ${meta.summary} Detail: docs/decisions/${file} | **${status}** · ${meta.class} | ${meta.rationale} |`;
 }
 
 /** Split a record into its ## sections (order-sensitive, first occurrence wins). */
@@ -64,6 +111,8 @@ export function parseRecord(n: number, file: string, text: string): RecordDoc {
     decisionLine: (bodies.get("Decision") ?? "").split("\n").map((l) => l.trim()).find((l) => l.startsWith("**Decision:**")) ?? "",
     evidenceText: bodies.get("Evidence") ?? "",
     raw: text,
+    indexMeta: parseIndexMeta(bodies.get("Index")),
+    blocks: /^Blocks:\s*(.+?)\s*$/m.exec(text)?.[1] ?? null,
   };
 }
 
@@ -102,6 +151,30 @@ export function validateRecord(doc: RecordDoc, shaExists: (sha: string) => boole
     issues.push(`${at}: SUPERSEDED requires a Superseded-By/Supersedes pointer`);
   }
   if (doc.evidenceText.trim().length === 0) issues.push(`${at}: ## Evidence is empty`);
+  // D-413 (A1) — the generated-row era: ## Index is the row's single source.
+  if (doc.n >= GENERATED_FROM) {
+    if (!doc.indexMeta) {
+      issues.push(`${at}: missing ## Index section (required from D-${GENERATED_FROM}: summary:/rationale:/class: lines — omega:new-decision emits it)`);
+    } else {
+      if (!doc.indexMeta.summary || !doc.indexMeta.rationale) {
+        issues.push(`${at}: ## Index needs non-empty summary: and rationale: lines (the row's Decision and Rationale cells)`);
+      }
+      if (!LEGAL_CLASSES.includes(doc.indexMeta.class)) {
+        issues.push(`${at}: ## Index class "${doc.indexMeta.class}" illegal (want ${LEGAL_CLASSES.join(" | ")})`);
+      }
+      const flat = `${doc.indexMeta.summary} ${doc.indexMeta.rationale}`;
+      if (STATUS_WORD_RE.test(flat)) {
+        issues.push(`${at}: ## Index summary/rationale must not contain status words (${LEGAL_STATUSES.join("|")}) — the index first-word trap class (the D-410 bite)`);
+      }
+      if (flat.includes("|")) {
+        issues.push(`${at}: ## Index summary/rationale must not contain "|" — it would break the generated row`);
+      }
+    }
+  }
+  // D-413 (A4) — the Blocks line, vocabulary-checked when present.
+  if (doc.blocks !== null && !BLOCKS_VOCAB.includes(doc.blocks)) {
+    issues.push(`${at}: Blocks "${doc.blocks}" outside the vocabulary (${BLOCKS_VOCAB.join(" | ")})`);
+  }
   if (doc.status === "RATIFIED") {
     const shas = doc.evidenceText.match(/\b[0-9a-f]{7,40}\b/g) ?? [];
     if (!shas.some((s) => { try { return shaExists(s); } catch { return false; } })) {
@@ -111,7 +184,28 @@ export function validateRecord(doc: RecordDoc, shaExists: (sha: string) => boole
   return issues;
 }
 
-export interface DecisionsResult { ok: boolean; detail: Record<string, unknown>; issues: string[] }
+/** D-413 (A7): report-only — bare citations of ids in the known collision set
+ *  must be track-qualified from the generated era on. Grandfathered before;
+ *  never fails the gate (warnings, not issues). The lookbehind excludes the
+ *  qualified spellings (akb:D-389, omega:D-389) — only bare D-389 bites. */
+export function scanTrackCollisions(doc: RecordDoc): string[] {
+  if (doc.n < GENERATED_FROM) return [];
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const m of doc.raw.matchAll(/(?<!:)\bD-(\d+)\b/g)) {
+    const cited = Number(m[1]);
+    for (const [track, ids] of Object.entries(KNOWN_TRACK_COLLISIONS)) {
+      if (!ids.includes(cited)) continue;
+      const key = `${track}:${cited}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push(`D-${doc.n}: bare citation "D-${cited}" collides with ${track}:D-${cited} — track-qualify it (omega:D-${cited} or ${track}:D-${cited}); registry: docs/decisions/CROSS-TRACK-REGISTRY.md`);
+    }
+  }
+  return out;
+}
+
+export interface DecisionsResult { ok: boolean; detail: Record<string, unknown>; issues: string[]; warnings: string[] }
 
 function defaultShaExists(root: string): (sha: string) => boolean {
   return (sha: string) => {
@@ -152,6 +246,7 @@ export async function checkDecisions(
     byId.set(n, [...(byId.get(n) ?? []), f]);
   }
   let ratified = 0;
+  const warnings: string[] = [];
   for (const [n, fs] of byId) {
     if (fs.length > 1) issues.push(`D-${n}: ${fs.length} record files (${fs.join(", ")}) — exactly one per decision`);
     const doc = parseRecord(n, `docs/decisions/${fs[0]}`, readFileSync(join(dir, fs[0]), "utf-8"));
@@ -159,21 +254,26 @@ export async function checkDecisions(
     const row = rows.find((r) => r.n === n);
     if (!row) {
       issues.push(`D-${n}: record file with no BUILD-DECISIONS.md index row`);
-    } else if (row.status !== doc.status) {
-      issues.push(`D-${n}: status mismatch (index ${row.status || "?"}, record ${doc.status})`);
+    } else {
+      if (row.status !== doc.status) issues.push(`D-${n}: status mismatch (index ${row.status || "?"}, record ${doc.status})`);
+      // D-413 (A1): generated-era rows are byte-exact derivations of the record.
+      if (n >= GENERATED_FROM && doc.indexMeta && row.raw !== generateIndexRow(n, doc.status, doc.indexMeta, fs[0])) {
+        issues.push(`D-${n}: index row is not the generated row — regenerate (bun run omega:questions --write); hand-editing generated-era rows is unexpressible by design`);
+      }
     }
     if (doc.status === "RATIFIED") ratified++;
+    warnings.push(...scanTrackCollisions(doc));
   }
   for (const r of rows) {
     if (r.n >= GRANDFATHER_BELOW && !byId.has(r.n)) {
       issues.push(`D-${r.n}: index row with no docs/decisions/D-${r.n}-*.md record file`);
     }
   }
-  const detail: Record<string, unknown> = { rows: rows.length, records: byId.size, ratified, grandfatherBelow: GRANDFATHER_BELOW };
+  const detail: Record<string, unknown> = { rows: rows.length, records: byId.size, ratified, grandfatherBelow: GRANDFATHER_BELOW, generatedFrom: GENERATED_FROM, trackWarnings: warnings.length };
   try {
     detail.openQuestions = summarizeOpenQuestions(root);
   } catch { /* board summary is informational — never fails the contract check */ }
-  return { ok: issues.length === 0, detail, issues };
+  return { ok: issues.length === 0, detail, issues, warnings };
 }
 
 // ---- open-questions board (team surface over PROPOSED records) ----
@@ -203,9 +303,30 @@ export interface OpenQuestion {
   recommended: string; // Decision-line body (may contain TBD)
   hasTbd: boolean;     // semantically open, not just unconfirmed
   awaiting: string;    // who acts next
+  blocks: string;      // the Blocks: line, "none" when absent (D-413, A4)
 }
 
-/** Every PROPOSED record is an open question by definition. Sorted by D-number. */
+/** Pure core of the board (D-413): PROPOSED records → open questions, sorted
+ *  blocking-first then D-number — the program's true serialization (owner
+ *  attention on blockers) sorts to the top. */
+export function computeOpenQuestions(items: Array<{ n: number; file: string; text: string }>): OpenQuestion[] {
+  const out: OpenQuestion[] = [];
+  for (const it of items) {
+    const doc = parseRecord(it.n, it.file, it.text);
+    if (doc.status !== "PROPOSED") continue;
+    const titleLine = it.text.split("\n").find((l) => l.startsWith("# ")) ?? `# D-${it.n}`;
+    const recommended = decisionBody(it.text) || "(no Decision line — record invalid, see gate)";
+    const hasTbd = /\bTBD\b/.test(recommended);
+    out.push({
+      n: it.n, file: it.file, title: titleLine.replace(/^#\s*/, ""), recommended, hasTbd,
+      blocks: doc.blocks ?? "none",
+      awaiting: hasTbd ? "Owner decision — TBD open" : "Owner confirmation",
+    });
+  }
+  return out.sort((a, b) => (a.blocks === "none" ? 1 : 0) - (b.blocks === "none" ? 1 : 0) || a.n - b.n);
+}
+
+/** Every PROPOSED record is an open question by definition. Blocking-first, then D-number (D-413, A4). */
 export function listOpenQuestions(root: string): OpenQuestion[] {
   const dir = join(root, "docs/decisions");
   let files: string[] = [];
@@ -214,7 +335,7 @@ export function listOpenQuestions(root: string): OpenQuestion[] {
   } catch {
     return [];
   }
-  const out: OpenQuestion[] = [];
+  const items: Array<{ n: number; file: string; text: string }> = [];
   for (const f of files) {
     const n = Number(/^D-(\d+)-/.exec(f)![1]);
     if (n < GRANDFATHER_BELOW) continue;
@@ -224,17 +345,9 @@ export function listOpenQuestions(root: string): OpenQuestion[] {
     } catch {
       continue;
     }
-    const doc = parseRecord(n, `docs/decisions/${f}`, text);
-    if (doc.status !== "PROPOSED") continue;
-    const titleLine = text.split("\n").find((l) => l.startsWith("# ")) ?? `# D-${n}`;
-    const recommended = decisionBody(text) || "(no Decision line — record invalid, see gate)";
-    const hasTbd = /\bTBD\b/.test(recommended);
-    out.push({
-      n, file: `docs/decisions/${f}`, title: titleLine.replace(/^#\s*/, ""), recommended, hasTbd,
-      awaiting: hasTbd ? "Owner decision — TBD open" : "Owner confirmation",
-    });
+    items.push({ n, file: `docs/decisions/${f}`, text });
   }
-  return out.sort((a, b) => a.n - b.n);
+  return computeOpenQuestions(items);
 }
 
 function headSha(root: string): string {
@@ -295,7 +408,7 @@ export function renderOpenQuestionsBoard(root: string, baseSha: string, generate
   const qs = listOpenQuestions(root);
   const rows = qs.map((q) => {
     const short = q.title.replace(/^D-\d+\s*[—–-]\s*/, ""); // ID has its own column
-    return `| **D-${q.n}** | ${short} | ${q.recommended} | ${q.awaiting} | [record](${q.file.split("/").pop()}) |`;
+    return `| **D-${q.n}** | ${short} | ${q.recommended} | ${q.blocks} | ${q.awaiting} | [record](${q.file.split("/").pop()}) |`;
   });
   return `# Open Questions (decision backlog)
 
@@ -305,8 +418,8 @@ ${qs.length === 0
     ? "No open questions. Every decision record is RATIFIED, SUPERSEDED, or REJECTED."
     : `_${qs.length} PROPOSED decision${qs.length === 1 ? "" : "s"} awaiting owner calls. Each row links to its record — the matrix, criteria, and evidence live there, not here._`}
 
-| ID | Question | Recommended position | Awaiting | Record |
-|---|---|---|---|---|
+| ID | Question | Recommended position | Blocks | Awaiting | Record |
+|---|---|---|---|---|---|
 ${rows.join("\n")}
 
 ## How to propose (team workflow)
@@ -318,17 +431,74 @@ ${rows.join("\n")}
 `;
 }
 
+/** D-413 (A1): the --write path for docs/BUILD-DECISIONS.md — regenerate every
+ *  generated-era row from its record (replace drifted ones, append missing ones
+ *  in D-order after the last row). Hand-era rows are returned byte-verbatim —
+ *  the append-only discipline is preserved by construction. Pure:
+ *  (indexText, docs) -> { text, changed, appended }; byte-stable when clean. */
+export function regenerateIndexRows(
+  indexText: string,
+  docs: Array<{ n: number; file: string; doc: RecordDoc }>,
+): { text: string; changed: number; appended: number } {
+  const gen = docs
+    .filter((d) => d.n >= GENERATED_FROM && d.doc.indexMeta)
+    .sort((a, b) => a.n - b.n);
+  if (gen.length === 0) return { text: indexText, changed: 0, appended: 0 };
+  const rows = parseIndexRows(indexText);
+  const lines = indexText.split("\n");
+  let lastRowLine = rows.reduce((m, r) => Math.max(m, r.line), 0);
+  let changed = 0;
+  let appended = 0;
+  for (const d of gen) {
+    const generated = generateIndexRow(d.n, d.doc.status, d.doc.indexMeta!, d.file);
+    const existing = rows.find((r) => r.n === d.n);
+    if (existing) {
+      if (lines[existing.line - 1] !== generated) {
+        lines[existing.line - 1] = generated;
+        changed++;
+      }
+    } else if (lastRowLine > 0) {
+      lines.splice(lastRowLine, 0, generated); // right after the last row, D-order
+      lastRowLine += 1;
+      appended++;
+    } else {
+      lines.push(generated); // degenerate: an index with no rows at all
+      appended++;
+    }
+  }
+  if (changed === 0 && appended === 0) return { text: indexText, changed: 0, appended: 0 };
+  return { text: lines.join("\n"), changed, appended };
+}
+
 if (import.meta.main) {
   const root = join(import.meta.dir, "../..");
   if (process.argv.includes("--write")) {
     const head = headSha(root);
+    // D-413 (A1): regenerate the generated-era index rows from the records
+    // first, then the board — one command, one derivation (MAC-05).
+    const indexText = readFileSync(join(root, "docs/BUILD-DECISIONS.md"), "utf-8");
+    const dir = join(root, "docs/decisions");
+    const docs = readdirSync(dir)
+      .filter((f) => /^D-\d+-.+\.md$/.test(f))
+      .map((f) => {
+        const n = Number(/^D-(\d+)-/.exec(f)![1]);
+        return { n, file: f, doc: parseRecord(n, f, readFileSync(join(dir, f), "utf-8")) };
+      });
+    const regen = regenerateIndexRows(indexText, docs);
+    if (regen.changed > 0 || regen.appended > 0) {
+      writeFileSync(join(root, "docs/BUILD-DECISIONS.md"), regen.text);
+    }
     const md = renderOpenQuestionsBoard(root, head, new Date().toISOString());
     const dest = join(root, "docs/decisions/OPEN-QUESTIONS.md");
     writeFileSync(dest, md);
     const n = listOpenQuestions(root).length;
-    console.log(`wrote docs/decisions/OPEN-QUESTIONS.md (${n} open, base ${head})`);
+    console.log(`wrote docs/decisions/OPEN-QUESTIONS.md (${n} open, base ${head}); index rows: ${regen.changed} regenerated, ${regen.appended} appended`);
   } else {
     checkDecisions(root).then((r) => {
+      if (r.warnings.length > 0) {
+        console.log("warnings (report-only, D-413 A7 — cross-track citations):");
+        for (const w of r.warnings) console.log(`  - ${w}`);
+      }
       console.log(JSON.stringify(r.ok ? { ok: true, ...r.detail } : { ok: false, issues: r.issues }, null, 2));
       process.exit(r.ok ? 0 : 1);
     });

@@ -1,4 +1,4 @@
-# The Decision Contract (v1)
+# The Decision Contract (v2 — D-413)
 
 Decisions with clear eyes: every consequential choice in this repo is recorded as a
 **decision record** — options, criteria, evidence, verdict — and the gate enforces the
@@ -8,12 +8,17 @@ A `RATIFIED` without evidence is not ratified.
 ## Where things live
 
 - `docs/BUILD-DECISIONS.md` — the **index**: one row per decision (`D-NNN`), append-only.
-  Rows `D-210`–`D-312` are the index-only era (grandfathered, see §4).
+  Rows `D-210`–`D-312` are the index-only era; `D-313`–`D-412` the hand-typed era; from
+  **`D-413`** rows are **generated** from the record's `## Index` section (see §“The
+  generated-row era” below).
 - `docs/decisions/D-NNN-<slug>.md` — the **record**: the full matrix for one decision.
   Required for every index row `D-313` and up.
+- `docs/decisions/CROSS-TRACK-REGISTRY.md` — the cross-track citation law (D-413, A7).
 - `tooling/gates/decisions.ts` — the **checker**: validates index ↔ record consistency
   and record shape. Runs as the `decisions` stage of `bun run omega:gate`
   (and standalone via `bun run omega:decisions`).
+- `tooling/gates/new-decision.ts` — the **scaffold** (`bun run omega:new-decision`, D-413):
+  emits a record that passes the contract by construction, plus its generated row.
 
 ## Record format
 
@@ -36,6 +41,10 @@ One file per decision, named `D-<n>-<slug>.md`. Exactly these `##` sections, in 
    and/or the gate run that went green on it. `PROPOSED` records SHOULD cite
    supporting analysis (doc sections, assessment files); the checker requires
    the section to exist, evidence strictness applies at ratification.
+7. `## Index` — **required from D-413 on** (optional before): exactly three lines —
+   `summary:` (the row's Decision cell), `rationale:` (the row's Rationale cell),
+   `class:` (`evidence` or `directive`). One line each, no `|`, no status words —
+   the index row is generated from these, byte-exact.
 
 ## Lifecycle
 
@@ -63,6 +72,14 @@ PROPOSED ──(owner confirms / gate green on the change)──▶ RATIFIED
 - Statuses agree between index row and record file both directions.
 - **D-364:** every index row `D-360+` carries a class tag — `· evidence` or
   `· directive` — in its status cell (see below).
+- **D-413 (A1):** every record `D-413+` carries `## Index` (summary/rationale/class,
+  no status words, no pipes) and its index row is **byte-equal to the generated
+  row** — hand-editing a generated-era row fails the gate with the regeneration
+  command named.
+- **D-413 (A4):** a `Blocks:` line, when present, must be inside the vocabulary
+  (`none | Core Phase | Wave 1..7 | parallel work`).
+- **D-413 (A7), report-only:** bare citations of cross-track collision ids
+  (`D-389` today) warn in records `D-413+`; track-qualified forms are silent.
 
 What it deliberately does NOT check: whether the decision was *wise*. That is the
 owner's job and the reviewer's job. The contract guarantees the decision is
@@ -84,6 +101,46 @@ visible at a glance, gate-enforced:
 The tag is `**RATIFIED** · evidence` / `**PROPOSED** · directive` etc. — appended
 to the status cell, never a new column. Rows before D-360 are grandfathered untagged
 (the audit trail stays as it was; the consolidation page carries the synthesis).
+
+## The generated-row era (D-413, A1) + the scaffold
+
+From **D-413** on, the index row is not hand-typed data — it is a derivation:
+
+```
+bun run omega:new-decision <slug> --class evidence|directive \
+  --title "…" --summary "…" --rationale "…"
+```
+
+scaffolds the record (six sections in order, bare `PROPOSED`, a seeded `(a)/(b)/(c)`
+matrix, `Blocks: none`, the `## Index` meta) **and appends the generated row** —
+the record passes the contract by construction, and the hand-typed-row trap class
+(the D-410 first-word bite) is unexpressible: the checker requires the row to be
+byte-equal to `generateIndexRow(record)`. `bun run omega:questions --write`
+regenerates all generated-era rows (byte-stable when clean) alongside the board;
+ratification flips the record's Status and regenerates the row in the same commit.
+The one-liners must not contain status words or `|` — the scaffold refuses them,
+the checker flags them if they arrive by hand. Retrofitting `## Index` into
+D-313..D-412 was deliberately declined (RATIFIED-never-edit outweighs
+byte-stability); the eras are named boundaries: `< D-313` index-only,
+`D-313..D-412` hand-typed, `D-413+` generated.
+
+## Blocks (D-413, A4) — what an open decision waits on
+
+A record MAY carry one `Blocks: <value>` line (in Context). The vocabulary is
+closed and gate-checked: `none | Core Phase | Wave 1 | Wave 2 | Wave 3 | Wave 4 |
+Wave 5 | Wave 6 | Wave 7 | parallel work`. The open-questions board renders a
+Blocks column and sorts **blocking-first, then D-number** — the program's true
+serialization (owner attention on blockers) sorts to the top. Default when the
+line is absent: `none`.
+
+## Cross-track citations (D-413, A7)
+
+A bare `D-NNN` in this repo always means THIS ledger. Foreign tracks are cited
+track-qualified (`akb:D-389`); the known-collision set lives in
+`docs/decisions/CROSS-TRACK-REGISTRY.md` and in the checker's
+`KNOWN_TRACK_COLLISIONS` — a lock test pins them together. From D-413 on, a bare
+citation of a colliding id produces a **report-only warning** at the decisions
+stage (never a failure); the qualified spellings are silent.
 
 ## Cooling-off for B1–B4 evidence-class decisions (D-364)
 
@@ -123,6 +180,10 @@ never failing. A stale board means someone changed records without regenerating.
 
 ## How to propose (team workflow)
 
+0. New decision? Start it with `bun run omega:new-decision <slug> --class
+   evidence|directive --title … --summary … --rationale …` — the record and its
+   index row land together, passing the contract by construction. Then fill the
+   six sections; never hand-type a row from D-413 on.
 1. Read `OPEN-QUESTIONS.md`, pick a row, read its record — Options matrix first.
 2. Argue *against the criteria by name* (PR/discussion). New evidence goes where the
    record's domain lives (vault refs, gate runs, benchmarks) and gets cited.
