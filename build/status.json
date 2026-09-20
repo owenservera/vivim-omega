@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-09-20T13:13:34.537Z",
+  "generatedAt": "2026-09-20T14:11:13.390Z",
   "repo": "vivim-omega",
   "branch": "omega",
-  "head": "64436f2",
+  "head": "ce8c8fc",
   "toolchain": {
     "bun": "1.3.14",
     "node": "24.3.0",
@@ -96,7 +96,7 @@
     }
   ],
   "gate": {
-    "startedAt": "2026-09-20T13:12:04.212Z",
+    "startedAt": "2026-09-20T14:09:41.143Z",
     "checks": {
       "host-loc": {
         "ok": true,
@@ -131,19 +131,20 @@
       "decisions": {
         "ok": true,
         "detail": {
-          "rows": 127,
-          "records": 101,
+          "rows": 128,
+          "records": 102,
           "ratified": 97,
           "grandfatherBelow": 313,
           "generatedFrom": 413,
           "trackWarnings": 0,
           "openQuestions": {
-            "count": 4,
+            "count": 5,
             "ids": [
               421,
               418,
               419,
-              420
+              420,
+              422
             ],
             "board": "stale"
           }
@@ -286,18 +287,14 @@
         }
       },
       "tests": {
-        "ok": true,
-        "detail": {
-          "pass": 1147,
-          "fail": 0,
-          "maxConcurrency": 4
-        }
+        "ok": false,
+        "detail": "1174 pass / 1 fail — failing: [\"F-6 — A15 the docscan (live lock + injected fixtures) > LIVE LOCK: the current tree scans clean (the D-418 fix holds tree-wide)\",\"F-6 — A15 the docscan (live lock + injected fixtures) > LIVE LOCK: the current tree scans clean (the D-418 fix holds tree-wide)\"]"
       },
       "attest": {
         "ok": true,
         "detail": {
-          "compileMs": 3,
-          "bootMs": 18,
+          "compileMs": 4,
+          "bootMs": 20,
           "echo": true,
           "counterBump": true,
           "counterValue": {
@@ -320,8 +317,8 @@
   },
   "hostLoc": 1500,
   "tests": {
-    "pass": 1147,
-    "fail": 0
+    "pass": 1174,
+    "fail": 1
   },
   "benchmarks": {
     "at": "2026-09-18T10:16:48.896Z",

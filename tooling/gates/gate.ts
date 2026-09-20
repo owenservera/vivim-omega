@@ -3,8 +3,22 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { cpus } from "node:os";
+import { parseStageFilter, renderFailureLine } from "./failures.ts";
 
 const ROOT = join(import.meta.dir, "../..");
+
+// D-422 (A14): output + targeting discipline. --failures-only suppresses the
+// per-check pass/skip lines and renders every failure as ONE line with its
+// STAGE_DOCS rule pointer (failures.ts) — exit codes and status semantics
+// unchanged. --stage <substrings> targets the TESTS stage at matching test
+// files (comma-separated substrings) — a targeted VERIFICATION run: attest is
+// skipped and status.json is NOT written (a partial run must never overwrite
+// the carried full-run status). No flags → byte-identical to the pre-D-422
+// gate (F-3 of the efficiency-tooling tests pins the default path untouched).
+const FAILURES_ONLY = process.argv.includes("--failures-only");
+const _stageIdx = process.argv.indexOf("--stage");
+const STAGE_FILTER = _stageIdx !== -1 ? parseStageFilter(process.argv[_stageIdx + 1]) : [];
+const TARGETED = STAGE_FILTER.length > 0;
 
 function countLoc(dir: string): number {
   let total = 0;
@@ -40,12 +54,12 @@ if (process.argv.includes("--explain")) {
   process.exit(0);
 }
 let failed = 0;
-const fail = (name: string, detail: string) => { checks[name] = { ok: false, detail }; failed++; console.error(`✗ ${name}: ${detail}`); };
-const pass = (name: string, detail: unknown) => { checks[name] = { ok: true, detail }; console.log(`✓ ${name}`); };
+const fail = (name: string, detail: string) => { checks[name] = { ok: false, detail }; failed++; console.error(FAILURES_ONLY ? renderFailureLine(name, detail) : `✗ ${name}: ${detail}`); };
+const pass = (name: string, detail: unknown) => { checks[name] = { ok: true, detail }; if (!FAILURES_ONLY) console.log(`✓ ${name}`); };
 // Skipped is NEITHER pass nor fail: recorded loudly in status.json, never rendered
 // as green. Only for checks that are definitionally inapplicable in this layout
 // (never for making a red check go away).
-const skip = (name: string, detail: unknown) => { checks[name] = { ok: true, skipped: true, detail }; console.log(`○ ${name}: skipped`); };
+const skip = (name: string, detail: unknown) => { checks[name] = { ok: true, skipped: true, detail }; if (!FAILURES_ONLY) console.log(`○ ${name}: skipped`); };
 
 // 1 · host-loc (B5 — the boredom budget is law; D-365 froze 1100; D-391 re-amended
 // once and loudly to 1500 for the D-340 genesis kernel's host-critical subset, then
@@ -271,7 +285,7 @@ if (QUICK) {
   console.log(JSON.stringify(summary, null, 2));
   process.exit(failed === 0 ? 0 : 1);
 }
-const tests = await sh(["bun", "test", "--max-concurrency", String(testMaxConc), "--timeout", TEST_TIMEOUT_MS]);
+const tests = await sh(["bun", "test", "--max-concurrency", String(testMaxConc), "--timeout", TEST_TIMEOUT_MS, ...(TARGETED ? STAGE_FILTER : [])]);
 const passMatch = tests.out.match(/^\s*(\d+) pass/m);
 const failMatch = tests.out.match(/^\s*(\d+) fail/m);
 const testPass = parseInt(passMatch?.[1] ?? "0");
@@ -280,18 +294,28 @@ const testFail = parseInt(failMatch?.[1] ?? "0");
 // mystery single-fail runs; the names are what the next action needs.
 const failingTests = [...tests.out.replace(/\x1b\[[0-9;]*m/g, "").matchAll(/\(fail\) (.+?) \[\d[\d.,]*m?s\]/g)]
   .map((m) => m[1].trim().slice(0, 160));
-if (tests.code === 0 && testFail === 0) pass("tests", { pass: testPass, fail: testFail, maxConcurrency: testMaxConc });
-else fail("tests", `${testPass} pass / ${testFail} fail — failing: ${JSON.stringify(failingTests)}`);
+if (tests.code === 0 && testFail === 0) pass("tests", TARGETED ? { pass: testPass, fail: testFail, maxConcurrency: testMaxConc, targeted: STAGE_FILTER } : { pass: testPass, fail: testFail, maxConcurrency: testMaxConc });
+else fail("tests", `${testPass} pass / ${testFail} fail${TARGETED ? ` (targeted: ${STAGE_FILTER.join(", ")})` : ""} — failing: ${JSON.stringify(failingTests)}`);
 
 // 6 · attest: boot the demo composition, round-trip, recovery drill (existence proof)
-try {
+// A targeted run (--stage) skips it: the boot drill is EVIDENCE, not
+// verification — a partial run never claims it (recorded as a skip, loudly).
+if (TARGETED) skip("attest", { reason: "targeted run (--stage): the boot drill is evidence, not verification — the full gate runs it" });
+else try {
   const { attest } = await import("./attest.ts");
   const a = await attest();
   if (a.ok) pass("attest", a.detail);
   else fail("attest", a.reason ?? "unknown");
 } catch (e) { fail("attest", String(e)); }
 
-// 7 · emit status.json (console feed) + gates.log line
+// 7 · emit status.json (console feed) + gates.log line — NEVER on a targeted
+// run: a partial test set is verification, not build evidence, and must not
+// overwrite the carried full-run status (the D-362 reproducibility stance).
+if (TARGETED) {
+  const summary = { ok: failed === 0, failed, hostLoc, tests: { pass: testPass, fail: testFail }, targeted: STAGE_FILTER, statusWritten: false, at: gate.startedAt };
+  console.log(JSON.stringify(summary, null, 2));
+  process.exit(failed === 0 ? 0 : 1);
+}
 const { emitStatus } = await import("./status.ts");
 await emitStatus({ gate, hostLoc, tests: { pass: testPass, fail: testFail } });
 

@@ -25,7 +25,7 @@
 import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { spawnSync as nodeSpawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { join } from "node:path";
+import { isAbsolute, join } from "node:path";
 import { boardFreshness, checkDecisions, listOpenQuestions } from "./decisions.ts";
 
 const ROOT = join(import.meta.dir, "../..");
@@ -69,6 +69,47 @@ export function scanBundles(files: string[]): { ns: number[]; issues: string[] }
     }
   }
   return { ns, issues };
+}
+
+/** D-422 (A17), amending D-414's F-3 scope honestly: the LEDGER README TABLE
+ *  is the ledger of record — the delivery environment prunes delivered bundle
+ *  files (the sandbox that shipped _11 kept only _11 on disk), so contiguity
+ *  is demanded of the RECORDED rows (no gaps between rows present; a
+ *  re-established ledger documents its first row in the README preamble),
+ *  while bundle FILES are demanded only for the last row (the double-run
+ *  guard's list-heads input). A gap among rows still refuses — the
+ *  anti-lying property is unchanged; what relaxed is the assumption that
+ *  delivered artifacts live forever. scanBundles (above) is unchanged and
+ *  stays exported for its existing falsifiers. */
+export function ledgerContiguity(rows: number[]): string[] {
+  const sorted = [...rows].sort((a, b) => a - b);
+  const issues: string[] = [];
+  for (let i = 1; i < sorted.length; i++) {
+    if (sorted[i] !== sorted[i - 1] + 1) {
+      issues.push(`ledger rows have a gap: _${sorted[i - 1]} → _${sorted[i]} — the README table is the ledger of record; fix it before closing`);
+    }
+  }
+  return issues;
+}
+
+/** D-422 (A17): the ledger home, resolved once, searched paths named.
+ *  Order: --ledger flag > the repo-root `.ledger-path` pin (absolute or
+ *  root-relative; environment-local, gitignored) > the D-414 default
+ *  (../download from the repo root). When the resolved dir is absent, the
+ *  refusal prints EVERY candidate searched with its source — the hunt this
+ *  tool's refusal used to leave to the operator (the audit's ledger-hunt
+ *  bite, killed at the root). Pure: fs reads only, no writes. */
+export function resolveLedgerDir(root: string, cliLedger?: string): { dir: string; source: string; searched: string[] } {
+  const candidates: Array<{ dir: string; source: string }> = [];
+  if (cliLedger) candidates.push({ dir: isAbsolute(cliLedger) ? cliLedger : join(root, cliLedger), source: "--ledger flag" });
+  const pinPath = join(root, ".ledger-path");
+  if (existsSync(pinPath)) {
+    const raw = readFileSync(pinPath, "utf-8").trim();
+    if (raw) candidates.push({ dir: isAbsolute(raw) ? raw : join(root, raw), source: ".ledger-path pin (D-422, A17)" });
+  }
+  candidates.push({ dir: join(root, "..", "download"), source: "D-414 default" });
+  const first = candidates[0];
+  return { dir: first.dir, source: first.source, searched: candidates.map((c) => `${c.dir} (${c.source})`) };
 }
 
 /** The preflight verdict: pure decision over collected facts. Every refusal is
@@ -163,8 +204,9 @@ function git(args: string[], cwd: string): { code: number; out: string } {
   return sh(["git", ...args], { cwd });
 }
 
-/** The bundle-protocol facts, collected from the actual tree. */
-function collectFacts(root: string, ledgerDir: string): PreflightFacts & { lastTip: string; bundleFiles: string[] } {
+/** The bundle-protocol facts, collected from the actual tree. ledgerSearched
+ *  (A17) is the pre-rendered searched-paths string for the absent-dir refusal. */
+function collectFacts(root: string, ledgerDir: string, ledgerSearched: string): PreflightFacts & { lastTip: string; bundleFiles: string[] } {
   const tree = git(["status", "--porcelain"], root);
   const cleanTree = tree.code === 0 && tree.out.trim() === "";
   const quick = sh([process.execPath, "tooling/gates/gate.ts", "--quick"], { cwd: root, timeout: 120_000 });
@@ -188,24 +230,34 @@ function collectFacts(root: string, ledgerDir: string): PreflightFacts & { lastT
     statusDetail = String(e instanceof Error ? e.message : e).slice(0, 120);
   }
   const ledgerOk0 = existsSync(ledgerDir);
-  let ledgerDetail = ledgerOk0 ? "ok" : `${ledgerDir} does not exist — pass --ledger <dir>`;
+  let ledgerDetail = ledgerOk0 ? "ok" : `${ledgerDir} does not exist — searched: ${ledgerSearched}`;
   let bundleFiles: string[] = [];
   let lastTip = "";
   if (ledgerOk0) {
+    const readmePath = join(ledgerDir, "README.md");
     bundleFiles = readdirSync(ledgerDir).filter((f) => f.endsWith(".bundle"));
-    const { ns, issues } = scanBundles(bundleFiles);
-    const readme = existsSync(join(ledgerDir, "README.md"));
-    if (issues.length > 0) ledgerDetail = issues.join("; ");
-    else if (!readme) ledgerDetail = "no README.md in the ledger dir — refusing to guess where the table lives";
-    else {
-      const readmeRows = readFileSync(join(ledgerDir, "README.md"), "utf-8").split("\n").filter((l) => /^\| `_\d+\.bundle` \|/.test(l));
-      const lastRowN = readmeRows.length > 0 ? Number(/^\| `_(\d+)\.bundle`/.exec(readmeRows[readmeRows.length - 1])![1]) : 0;
-      if (ns.length === 0) ledgerDetail = "no prior bundles found — first bundle will be _1";
-      else if (lastRowN !== ns[ns.length - 1]) ledgerDetail = `README table last row (_${lastRowN}) desynced from bundle files (_${ns[ns.length - 1]}) — fix the ledger first`;
-    }
-    if (ns.length > 0) {
-      const heads = git(["bundle", "list-heads", join(ledgerDir, `vivim-omega-wave0-omega-forge_${ns[ns.length - 1]}.bundle`)], root);
-      lastTip = heads.out.split("\n").find((l) => l.trim().endsWith(" HEAD"))?.split(/\s+/)[0] ?? "";
+    if (!existsSync(readmePath)) {
+      ledgerDetail = "no README.md in the ledger dir — the table is the ledger of record (D-422, A17); refusing to guess where it lives";
+    } else {
+      const readmeText = readFileSync(readmePath, "utf-8");
+      const rows = readmeText.split("\n")
+        .map((l) => /^\| `_(\d+)\.bundle`/.exec(l)).filter(Boolean).map((m) => Number(m![1]));
+      const fileNs = bundleFiles
+        .map((f) => Number(/_(\d+)\.bundle$/.exec(f)?.[1] ?? Number.NaN))
+        .filter((n) => !Number.isNaN(n));
+      const lastRow = rows.length ? Math.max(...rows) : 0;
+      const lastFile = fileNs.length ? Math.max(...fileNs) : 0;
+      const gaps = ledgerContiguity(rows);
+      if (rows.length === 0 && fileNs.length === 0) ledgerDetail = "no prior bundles found — first bundle will be _1";
+      else if (rows.length === 0) ledgerDetail = `bundle file _${lastFile} has no README row — a file beyond the table means the ledger is lying`;
+      else if (gaps.length > 0) ledgerDetail = gaps.join("; ");
+      else if (lastFile > lastRow) ledgerDetail = `bundle file _${lastFile} has no README row — a file beyond the table means the ledger is lying`;
+      else if (!fileNs.includes(lastRow)) ledgerDetail = `the last ledger row (_${lastRow}) has no bundle file on disk — the double-run guard needs it (git bundle list-heads)`;
+      else {
+        ledgerDetail = "ok";
+        const heads = git(["bundle", "list-heads", join(ledgerDir, `vivim-omega-wave0-omega-forge_${lastRow}.bundle`)], root);
+        lastTip = heads.out.split("\n").find((l) => l.trim().endsWith(" HEAD"))?.split(/\s+/)[0] ?? "";
+      }
     }
   }
   const headFull = git(["rev-parse", "HEAD"], root).out.trim();
@@ -233,18 +285,21 @@ export interface RoundCloseResult {
 }
 
 /** The full ceremony. Pure-ish: reads git/fs, writes ONLY on the green path
- *  (the bundle + the README row); refuses before any mutation otherwise. */
+ *  (the bundle + the README row); refuses before any mutation otherwise.
+ *  ledgerSearched (A17) threads the resolver's searched-paths into the
+ *  absent-ledger refusal. */
 export async function runRoundClose(
   root: string,
   ledgerDir: string,
   note: string,
   evidence: string,
   dryRun = false,
+  ledgerSearched = "",
 ): Promise<RoundCloseResult> {
   validateCell("note", note);
   validateCell("evidence", evidence);
   const d = await checkDecisions(root);
-  const facts = collectFacts(root, ledgerDir);
+  const facts = collectFacts(root, ledgerDir, ledgerSearched);
   facts.decisionsGreen = d.ok;
   facts.decisionsDetail = d.ok ? `${d.detail.records} records, ${d.detail.ratified} ratified` : (d.issues[0] ?? "unknown").slice(0, 160);
   const v = preflightVerdict(facts);
@@ -300,21 +355,21 @@ function parseCli(argv: string[]): { note: string; evidence: string; ledger?: st
 if (import.meta.main) {
   try {
     const a = parseCli(process.argv.slice(2));
-    const ledgerDir = a.ledger ? join(ROOT, a.ledger) : join(ROOT, "..", "download");
-    const r = await runRoundClose(ROOT, ledgerDir, a.note, a.evidence, a.dryRun);
+    const resolved = resolveLedgerDir(ROOT, a.ledger); // D-422 (A17): one resolver for close + entry
+    const r = await runRoundClose(ROOT, resolved.dir, a.note, a.evidence, a.dryRun, resolved.searched.join("; "));
     if (!r.ok) {
       console.error(`✗ round-close REFUSED (${r.refusals.length} named):`);
       for (const x of r.refusals) console.error(`  - ${x}`);
       process.exit(1);
     }
     if (r.dryRun) {
-      console.log("○ dry-run: preflight green, nothing written. The row WOULD be:");
+      console.log(`○ dry-run: preflight green, nothing written (ledger: ${resolved.dir} via ${resolved.source}). The row WOULD be:`);
       console.log(`  ${r.row}`);
       console.log("");
       console.log(r.nextBlock);
       process.exit(0);
     }
-    console.log(`✓ bundle: ${r.bundlePath} (git bundle verify green)`);
+    console.log(`✓ bundle: ${r.bundlePath} (git bundle verify green; ledger home via ${resolved.source})`);
     console.log(`✓ sha256: ${r.sha256}`);
     console.log(`✓ ledger row appended:`);
     console.log(`  ${r.row}`);
