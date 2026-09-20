@@ -67,7 +67,7 @@ describe("F-1 — the preflight refuses, loudly and by name", () => {
 });
 
 describe("F-2 — the ledger row's byte shape", () => {
-  test("shortHash: 8…7 for both hash shapes, garbage refused", () => {
+  test("shortHash: 8…8 for both hash shapes, garbage refused", () => {
     expect(shortHash("7f18fff46915400c841047c799f018411e53aee9")).toBe("7f18fff4…1e53aee9");
     expect(shortHash("e02c8b70" + "0".repeat(56))).toBe("e02c8b70…00000000");
     expect(shortHash("a".repeat(64)).endsWith("…" + "a".repeat(8))).toBe(true);
@@ -84,14 +84,14 @@ describe("F-2 — the ledger row's byte shape", () => {
       sha256: "e02c8b70".padEnd(64, "0"),
       evidence: "gate green",
     });
-    expect(row).toBe("| `7.bundle` | 7 — the round | `bd08436` | `7f18fff4…1e53aee9` | `e02c8b70…00000000` | gate green |");
+    expect(row).toBe("| `_7.bundle` | 7 — the round | `bd08436` | `7f18fff4…1e53aee9` | `e02c8b70…00000000` | gate green |");
   });
   test("appendLedgerRow inserts after the LAST table row and refuses table-less READMEs", () => {
-    const readme = ["# L", "", "| Bundle | Round |", "|---|---|", "| `1.bundle` | 1 — a |", "| `2.bundle` | 2 — b |", "", "trailer text"].join("\n");
-    const r = appendLedgerRow(readme, "| `3.bundle` | 3 — c |");
+    const readme = ["# L", "", "| Bundle | Round |", "|---|---|", "| `_1.bundle` | 1 — a |", "| `_2.bundle` | 2 — b |", "", "trailer text"].join("\n");
+    const r = appendLedgerRow(readme, "| `_3.bundle` | 3 — c |");
     expect(r.issues).toEqual([]);
-    expect(r.text.split("\n")).toEqual(["# L", "", "| Bundle | Round |", "|---|---|", "| `1.bundle` | 1 — a |", "| `2.bundle` | 2 — b |", "| `3.bundle` | 3 — c |", "", "trailer text"]);
-    const bad = appendLedgerRow("# no table here", "| `1.bundle` | x |");
+    expect(r.text.split("\n")).toEqual(["# L", "", "| Bundle | Round |", "|---|---|", "| `_1.bundle` | 1 — a |", "| `_2.bundle` | 2 — b |", "| `_3.bundle` | 3 — c |", "", "trailer text"]);
+    const bad = appendLedgerRow("# no table here", "| `_1.bundle` | x |");
     expect(bad.text).toBe("# no table here");
     expect(bad.issues[0]).toMatch(/no bundle-table row/);
   });
@@ -112,7 +112,7 @@ describe("F-3 — bundle mechanics on a scratch repo (real git, real sha256)", (
     // scratch ledger with a README table
     const ledger = join(root, "ledger");
     mkdirSync(ledger);
-    writeFileSync(join(ledger, "README.md"), "# L\n\n| Bundle | Round |\n|---|---|\n| `1.bundle` | 1 — first |\n\ntrailer\n");
+    writeFileSync(join(ledger, "README.md"), "# L\n\n| Bundle | Round |\n|---|---|\n| `_1.bundle` | 1 — first |\n\ntrailer\n");
     // bundle _1 (the prior round, for the double-run shape)
     expect(spawnSync("git", ["bundle", "create", join(ledger, "vivim-omega-wave0-omega-forge_1.bundle"), "--all"], { cwd: root, encoding: "buffer" }).status).toBe(0);
     // a second commit = the new round's tip

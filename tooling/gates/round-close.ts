@@ -48,7 +48,7 @@ export function shortHash(h: string): string {
 
 /** One ledger table row, generated from git data — never typed (A2's core claim). */
 export function renderLedgerRow(a: { n: number; note: string; tip: string; tree: string; sha256: string; evidence: string }): string {
-  return `| \`${a.n}.bundle\` | ${a.n} — ${a.note} | \`${a.tip}\` | \`${shortHash(a.tree)}\` | \`${shortHash(a.sha256)}\` | ${a.evidence} |`;
+  return `| \`_${a.n}.bundle\` | ${a.n} — ${a.note} | \`${a.tip}\` | \`${shortHash(a.tree)}\` | \`${shortHash(a.sha256)}\` | ${a.evidence} |`;
 }
 
 /** Parse `vivim-omega-wave0-omega-forge_<N>.bundle` filenames; refuse gaps (a
@@ -151,7 +151,7 @@ export function nextRoundEntryBlock(
 export function appendLedgerRow(readmeText: string, row: string): { text: string; issues: string[] } {
   const lines = readmeText.split("\n");
   let lastRowIdx = -1;
-  lines.forEach((l, i) => { if (/^\| `\d+\.bundle` \|/.test(l)) lastRowIdx = i; });
+  lines.forEach((l, i) => { if (/^\| `_\d+\.bundle` \|/.test(l)) lastRowIdx = i; });
   if (lastRowIdx === -1) return { text: readmeText, issues: ["no bundle-table row found in the ledger README — refusing to guess where the row goes"] };
   lines.splice(lastRowIdx + 1, 0, row);
   return { text: lines.join("\n"), issues: [] };
@@ -198,8 +198,8 @@ function collectFacts(root: string, ledgerDir: string): PreflightFacts & { lastT
     if (issues.length > 0) ledgerDetail = issues.join("; ");
     else if (!readme) ledgerDetail = "no README.md in the ledger dir — refusing to guess where the table lives";
     else {
-      const readmeRows = readFileSync(join(ledgerDir, "README.md"), "utf-8").split("\n").filter((l) => /^\| `\d+\.bundle` \|/.test(l));
-      const lastRowN = readmeRows.length > 0 ? Number(/^\| `(\d+)\.bundle`/.exec(readmeRows[readmeRows.length - 1])![1]) : 0;
+      const readmeRows = readFileSync(join(ledgerDir, "README.md"), "utf-8").split("\n").filter((l) => /^\| `_\d+\.bundle` \|/.test(l));
+      const lastRowN = readmeRows.length > 0 ? Number(/^\| `_(\d+)\.bundle`/.exec(readmeRows[readmeRows.length - 1])![1]) : 0;
       if (ns.length === 0) ledgerDetail = "no prior bundles found — first bundle will be _1";
       else if (lastRowN !== ns[ns.length - 1]) ledgerDetail = `README table last row (_${lastRowN}) desynced from bundle files (_${ns[ns.length - 1]}) — fix the ledger first`;
     }
