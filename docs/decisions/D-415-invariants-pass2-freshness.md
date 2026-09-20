@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -47,6 +47,8 @@ Blocks: none
 - **F-5 (the `-->` leak regression):** a marker ending `stages: … tests -->` parses without a phantom `--` stage — bitten while writing the parser (the first `[a-z- ]*` class ate the comment's dashes), caught by the falsifier before the gate ever ran.
 - The digest itself cites its sources per section (the records named inline); pass #1's still-true material is retained, its stale numbers corrected (host 1500/1500 flat, anvil 856/860, compositions 18, tests 1102+ at the D-414 tip).
 - Standing directives: the review's grant + build-order row 4; the owner's standing "continue as far as you can", executed to the S3 owner-call boundary per D-410's milestone row.
+- Landed in `882324e`: falsifiers F-1..F-5 green in the record's tree BEFORE the flip per D-364 (13 tests, `tooling/gates/test/invariants-freshness.test.ts`); full gate green 1115/0 ×2 on the PROPOSED tree (2026-09-20T09:08:26Z and 09:09:58Z, host flat 1500/1500, anvil untouched); the live lock (F-4) green on the record's own tree — the digest and the stage registry pinned together in the round that lands both; the row flips to RATIFIED by `omega:questions --write` (1 regenerated, 0 appended).
+
 
 ## Index
 
