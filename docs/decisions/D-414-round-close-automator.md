@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -38,13 +38,14 @@ Blocks: none
 
 ## Evidence
 
-- **F-0 (self-host):** `--dry-run` green on this record's tree BEFORE the flip — the preflight passes on the PROPOSED tip and the row renders from live git data, nothing written; the round's own close then runs the real path, so bundle `_8` and its ledger row exist only because the tool ran. [Dry-run leg green pre-flip this round; the real cut is the close itself.]
+- **F-0 (self-host):** `--dry-run` green on this record's tree BEFORE the flip — the preflight passes on the PROPOSED tip and the row renders from live git data, nothing written; the round's own close then runs the real path, so bundle `_8` and its ledger row exist only because the tool ran. [Dry-run leg executed green pre-flip — and it bit twice: the preflight refused first on the row-shape desync (the underscore bite, fixed pre-commit) then on the dirty tree carrying the fix — the tool catching its own author's mistakes with zero writes, the self-host proof BEFORE the flip, not just after.]
 - **F-1 (refusals):** `tooling/gates/test/round-close.test.ts` — every failed preflight fact produces its **named** refusal; `--note`/`--evidence` cells with pipes/newlines/emptiness refused; bundle numbering gaps refused; refusals write nothing (the CLI refuses before any mutation — by construction).
 - **F-2 (row shape):** `renderLedgerRow` reproduces the ledger's exact row byte-shape; `shortHash` accepts exactly the 40/64-char hex shapes and refuses garbage; `appendLedgerRow` inserts after the LAST table row and refuses table-less READMEs (text returned unchanged). This falsifier bit during authoring: the first spelling was `8…7`, the ledger's convention is `8…8` — caught pre-commit, exactly the class F-2 exists for. The decisions stage also caught the paren-option trap in this record's own Decision line (`(A2)` read as an option ref — the AGENTS.md trap list, biting once more, caught by the gate as designed).
 - **F-3 (bundle mechanics):** scratch-repo integration — real `git bundle create --all` + `verify` + `list-heads` (the bundle's HEAD equals the repo tip — the double-run guard's input), sha256 over the real bundle bytes, the row landing in a scratch ledger README after its last table row.
 - **F-4 (derived, not typed):** the next-round entry block is generated from BACKLOG's OPEN items + PARKED section headers + the open board + the fixed baseline commands — no hard-coded round prose; struck BACKLOG rows excluded; empty states degrade honestly.
 - **F-5 (A12):** `toolchainPin()` records the running shape (bun under the gate, null under non-bun); `compareToolchain` reports same/drift — drift never fails.
 - Standing directives: the review's grant + build-order row 5; D-413's ratified consequences naming A2+A12 the next tooling round; the owner's standing "continue as far as you can", executed to the S3 owner-call boundary per D-410's milestone row.
+- Landed in `0cb42fc` (underscore fixup `2acb77e`): falsifiers F-0..F-5 green in the record's tree BEFORE the flip per D-364 — F-0's dry-run leg refused-then-greened on its own round (the preflight catching the underscore desync and the dirty fix tree, zero writes); F-1..F-5 green in `tooling/gates/test/round-close.test.ts` (13 tests); full gate green 1102/0 ×2 on the PROPOSED tree (2026-09-20T08:51:59Z and 08:53:33Z, host flat 1500/1500, anvil untouched); the row flips to RATIFIED by `omega:questions --write` (1 regenerated, 0 appended).
 
 ## Index
 
