@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-09-20T22:27:25.165Z",
+  "generatedAt": "2026-09-20T22:31:06.478Z",
   "repo": "vivim-omega",
   "branch": "omega",
-  "head": "d466161",
+  "head": "083739b",
   "toolchain": {
     "bun": "1.3.14",
     "node": "24.3.0",
@@ -96,7 +96,7 @@
     }
   ],
   "gate": {
-    "startedAt": "2026-09-20T22:25:53.123Z",
+    "startedAt": "2026-09-20T22:29:33.513Z",
     "checks": {
       "host-loc": {
         "ok": true,
@@ -133,19 +133,13 @@
         "detail": {
           "rows": 135,
           "records": 109,
-          "ratified": 104,
+          "ratified": 109,
           "grandfatherBelow": 313,
           "generatedFrom": 413,
           "trackWarnings": 0,
           "openQuestions": {
-            "count": 5,
-            "ids": [
-              425,
-              426,
-              427,
-              428,
-              429
-            ],
+            "count": 0,
+            "ids": [],
             "board": "stale"
           }
         }
@@ -291,13 +285,13 @@
         "detail": {
           "policy": "report-only (D-423 — mirrors D-415/D-368; the flip to failing, if ever, is a future record's call)",
           "gateGreen": true,
-          "gateStale": false,
-          "boardOpen": 5,
+          "gateStale": true,
+          "boardOpen": 0,
           "boardBlocking": 0,
           "boardFreshness": "stale",
           "docscanFindings": 0,
           "ledgerResolved": true,
-          "ratifiedCount": 129
+          "ratifiedCount": 134
         }
       },
       "genome": {
@@ -311,8 +305,8 @@
             "ratifiedUnimplemented": 1,
             "queued": 8,
             "decisions": 135,
-            "ratified": 129,
-            "proposed": 6,
+            "ratified": 134,
+            "proposed": 1,
             "records": 109,
             "testFiles": 117,
             "gateStages": 15,
@@ -321,13 +315,7 @@
           },
           "genomeBytes": 45209,
           "briefBytes": 7036,
-          "inFlight": [
-            "Ω-DEV.1",
-            "Ω-DEV.2",
-            "Ω-DEV.3",
-            "Ω-DEV.4",
-            "Ω-DEV.5"
-          ],
+          "inFlight": [],
           "externalAssumed": 16,
           "unresolvedFalsifiers": [
             "F-BOOT (Ω-0)",
@@ -361,7 +349,7 @@
         "ok": true,
         "detail": {
           "compileMs": 3,
-          "bootMs": 19,
+          "bootMs": 18,
           "echo": true,
           "counterBump": true,
           "counterValue": {

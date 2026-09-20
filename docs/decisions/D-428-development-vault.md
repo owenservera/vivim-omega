@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -88,6 +88,8 @@ Blocks: none
 - Precedents: D-423 (the evidence-class boundary), D-424 (the seam NOT
   crossed), D-410 item C (append-only history discipline), the
   pre-existing `.gitignore` reservation.
+
+- Ratified on greens (evidence-class, F-DEVAULT.1..4 green in this record's tree BEFORE the flip per D-364): landing commit 083739b; full gate green 1232/0 ×2 on the PROPOSED tree (2026-09-20T22:24:15Z and 22:25:53Z); the vault's first three chained entries recorded and verified live in this record's own round (the wave's working lessons: the backtick law, the clause-line law, the evidence-kind law); the checker clean, docscan 0 findings; zero host LOC; anvil untouched.
 
 ## Index
 

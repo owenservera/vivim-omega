@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -86,6 +86,8 @@ Blocks: none
   - F-LOOP.4 (no-clobber) — regenerating a stub over a file whose content differs from the stub template refuses LOOP_STUB_OVERWRITE unless --force; the stub path is stable per id.
 - Self-host, exercised in this record's own round: `omega:loop --stub D-425` generated the F-GENOME stub (then implemented to green — the bootstrap note above); `omega:loop --status` resolves every named falsifier this family declares; the genome stage's F-GENOME.3 enforces the implemented-layer subset mechanically.
 - Precedents: D-423 (falsifiers-in-record discipline), D-425 (the named-falsifier extraction this builds on), D-364 (green-before-flip).
+
+- Ratified on greens (evidence-class, F-LOOP.1..4 green in this record's tree BEFORE the flip per D-364): landing commit 083739b; full gate green 1232/0 ×2 on the PROPOSED tree (2026-09-20T22:24:15Z and 22:25:53Z); the loop's own RED leg executed live (F-LOOP.2 spawns a generated stub and observes the failure); the checker clean, docscan 0 findings; zero host LOC; anvil untouched.
 
 ## Index
 

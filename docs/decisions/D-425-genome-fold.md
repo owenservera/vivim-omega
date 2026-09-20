@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -99,6 +99,8 @@ Blocks: none
   - F-GENOME.6 (live-lock) — checkGenome runs GREEN against this record's own tree with the artifacts committed, and REPORTS (never fails on) the in-flight record statuses and the external-assumed count.
 - Self-host, exercised in this record's own round: `bun run omega:genome` emits and verifies clean; `bun run tooling/gates/gate.ts --quick` shows `✓ genome` immediately after `✓ process`; `bun run tooling/gates/gate.ts --explain genome` names the scan, the allowlist, and this rule pointer.
 - Precedents: D-423 (the self-model this extends), D-413 (generated-row discipline this mirrors for a derived artifact), D-362 (reproducible status — the content-addressed stance), D-410 (the renumbering context for the two-lineage mapping).
+
+- Ratified on greens (evidence-class, F-GENOME.1..6 green in this record's tree BEFORE the flip per D-364 — stubbed by `omega:loop --stub D-425`, then implemented, the loop's own bootstrap): landing commit 083739b; full gate green 1232/0 ×2 on the PROPOSED tree (2026-09-20T22:24:15Z and 22:25:53Z — the prior tip's 1190 + 42 new across the wave); the genome stage GREEN with the artifacts committed (the record verified by the very fold it describes); the checker clean, docscan 0 findings; zero host LOC; anvil untouched.
 
 ## Index
 

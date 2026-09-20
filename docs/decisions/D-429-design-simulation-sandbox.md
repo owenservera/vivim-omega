@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -81,6 +81,8 @@ Blocks: none
 - Precedents: D-425 (the verifier it rehearses), D-321 (the
   honest-containment stance — claims only what is measured), the
   adaptation-governance law (suggest, never block).
+
+- Ratified on greens (evidence-class, F-PRESIM.1..4 green in this record's tree BEFORE the flip per D-364): landing commit 083739b; full gate green 1232/0 ×2 on the PROPOSED tree (2026-09-20T22:24:15Z and 22:25:53Z); the self-host receipt live (Ω-DEV.1 through the catalog: 6 applicable mutations, 0 uncaught, advisory, inputHash-pinned); the checker clean, docscan 0 findings; zero host LOC; anvil untouched.
 
 ## Index
 

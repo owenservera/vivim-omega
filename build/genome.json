@@ -13,8 +13,8 @@
     "ratifiedUnimplemented": 1,
     "queued": 8,
     "decisions": 135,
-    "ratified": 129,
-    "proposed": 6,
+    "ratified": 134,
+    "proposed": 1,
     "records": 109,
     "testFiles": 117,
     "gateStages": 15,
@@ -70,7 +70,7 @@
       "evidence": {
         "treeId": 425,
         "recordFile": "docs/decisions/D-425-genome-fold.md",
-        "recordStatus": "PROPOSED",
+        "recordStatus": "RATIFIED",
         "falsifier": "F-GENOME",
         "falsifierFile": "tooling/gates/test/f-genome.test.ts",
         "falsifierClauses": [
@@ -96,7 +96,7 @@
       "evidence": {
         "treeId": 426,
         "recordFile": "docs/decisions/D-426-falsifier-first-loop.md",
-        "recordStatus": "PROPOSED",
+        "recordStatus": "RATIFIED",
         "falsifier": "F-LOOP",
         "falsifierFile": "tooling/gates/test/f-loop.test.ts",
         "falsifierClauses": [
@@ -120,7 +120,7 @@
       "evidence": {
         "treeId": 427,
         "recordFile": "docs/decisions/D-427-orchestration-graph.md",
-        "recordStatus": "PROPOSED",
+        "recordStatus": "RATIFIED",
         "falsifier": "F-ORCH",
         "falsifierFile": "tooling/gates/test/f-orch.test.ts",
         "falsifierClauses": [
@@ -144,7 +144,7 @@
       "evidence": {
         "treeId": 428,
         "recordFile": "docs/decisions/D-428-development-vault.md",
-        "recordStatus": "PROPOSED",
+        "recordStatus": "RATIFIED",
         "falsifier": "F-DEVAULT",
         "falsifierFile": "tooling/gates/test/f-devault.test.ts",
         "falsifierClauses": [
@@ -168,7 +168,7 @@
       "evidence": {
         "treeId": 429,
         "recordFile": "docs/decisions/D-429-design-simulation-sandbox.md",
-        "recordStatus": "PROPOSED",
+        "recordStatus": "RATIFIED",
         "falsifier": "F-PRESIM",
         "falsifierFile": "tooling/gates/test/f-presim.test.ts",
         "falsifierClauses": [
@@ -1294,27 +1294,27 @@
     },
     {
       "n": 425,
-      "status": "PROPOSED",
+      "status": "RATIFIED",
       "file": "docs/decisions/D-425-genome-fold.md"
     },
     {
       "n": 426,
-      "status": "PROPOSED",
+      "status": "RATIFIED",
       "file": "docs/decisions/D-426-falsifier-first-loop.md"
     },
     {
       "n": 427,
-      "status": "PROPOSED",
+      "status": "RATIFIED",
       "file": "docs/decisions/D-427-orchestration-graph.md"
     },
     {
       "n": 428,
-      "status": "PROPOSED",
+      "status": "RATIFIED",
       "file": "docs/decisions/D-428-development-vault.md"
     },
     {
       "n": 429,
-      "status": "PROPOSED",
+      "status": "RATIFIED",
       "file": "docs/decisions/D-429-design-simulation-sandbox.md"
     }
   ],

@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -74,6 +74,8 @@ Blocks: none
   - F-ORCH.4 (merge-is-the-gate) — the merge verdict runs the FULL gate and refuses with the failing stage names on red; a green merge cites the whole-gate run — the runner is injected so the refusal path is testable without a red tree.
 - Self-host, exercised in this record's own round: `bun run omega:orchestrate` renders the real plan — CORE + the Ω-DEV family in-flight, Ω-0 in the build queue, Ω-1..Ω-16 in the verify queue, the builder gaps in the spec queue, Ω-0.5 blocked on Ω-0.
 - Precedents: D-425 (the genome it reads), D-417 (the parallel-era law), D-364 (the gate as the only arbiter of green).
+
+- Ratified on greens (evidence-class, F-ORCH.1..4 green in this record's tree BEFORE the flip per D-364): landing commit 083739b; full gate green 1232/0 ×2 on the PROPOSED tree (2026-09-20T22:24:15Z and 22:25:53Z); the plan rendered live at the PROPOSED tip (CORE done on program evidence, the Ω-DEV family in-flight pending this very flip, Ω-0 the one build-queue row, Ω-1..Ω-16 the verify queue, the seven builder gaps the spec queue, Ω-0.5 blocked on Ω-0); the checker clean, docscan 0 findings; zero host LOC; anvil untouched.
 
 ## Index
 
