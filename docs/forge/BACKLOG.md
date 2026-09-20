@@ -11,28 +11,11 @@ implementation.
 
 ## Core Phase (next — D-410)
 
-- **S1 · the canonical-intent seam** (HARD, volume-clocked — first): one
-  canonical writer path for intents (ns `intent` / `intent-plan`, declared in
-  namespace law); law decisions cite `{intentRef, payloadHash}`; the
-  four-state resolution (UNDERSTOOD / AMBIGUOUS / REFUSED / EXECUTED) lands as
-  rows; fix the `intent.cancel` silent no-op (undefined `stepId` inside
-  try/catch — `plugins/vivim-intent/src/index.ts:233`) with a regression test
-  that fails on the old code; one live path routes
-  interpret → persist → gate → execute → resolve.
-- **S2 · the principal-identity seam**: principal identity rows (a principal
-  record namespace) with the non-reuse invariant enforced; new identity-bearing
-  writes resolve through records; existing consent/grant/journal history is
-  NOT re-typed (R1 avoided by design).
-- **S3 · the evidence-store choicepoint** (owner call, closing window): fold
-  the law-journal into the vault chain vs sidecar with its own chain +
-  signature; the audit chain gains a persistence point either way; the call
-  carries a measured law-journal volume number so window expiry is visible.
-- **C · the compaction invariant**: "compaction never deletes a revision,
-  period" (the stronger F9 prerequisite) explicit in namespace law, not prose.
-- **At core-omega-ready**: the plugin-identification pass — one record
-  enumerating the plugins the core actually needs (tactical map + frozen
-  24-op catalog + the parked register below) — which un-parks everything
-  below and opens parallel work.
+- ~~**S1 · the canonical-intent seam**~~ — **DONE (D-411, ratified 2026-09-20)**: real sha256 payloadHash; the `intent.cancel` defect fixed with a failing-on-old-code regression; interpretation summaries on intent rows; `intent.resolution@1` four-state rows; law decisions cite `{intentRef, payloadHash}`; the console live path routes interpret → persist → gate-with-citation → execute → resolve.
+- ~~**S2 · the principal-identity seam**~~ — **DONE (D-412, ratified 2026-09-20)**: ns `principal` identity rows (retention forever); the non-reuse invariant (PRINCIPAL_REUSED — retired is forever); the consent ceremony resolves through the record when law holds vault caps; existing keyed history untouched.
+- **S3 · the evidence-store choicepoint** — **OPEN, the owner's call** (the last Core Phase item): fold the law-journal into the vault chain (recommended) vs sidecar with its own chain + signature; the audit-chain persistence point common to both and landable first; pre-analyzed lift-ready in `docs/forge/annex/S3-EVIDENCE-STORE-FORK.md` (D-413 at lift).
+- ~~**C · the compaction invariant**~~ — **DONE (D-410's item C, stated 2026-09-20)**: "compaction never deletes a revision, period" is explicit namespace law in `docs/VAULT-NAMESPACES.md` (the stronger F9 prerequisite).
+- **At core-omega-ready (after S3 lands)**: the plugin-identification pass — one record enumerating the plugins the core actually needs (tactical map + frozen 24-op catalog + the parked register below) — which un-parks everything below and opens parallel work.
 
 ## Parked until core-omega-ready (D-410 register)
 

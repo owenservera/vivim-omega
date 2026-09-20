@@ -15,6 +15,7 @@ with the repo so it can be cited by path instead of by memory.
 | `OMEGA-PROGRAM-ACCELERATION.md` | the pre-Wave-1 program review — the B1–B10 bottleneck register, accelerator designs A1–A12, the chosen build order |
 | `OMEGA-CORE-FIRST-RESEQUENCE.md` | D-410's material — the core-omega-ready milestone, the parked-plugin register, the post-core sequence, falsifiers of the ordering |
 | `OD-1-CAPTURE-VS-READ-FORK.md` | the lift-ready fork file — decided (a) split-plugin by the owner 2026-09-20, lifted as D-409; implementation parked per D-410 |
+| `S3-EVIDENCE-STORE-FORK.md` | the Core Phase's last open item — the evidence-store choicepoint, pre-analyzed lift-ready: (a) fold the law-journal into the vault chain (recommended) vs (b) sidecar with its own chain + signature; the audit-chain persistence point common to both; **the owner's call** (D-413 at lift) |
 | `PARKED-STATE.md` | the park record (2026-09-20) and its lift — historical; documents the omega ↔ vision separation era and the restore path used |
 
 Provenance: authored 2026-09-20 in the external working set (`vivim-vision/`)

@@ -9,6 +9,18 @@ refs are `{ns, id, rev}` with integer rev ≥ 1 (`validate.ts` rejects anything 
 compaction never deletes a revision cited by a live object's refs; the changelog is
 append-only forever while object revisions are latest-wins (hot) + cold fallback.
 
+**The stronger compaction invariant (D-410, Core Phase item C — the F9
+prerequisite, held explicitly as law, not prose):** compaction NEVER deletes a
+revision, period — cited or not, hot or cold. Compaction moves revisions
+hot→cold; it never removes them. Time travel (CIV-22–25, F9), the Exit
+Manifest (CIV-30/31, F10), decision replay (CON-18), and scope-undo (CIV-24)
+are folds over the full log; deleting any revision anywhere breaks projection
+at arbitrary T and turns those features into data migrations. This is the
+stronger form of the convention above, stated so a future compaction change
+reads it before it ships — the falsifier stays §3.1's: if compaction ever
+deletes (rather than moves) an uncited revision, the tactical map's biggest
+row flips structural.
+
 ## Worked example: audit log vs current state (D-319)
 
 Promotion of a candidate produces TWO writes with different retention needs:
