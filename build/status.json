@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-09-20T10:54:26.684Z",
+  "generatedAt": "2026-09-20T10:56:29.313Z",
   "repo": "vivim-omega",
   "branch": "omega",
-  "head": "f9aeebc",
+  "head": "ac9aabf",
   "toolchain": {
     "bun": "1.3.14",
     "node": "24.3.0",
@@ -96,7 +96,7 @@
     }
   ],
   "gate": {
-    "startedAt": "2026-09-20T10:52:57.001Z",
+    "startedAt": "2026-09-20T10:54:59.093Z",
     "checks": {
       "host-loc": {
         "ok": true,
@@ -133,15 +133,13 @@
         "detail": {
           "rows": 123,
           "records": 97,
-          "ratified": 96,
+          "ratified": 97,
           "grandfatherBelow": 313,
           "generatedFrom": 413,
           "trackWarnings": 0,
           "openQuestions": {
-            "count": 1,
-            "ids": [
-              417
-            ],
+            "count": 0,
+            "ids": [],
             "board": "stale"
           }
         }
@@ -267,7 +265,7 @@
           "policy": "report-only (D-415, A3 — the flip to failing is a future record's call, after one green wave of reports)",
           "pass": 2,
           "asOf": "D-415",
-          "ratifiedSince": 1,
+          "ratifiedSince": 2,
           "gateStages": 13,
           "stale": false,
           "triggers": []
@@ -285,7 +283,7 @@
         "ok": true,
         "detail": {
           "compileMs": 3,
-          "bootMs": 24,
+          "bootMs": 18,
           "echo": true,
           "counterBump": true,
           "counterValue": {

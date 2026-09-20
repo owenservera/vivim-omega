@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -102,6 +102,7 @@ plugins plus the Wave-2 assembly plugin**, enumerated below.
 
 ## Evidence
 
+- Landed in `ac9aabf`: falsifiers F-1..F-3 green in the record's tree BEFORE the flip per D-364 (5 mechanical tests, `tooling/gates/test/plugin-identification.test.ts`); full gate green 1126/0 x2 on the PROPOSED tree (2026-09-20T10:51:27Z and 10:52:57Z — 1121 + 5 new; host flat 1500/1500, zero host LOC, anvil untouched); the row flips to RATIFIED by `omega:questions --write` (1 regenerated, 0 appended).
 - **Falsifiers (in this record's tree BEFORE the flip, per D-364):**
   - **F-1 (enumeration completeness, mechanical):**
     `tooling/gates/test/plugin-identification.test.ts` — parses this
