@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -44,3 +44,4 @@ D-410 opened the Core Phase; its milestone's first row is S1, the structural ana
   - **F-4 four-state rows**: one confident executed console command → an intent row (state `submitted`, interpretation summary) + an `EXECUTED` resolution row citing `intentRef`; one ambiguous command → an `AMBIGUOUS` row with `intentRef: null`; one refused (require-consent) command → a `REFUSED` row carrying the consentId.
   - **F-5 live-path parity**: the existing console consent ceremony (interpret → consent card → grant → retry) is behaviorally unchanged; the refused card still carries the consent id (now from the structured pre-gate decision, not regex extraction); `surfaces/web/test/web.test.ts` stays green with the new assertions added.
 - Gate bar: **evidence-class** — the falsifiers above are IN this record before ratification; ratification cites two full gate greens on the record's tree (1056 + new tests / 0 ×2).
+- **Ratified: landed in `9d142fa`; falsifiers F-1 through F-5 all green on this tree** (intent-seam 7/7 — the F-1 regression fails on the pre-D-411 code; d411-citation 3/3; web 14/14 including the F-3 live journal citation and the F-5 consent-ceremony parity); **two full gate greens 1069/0 ×2** on the record's tree (2026-09-20T05:02:00Z and 05:03:50Z; +13 tests over the 1056 baseline); host flat 1500/1500; anvil untouched (856/860, 45 exports); composition count unchanged at 18.
