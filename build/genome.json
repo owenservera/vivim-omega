@@ -13,8 +13,8 @@
     "ratifiedUnimplemented": 1,
     "queued": 8,
     "decisions": 136,
-    "ratified": 134,
-    "proposed": 2,
+    "ratified": 135,
+    "proposed": 1,
     "records": 110,
     "testFiles": 118,
     "gateStages": 15,
@@ -192,7 +192,7 @@
       "evidence": {
         "treeId": 430,
         "recordFile": "docs/decisions/D-430-session-ledger.md",
-        "recordStatus": "PROPOSED",
+        "recordStatus": "RATIFIED",
         "falsifier": "F-SESSION",
         "falsifierFile": "tooling/gates/test/f-session.test.ts",
         "falsifierClauses": [
@@ -1345,7 +1345,7 @@
     },
     {
       "n": 430,
-      "status": "PROPOSED",
+      "status": "RATIFIED",
       "file": "docs/decisions/D-430-session-ledger.md"
     }
   ],

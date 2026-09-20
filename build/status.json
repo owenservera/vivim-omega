@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-09-20T23:25:29.123Z",
+  "generatedAt": "2026-09-20T23:28:38.876Z",
   "repo": "vivim-omega",
   "branch": "omega",
-  "head": "89e5690",
+  "head": "93cf286",
   "toolchain": {
     "bun": "1.3.14",
     "node": "24.3.0",
@@ -96,7 +96,7 @@
     }
   ],
   "gate": {
-    "startedAt": "2026-09-20T23:23:56.950Z",
+    "startedAt": "2026-09-20T23:27:06.521Z",
     "checks": {
       "host-loc": {
         "ok": true,
@@ -133,15 +133,13 @@
         "detail": {
           "rows": 136,
           "records": 110,
-          "ratified": 109,
+          "ratified": 110,
           "grandfatherBelow": 313,
           "generatedFrom": 413,
           "trackWarnings": 0,
           "openQuestions": {
-            "count": 1,
-            "ids": [
-              430
-            ],
+            "count": 0,
+            "ids": [],
             "board": "stale"
           }
         }
@@ -287,17 +285,17 @@
         "detail": {
           "policy": "report-only (D-423 — mirrors D-415/D-368; the flip to failing, if ever, is a future record's call)",
           "gateGreen": true,
-          "gateStale": false,
-          "boardOpen": 1,
+          "gateStale": true,
+          "boardOpen": 0,
           "boardBlocking": 0,
           "boardFreshness": "stale",
           "docscanFindings": 0,
           "ledgerResolved": true,
-          "sessionOpen": false,
+          "sessionOpen": true,
           "sessionHomePresent": true,
-          "sessionEvents": 0,
+          "sessionEvents": 3,
           "sessionClosedCount": 0,
-          "ratifiedCount": 134
+          "ratifiedCount": 135
         }
       },
       "genome": {
@@ -311,8 +309,8 @@
             "ratifiedUnimplemented": 1,
             "queued": 8,
             "decisions": 136,
-            "ratified": 134,
-            "proposed": 2,
+            "ratified": 135,
+            "proposed": 1,
             "records": 110,
             "testFiles": 118,
             "gateStages": 15,
@@ -321,9 +319,7 @@
           },
           "genomeBytes": 47178,
           "briefBytes": 7557,
-          "inFlight": [
-            "Ω-DEV.6"
-          ],
+          "inFlight": [],
           "externalAssumed": 16,
           "unresolvedFalsifiers": [
             "F-BOOT (Ω-0)",
@@ -356,8 +352,8 @@
       "attest": {
         "ok": true,
         "detail": {
-          "compileMs": 3,
-          "bootMs": 20,
+          "compileMs": 22,
+          "bootMs": 90,
           "echo": true,
           "counterBump": true,
           "counterValue": {

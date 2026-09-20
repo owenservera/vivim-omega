@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -132,6 +132,8 @@ Blocks: none
   loop this record rides), the owner directives of 2026-09-22 (the
   session stream + structured lessons; the timestamps for bottleneck
   identification).
+
+- Ratified on greens (evidence-class, F-SESSION.1..6 green in this record's tree BEFORE the flip per D-364): landing commit 93cf286; full gate green 1247/0 ×2 on the PROPOSED tree (2026-09-20T23:22:19Z and 2026-09-20T23:23:56Z; the prior tip's 1232 + 15 new); the wave's own session opened at tool completion (20260920-232544, bootstrap stated in-stream at its honest `at`, never backdated) and closed with the retrospective before `omega:round-close` cut the bundle — the publish gate dogfooded on its own landing wave; the tooling caught its own program mid-wave (the deletion witness naming its line range, the stale genome fold + pass-5 pin flagged by the first full gate); the checker clean, docscan 0 findings; zero host LOC; anvil untouched.
 
 ## Index
 
