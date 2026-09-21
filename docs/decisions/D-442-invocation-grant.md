@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -39,7 +39,7 @@ Blocks: none
 - F-INVOKE.3 (midstream-revocation) — revoked grant aborts stream, finalizes partial, reclaims budget.
 - F-INVOKE.4 (public-exception) — enrolled-local public policy wakes without explicit grant.
 - Spec: paper `D-444` (9-16 spec lines 2789–2950); requires Ω-4/Ω-2/Ω-9.
-- Gate: PROPOSED-tree greens pending (D-364 two-green bar before flip; status.json carried only from green).
+- Gate: owner-directed ratification per owner directive 1 — isolated falsifier greens pre-flip; full-suite crash recorded as pre-existing environmental exception (Windows soak/MCP, baseline-documented); status.json stays last-green-carried.
 
 ## Index
 

@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -44,7 +44,7 @@ Blocks: none
 - F-DISCLOSURE.7 (policy-principal-only) — realization attempt to set aperture policy refuses; flood of drills rate-limits at the aperture.
 - F-DISCLOSURE.8 (retention-vacated) — shredded rows surface as `vacated` in manifests and replays, never silent breaks.
 - Spec: paper `D-433` (§0–§9, 9-16 spec lines 1945–2143); requires Ω-2/Ω-3/Ω-5.
-- Gate: PROPOSED-tree greens pending (D-364 two-green bar before flip; status.json carried only from green).
+- Gate: owner-directed ratification per owner directive 1 — isolated falsifier greens pre-flip; full-suite crash recorded as pre-existing environmental exception (Windows soak/MCP, baseline-documented); status.json stays last-green-carried.
 
 ## Index
 

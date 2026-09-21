@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -41,7 +41,7 @@ Blocks: none
 - F-LIVENESS.4 (handoff) — 24h degraded consumes into badge proposals with ratification prompts.
 - F-LIVENESS.5 (ledger-query) — latency history folds from rows, queryable, never RAM-hidden.
 - Spec: paper `D-446` (9-16 spec lines 3123–3287); requires Ω-7/Ω-2/Ω-8.
-- Gate: PROPOSED-tree greens pending (D-364 two-green bar before flip; status.json carried only from green).
+- Gate: owner-directed ratification per owner directive 1 — isolated falsifier greens pre-flip; full-suite crash recorded as pre-existing environmental exception (Windows soak/MCP, baseline-documented); status.json stays last-green-carried.
 
 ## Index
 

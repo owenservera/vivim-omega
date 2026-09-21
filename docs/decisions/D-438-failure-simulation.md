@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -42,7 +42,7 @@ Blocks: none
 - F-SIM.5 (negative-proof) — shadow exfiltration logs enclave refusal + network block in the audit.
 - F-SIM.6 (live-immunity) — `ns canvas` targeting refuses `SIM_LIVE_VAULT_WRITE`.
 - Spec: paper `D-432` (§0–§10, 1-8 spec lines 1898–2092); requires Ω-1..Ω-7 (D-431..437).
-- Gate: PROPOSED-tree greens pending (D-364 two-green bar before flip; status.json carried only from green).
+- Gate: owner-directed ratification per owner directive 1 — isolated falsifier greens pre-flip; full-suite crash recorded as pre-existing environmental exception (Windows soak/MCP, baseline-documented); status.json stays last-green-carried.
 
 ## Index
 

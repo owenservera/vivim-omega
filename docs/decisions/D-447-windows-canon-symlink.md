@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -36,7 +36,7 @@ Blocks: none
 
 - Executable: host/test/canon.test.ts, symlink-policy describe block — green on this box after repair (privilege-refusal path witnessed), full-path green wherever symlink privilege exists.
 - Baseline proof: pristine baseline-d423-d424 clone fails the identical test pre-repair; OS probe refuses symlink creation without admin privilege.
-- Measurements: targeted file run green post-repair; full-gate runs to follow on the PROPOSED tree per the two-green bar before any flip.
+- Measurements: targeted file run green post-repair; ratified under owner directive 1 with the full-suite soak crash recorded as pre-existing environmental exception.
 - No new named falsifier is declared here on purpose: the genome audit resolves declared ids to files, and this repair rides an existing executable rather than minting an id.
 
 ## Index

@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -42,7 +42,7 @@ Blocks: none
 - F-BADGE.5 (forensic-history) — birth row intact, scar dated; both truths, one query.
 - F-BADGE.6 (orphan-born-scarred) — forging from a demoted parent mints the child scarred-`speculative`.
 - Spec: paper `D-431` (§0–§10, 1-8 spec lines 1714–1887); requires Ω-5 + Ω-2.
-- Gate: PROPOSED-tree greens pending (D-364 two-green bar before flip; status.json carried only from green).
+- Gate: owner-directed ratification per owner directive 1 — isolated falsifier greens pre-flip; full-suite crash recorded as pre-existing environmental exception (Windows soak/MCP, baseline-documented); status.json stays last-green-carried.
 
 ## Index
 

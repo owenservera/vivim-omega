@@ -13,8 +13,8 @@
     "ratifiedUnimplemented": 1,
     "queued": 8,
     "decisions": 153,
-    "ratified": 135,
-    "proposed": 18,
+    "ratified": 152,
+    "proposed": 1,
     "records": 127,
     "testFiles": 134,
     "gateStages": 15,
@@ -237,7 +237,7 @@
       "evidence": {
         "treeId": 431,
         "recordFile": "docs/decisions/D-431-watch-substrate.md",
-        "recordStatus": "PROPOSED",
+        "recordStatus": "RATIFIED",
         "falsifier": "F-WATCH",
         "falsifierFile": "tooling/gates/test/f-watch.test.ts",
         "falsifierClauses": [
@@ -263,7 +263,7 @@
       "evidence": {
         "treeId": 432,
         "recordFile": "docs/decisions/D-432-resource-governor.md",
-        "recordStatus": "PROPOSED",
+        "recordStatus": "RATIFIED",
         "falsifier": "F-GOV",
         "falsifierFile": "tooling/gates/test/f-gov.test.ts",
         "falsifierClauses": [
@@ -293,7 +293,7 @@
       "evidence": {
         "treeId": 433,
         "recordFile": "docs/decisions/D-433-context-spine.md",
-        "recordStatus": "PROPOSED",
+        "recordStatus": "RATIFIED",
         "falsifier": "F-CTX",
         "falsifierFile": "tooling/gates/test/f-ctx.test.ts",
         "falsifierClauses": [
@@ -321,7 +321,7 @@
       "evidence": {
         "treeId": 434,
         "recordFile": "docs/decisions/D-434-trust-mesh.md",
-        "recordStatus": "PROPOSED",
+        "recordStatus": "RATIFIED",
         "falsifier": "F-TRUST",
         "falsifierFile": "tooling/gates/test/f-trust.test.ts",
         "falsifierClauses": [
@@ -346,7 +346,7 @@
       "evidence": {
         "treeId": 435,
         "recordFile": "docs/decisions/D-435-vault-analytics.md",
-        "recordStatus": "PROPOSED",
+        "recordStatus": "RATIFIED",
         "falsifier": "F-ANALYTICS",
         "falsifierFile": "tooling/gates/test/f-analytics.test.ts",
         "falsifierClauses": [
@@ -371,7 +371,7 @@
       "evidence": {
         "treeId": 436,
         "recordFile": "docs/decisions/D-436-layout-predicate.md",
-        "recordStatus": "PROPOSED",
+        "recordStatus": "RATIFIED",
         "falsifier": "F-LAYOUT",
         "falsifierFile": "tooling/gates/test/f-layout.test.ts",
         "falsifierClauses": [
@@ -399,7 +399,7 @@
       "evidence": {
         "treeId": 437,
         "recordFile": "docs/decisions/D-437-badge-provenance.md",
-        "recordStatus": "PROPOSED",
+        "recordStatus": "RATIFIED",
         "falsifier": "F-BADGE",
         "falsifierFile": "tooling/gates/test/f-badge.test.ts",
         "falsifierClauses": [
@@ -425,7 +425,7 @@
       "evidence": {
         "treeId": 438,
         "recordFile": "docs/decisions/D-438-failure-simulation.md",
-        "recordStatus": "PROPOSED",
+        "recordStatus": "RATIFIED",
         "falsifier": "F-SIM",
         "falsifierFile": "tooling/gates/test/f-sim.test.ts",
         "falsifierClauses": [
@@ -453,7 +453,7 @@
       "evidence": {
         "treeId": 439,
         "recordFile": "docs/decisions/D-439-aperture-disclosure.md",
-        "recordStatus": "PROPOSED",
+        "recordStatus": "RATIFIED",
         "falsifier": "F-DISCLOSURE",
         "falsifierFile": "tooling/gates/test/f-disclosure.test.ts",
         "falsifierClauses": [
@@ -481,7 +481,7 @@
       "evidence": {
         "treeId": 440,
         "recordFile": "docs/decisions/D-440-partial-turn.md",
-        "recordStatus": "PROPOSED",
+        "recordStatus": "RATIFIED",
         "falsifier": "F-PARTIAL",
         "falsifierFile": "tooling/gates/test/f-partial.test.ts",
         "falsifierClauses": [
@@ -505,7 +505,7 @@
       "evidence": {
         "treeId": 441,
         "recordFile": "docs/decisions/D-441-aperture-privacy.md",
-        "recordStatus": "PROPOSED",
+        "recordStatus": "RATIFIED",
         "falsifier": "F-APERTURE-PRIVACY",
         "falsifierFile": "tooling/gates/test/f-aperture-privacy.test.ts",
         "falsifierClauses": [
@@ -529,7 +529,7 @@
       "evidence": {
         "treeId": 442,
         "recordFile": "docs/decisions/D-442-invocation-grant.md",
-        "recordStatus": "PROPOSED",
+        "recordStatus": "RATIFIED",
         "falsifier": "F-INVOKE",
         "falsifierFile": "tooling/gates/test/f-invoke.test.ts",
         "falsifierClauses": [
@@ -553,7 +553,7 @@
       "evidence": {
         "treeId": 443,
         "recordFile": "docs/decisions/D-443-standing-state.md",
-        "recordStatus": "PROPOSED",
+        "recordStatus": "RATIFIED",
         "falsifier": "F-STANDING",
         "falsifierFile": "tooling/gates/test/f-standing.test.ts",
         "falsifierClauses": [
@@ -577,7 +577,7 @@
       "evidence": {
         "treeId": 444,
         "recordFile": "docs/decisions/D-444-liveness-health.md",
-        "recordStatus": "PROPOSED",
+        "recordStatus": "RATIFIED",
         "falsifier": "F-LIVENESS",
         "falsifierFile": "tooling/gates/test/f-liveness.test.ts",
         "falsifierClauses": [
@@ -602,7 +602,7 @@
       "evidence": {
         "treeId": 445,
         "recordFile": "docs/decisions/D-445-consent-delegation.md",
-        "recordStatus": "PROPOSED",
+        "recordStatus": "RATIFIED",
         "falsifier": "F-DELEGATE",
         "falsifierFile": "tooling/gates/test/f-delegate.test.ts",
         "falsifierClauses": [
@@ -627,7 +627,7 @@
       "evidence": {
         "treeId": 446,
         "recordFile": "docs/decisions/D-446-adaptation-constitution.md",
-        "recordStatus": "PROPOSED",
+        "recordStatus": "RATIFIED",
         "falsifier": "F-ADAPT",
         "falsifierFile": "tooling/gates/test/f-adapt.test.ts",
         "falsifierClauses": [
@@ -1456,87 +1456,87 @@
     },
     {
       "n": 431,
-      "status": "PROPOSED",
+      "status": "RATIFIED",
       "file": "docs/decisions/D-431-watch-substrate.md"
     },
     {
       "n": 432,
-      "status": "PROPOSED",
+      "status": "RATIFIED",
       "file": "docs/decisions/D-432-resource-governor.md"
     },
     {
       "n": 433,
-      "status": "PROPOSED",
+      "status": "RATIFIED",
       "file": "docs/decisions/D-433-context-spine.md"
     },
     {
       "n": 434,
-      "status": "PROPOSED",
+      "status": "RATIFIED",
       "file": "docs/decisions/D-434-trust-mesh.md"
     },
     {
       "n": 435,
-      "status": "PROPOSED",
+      "status": "RATIFIED",
       "file": "docs/decisions/D-435-vault-analytics.md"
     },
     {
       "n": 436,
-      "status": "PROPOSED",
+      "status": "RATIFIED",
       "file": "docs/decisions/D-436-layout-predicate.md"
     },
     {
       "n": 437,
-      "status": "PROPOSED",
+      "status": "RATIFIED",
       "file": "docs/decisions/D-437-badge-provenance.md"
     },
     {
       "n": 438,
-      "status": "PROPOSED",
+      "status": "RATIFIED",
       "file": "docs/decisions/D-438-failure-simulation.md"
     },
     {
       "n": 439,
-      "status": "PROPOSED",
+      "status": "RATIFIED",
       "file": "docs/decisions/D-439-aperture-disclosure.md"
     },
     {
       "n": 440,
-      "status": "PROPOSED",
+      "status": "RATIFIED",
       "file": "docs/decisions/D-440-partial-turn.md"
     },
     {
       "n": 441,
-      "status": "PROPOSED",
+      "status": "RATIFIED",
       "file": "docs/decisions/D-441-aperture-privacy.md"
     },
     {
       "n": 442,
-      "status": "PROPOSED",
+      "status": "RATIFIED",
       "file": "docs/decisions/D-442-invocation-grant.md"
     },
     {
       "n": 443,
-      "status": "PROPOSED",
+      "status": "RATIFIED",
       "file": "docs/decisions/D-443-standing-state.md"
     },
     {
       "n": 444,
-      "status": "PROPOSED",
+      "status": "RATIFIED",
       "file": "docs/decisions/D-444-liveness-health.md"
     },
     {
       "n": 445,
-      "status": "PROPOSED",
+      "status": "RATIFIED",
       "file": "docs/decisions/D-445-consent-delegation.md"
     },
     {
       "n": 446,
-      "status": "PROPOSED",
+      "status": "RATIFIED",
       "file": "docs/decisions/D-446-adaptation-constitution.md"
     },
     {
       "n": 447,
-      "status": "PROPOSED",
+      "status": "RATIFIED",
       "file": "docs/decisions/D-447-windows-canon-symlink.md"
     }
   ],

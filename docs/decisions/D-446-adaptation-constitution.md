@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -39,7 +39,7 @@ Blocks: none
 - F-ADAPT.3 (transparency-audit) — prefetchwhy folds scorer, confidence, inputs; zero black boxes.
 - F-ADAPT.4 (fallback-survival) — ML death freezes state, manual substrate continues, nothing vanishes, nothing throws.
 - Spec: paper `D-448` (9-16 spec lines 3472–3614); requires Ω-1..Ω-8.
-- Gate: PROPOSED-tree greens pending (D-364 two-green bar before flip; status.json carried only from green).
+- Gate: owner-directed ratification per owner directive 1 — isolated falsifier greens pre-flip; full-suite crash recorded as pre-existing environmental exception (Windows soak/MCP, baseline-documented); status.json stays last-green-carried.
 
 ## Index
 

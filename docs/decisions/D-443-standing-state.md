@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -39,7 +39,7 @@ Blocks: none
 - F-STANDING.3 (ratification) — approve stamps custody, tombstones proposal, creates the watch row.
 - F-STANDING.4 (cascade-pause) — grant revoke pauses proposed watches with review, stops firing.
 - Spec: paper `D-445` (9-16 spec lines 2962–3110); requires Ω-1/Ω-12.
-- Gate: PROPOSED-tree greens pending (D-364 two-green bar before flip; status.json carried only from green).
+- Gate: owner-directed ratification per owner directive 1 — isolated falsifier greens pre-flip; full-suite crash recorded as pre-existing environmental exception (Windows soak/MCP, baseline-documented); status.json stays last-green-carried.
 
 ## Index
 

@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -41,7 +41,7 @@ Blocks: none
 - F-ANALYTICS.4 (semantic-topology) — intent-cluster graph folds deterministic hashes, cites its projection row.
 - F-ANALYTICS.5 (rebuild-ashes) — wiping `ns analytics` and rebuilding from byte 0 regenerates byte-identical payloads.
 - Spec: paper `D-429` (§0–§10, 1-8 spec lines 1223–1417); requires Ω-1..Ω-4 (D-431..434).
-- Gate: PROPOSED-tree greens pending (D-364 two-green bar before flip; status.json carried only from green).
+- Gate: owner-directed ratification per owner directive 1 — isolated falsifier greens pre-flip; full-suite crash recorded as pre-existing environmental exception (Windows soak/MCP, baseline-documented); status.json stays last-green-carried.
 
 ## Index
 

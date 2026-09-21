@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -39,7 +39,7 @@ Blocks: none
 - F-PARTIAL.3 (midstream-kill) — banned-regex output dies at match with `REFUSED_MID` and zeroed payload.
 - F-PARTIAL.4 (crash-reclaim) — killed kernel reboots to `ORPHANED` marks and full budget reclaim; no death lacks finalize-or-reclaim.
 - Spec: paper `D-442` (9-16 spec lines 2487–2599); requires Ω-2/Ω-3/Ω-9.
-- Gate: PROPOSED-tree greens pending (D-364 two-green bar before flip; status.json carried only from green).
+- Gate: owner-directed ratification per owner directive 1 — isolated falsifier greens pre-flip; full-suite crash recorded as pre-existing environmental exception (Windows soak/MCP, baseline-documented); status.json stays last-green-carried.
 
 ## Index
 

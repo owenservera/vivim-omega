@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -43,7 +43,7 @@ Blocks: none
 - F-WATCH.6 (headless-idempotent) — canvas killed, watch still fires; synced watch firing on two devices reconciles to one event + named merge record (no double-mint).
 - Entailed codes (beyond the paper five, same authority): `WATCH_NOT_OWNER` ("Only the watch owner arms or pauses this watch.") for §3 ownership, `WATCH_PAUSED` for fire-while-not-armed. No new privilege; both refuse loudly.
 - Spec: paper `D-425` (§0–§11, `chat-Git Bundle Vision and Core Capabilities1-8.txt` lines 16–208); genome Ω-1 row (paper `D-425`, external-assumed pre-port); simulate receipt `build/sim-receipts/_-1.json` (4 applicable, 0 uncaught, advisory).
-- Gate: PROPOSED-tree greens pending (D-364 two-green bar before flip; status.json carried only from green).
+- Gate: owner-directed ratification per owner directive 1 — isolated falsifier greens pre-flip; full-suite crash recorded as pre-existing environmental exception (Windows soak/MCP, baseline-documented); status.json stays last-green-carried.
 
 ## Index
 

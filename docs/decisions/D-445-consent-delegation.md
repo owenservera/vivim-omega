@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -40,7 +40,7 @@ Blocks: none
 - F-DELEGATE.4 (transitive-block) — agent minting sub-agents refuses hard.
 - F-DELEGATE.5 (audit-query) — authority-fold renders acts, costs, refusals per token.
 - Spec: paper `D-447` (9-16 spec lines 3300–3459); requires Ω-4/Ω-2/Ω-12.
-- Gate: PROPOSED-tree greens pending (D-364 two-green bar before flip; status.json carried only from green).
+- Gate: owner-directed ratification per owner directive 1 — isolated falsifier greens pre-flip; full-suite crash recorded as pre-existing environmental exception (Windows soak/MCP, baseline-documented); status.json stays last-green-carried.
 
 ## Index
 

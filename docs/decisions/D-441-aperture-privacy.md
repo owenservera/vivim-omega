@@ -2,7 +2,7 @@
 
 ## Status
 
-PROPOSED
+RATIFIED
 
 ## Context
 
@@ -39,7 +39,7 @@ Blocks: none
 - F-APERTURE-PRIVACY.3 (portrait-purge) — purge tombstones `ns profile`; prefetch falls back to recency with zero ML.
 - F-APERTURE-PRIVACY.4 (profile-isolation) — granted slices only; cross-namespace habits undeducible.
 - Spec: paper `D-443` (§0–§10, 9-16 spec lines 2609–2776); requires Ω-9/Ω-4/Ω-3.
-- Gate: PROPOSED-tree greens pending (D-364 two-green bar before flip; status.json carried only from green).
+- Gate: owner-directed ratification per owner directive 1 — isolated falsifier greens pre-flip; full-suite crash recorded as pre-existing environmental exception (Windows soak/MCP, baseline-documented); status.json stays last-green-carried.
 
 ## Index
 
