@@ -41,6 +41,7 @@ Blocks: none
 - F-DELEGATE.5 (audit-query) — authority-fold renders acts, costs, refusals per token.
 - Spec: paper `D-447` (9-16 spec lines 3300–3459); requires Ω-4/Ω-2/Ω-12.
 - Gate: owner-directed ratification per owner directive 1 — isolated falsifier greens pre-flip; full-suite crash recorded as pre-existing environmental exception (Windows soak/MCP, baseline-documented); status.json stays last-green-carried.
+- Landed in `9e45326` (PROPOSED commit; ratified on owner directive 1).
 
 ## Index
 

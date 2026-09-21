@@ -40,6 +40,7 @@ Blocks: none
 - F-PARTIAL.4 (crash-reclaim) — killed kernel reboots to `ORPHANED` marks and full budget reclaim; no death lacks finalize-or-reclaim.
 - Spec: paper `D-442` (9-16 spec lines 2487–2599); requires Ω-2/Ω-3/Ω-9.
 - Gate: owner-directed ratification per owner directive 1 — isolated falsifier greens pre-flip; full-suite crash recorded as pre-existing environmental exception (Windows soak/MCP, baseline-documented); status.json stays last-green-carried.
+- Landed in `9e45326` (PROPOSED commit; ratified on owner directive 1).
 
 ## Index
 

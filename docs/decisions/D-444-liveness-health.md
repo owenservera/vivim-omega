@@ -42,6 +42,7 @@ Blocks: none
 - F-LIVENESS.5 (ledger-query) — latency history folds from rows, queryable, never RAM-hidden.
 - Spec: paper `D-446` (9-16 spec lines 3123–3287); requires Ω-7/Ω-2/Ω-8.
 - Gate: owner-directed ratification per owner directive 1 — isolated falsifier greens pre-flip; full-suite crash recorded as pre-existing environmental exception (Windows soak/MCP, baseline-documented); status.json stays last-green-carried.
+- Landed in `9e45326` (PROPOSED commit; ratified on owner directive 1).
 
 ## Index
 

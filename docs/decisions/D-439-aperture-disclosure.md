@@ -45,6 +45,7 @@ Blocks: none
 - F-DISCLOSURE.8 (retention-vacated) — shredded rows surface as `vacated` in manifests and replays, never silent breaks.
 - Spec: paper `D-433` (§0–§9, 9-16 spec lines 1945–2143); requires Ω-2/Ω-3/Ω-5.
 - Gate: owner-directed ratification per owner directive 1 — isolated falsifier greens pre-flip; full-suite crash recorded as pre-existing environmental exception (Windows soak/MCP, baseline-documented); status.json stays last-green-carried.
+- Landed in `9e45326` (PROPOSED commit; ratified on owner directive 1).
 
 ## Index
 

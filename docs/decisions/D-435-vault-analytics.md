@@ -42,6 +42,7 @@ Blocks: none
 - F-ANALYTICS.5 (rebuild-ashes) — wiping `ns analytics` and rebuilding from byte 0 regenerates byte-identical payloads.
 - Spec: paper `D-429` (§0–§10, 1-8 spec lines 1223–1417); requires Ω-1..Ω-4 (D-431..434).
 - Gate: owner-directed ratification per owner directive 1 — isolated falsifier greens pre-flip; full-suite crash recorded as pre-existing environmental exception (Windows soak/MCP, baseline-documented); status.json stays last-green-carried.
+- Landed in `9e45326` (PROPOSED commit; ratified on owner directive 1).
 
 ## Index
 

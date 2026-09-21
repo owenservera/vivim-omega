@@ -45,6 +45,7 @@ Blocks: none
 - F-LAYOUT.8 (conflict-visibility) — contradictory rules resolve by priority; loser logged; inspect explains the winner.
 - Spec: paper `D-430` (§0–§10, 1-8 spec lines 1428–1703); requires Ω-5/Ω-2/Ω-1/Ω-4.
 - Gate: owner-directed ratification per owner directive 1 — isolated falsifier greens pre-flip; full-suite crash recorded as pre-existing environmental exception (Windows soak/MCP, baseline-documented); status.json stays last-green-carried.
+- Landed in `9e45326` (PROPOSED commit; ratified on owner directive 1).
 
 ## Index
 

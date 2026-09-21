@@ -40,6 +40,7 @@ Blocks: none
 - F-STANDING.4 (cascade-pause) — grant revoke pauses proposed watches with review, stops firing.
 - Spec: paper `D-445` (9-16 spec lines 2962–3110); requires Ω-1/Ω-12.
 - Gate: owner-directed ratification per owner directive 1 — isolated falsifier greens pre-flip; full-suite crash recorded as pre-existing environmental exception (Windows soak/MCP, baseline-documented); status.json stays last-green-carried.
+- Landed in `9e45326` (PROPOSED commit; ratified on owner directive 1).
 
 ## Index
 

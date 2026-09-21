@@ -40,6 +40,7 @@ Blocks: none
 - F-APERTURE-PRIVACY.4 (profile-isolation) — granted slices only; cross-namespace habits undeducible.
 - Spec: paper `D-443` (§0–§10, 9-16 spec lines 2609–2776); requires Ω-9/Ω-4/Ω-3.
 - Gate: owner-directed ratification per owner directive 1 — isolated falsifier greens pre-flip; full-suite crash recorded as pre-existing environmental exception (Windows soak/MCP, baseline-documented); status.json stays last-green-carried.
+- Landed in `9e45326` (PROPOSED commit; ratified on owner directive 1).
 
 ## Index
 

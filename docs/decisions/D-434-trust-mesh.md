@@ -41,6 +41,7 @@ Blocks: none
 - F-TRUST.5 (shard-recovery) — destroyed primary restored to a new enclave from k physical shards; fewer than k refuses (`TRUST_INSUFFICIENT_SHARDS`); mesh survives.
 - Spec: paper `D-428` (§0–§10, 1-8 spec lines 1030–1212); requires Ω-1..Ω-3 (D-431..433).
 - Gate: owner-directed ratification per owner directive 1 — isolated falsifier greens pre-flip; full-suite crash recorded as pre-existing environmental exception (Windows soak/MCP, baseline-documented); status.json stays last-green-carried.
+- Landed in `9e45326` (PROPOSED commit; ratified on owner directive 1).
 
 ## Index
 

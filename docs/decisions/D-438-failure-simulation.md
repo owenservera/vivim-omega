@@ -43,6 +43,7 @@ Blocks: none
 - F-SIM.6 (live-immunity) — `ns canvas` targeting refuses `SIM_LIVE_VAULT_WRITE`.
 - Spec: paper `D-432` (§0–§10, 1-8 spec lines 1898–2092); requires Ω-1..Ω-7 (D-431..437).
 - Gate: owner-directed ratification per owner directive 1 — isolated falsifier greens pre-flip; full-suite crash recorded as pre-existing environmental exception (Windows soak/MCP, baseline-documented); status.json stays last-green-carried.
+- Landed in `9e45326` (PROPOSED commit; ratified on owner directive 1).
 
 ## Index
 

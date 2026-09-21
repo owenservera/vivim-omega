@@ -45,6 +45,7 @@ Blocks: none
 - F-GOV.8 (healing-reclaim) — realization promotion refuses stale claims until revalidation; badge-weighted eviction and self-exemption refuse (`GOV_BADGE_WEIGHTED`, `GOV_SELF_EXEMPTION`).
 - Spec: paper `D-426` (§0–§12, 1-8 spec lines 219–509); requires Ω-1 (tree D-431 green).
 - Gate: owner-directed ratification per owner directive 1 — isolated falsifier greens pre-flip; full-suite crash recorded as pre-existing environmental exception (Windows soak/MCP, baseline-documented); status.json stays last-green-carried.
+- Landed in `9e45326` (PROPOSED commit; ratified on owner directive 1).
 
 ## Index
 

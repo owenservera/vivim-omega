@@ -43,6 +43,7 @@ Blocks: none
 - F-BADGE.6 (orphan-born-scarred) — forging from a demoted parent mints the child scarred-`speculative`.
 - Spec: paper `D-431` (§0–§10, 1-8 spec lines 1714–1887); requires Ω-5 + Ω-2.
 - Gate: owner-directed ratification per owner directive 1 — isolated falsifier greens pre-flip; full-suite crash recorded as pre-existing environmental exception (Windows soak/MCP, baseline-documented); status.json stays last-green-carried.
+- Landed in `9e45326` (PROPOSED commit; ratified on owner directive 1).
 
 ## Index
 

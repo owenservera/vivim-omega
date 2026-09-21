@@ -45,6 +45,7 @@ Blocks: none
 - F-CTX.8 (token-accounting) — spend per ctx joins realization × namespace; cross-model per-namespace totals answer as one query.
 - Spec: paper `D-427` (§0–§10, 1-8 spec lines 775–1019); requires Ω-1 (D-431) + Ω-2 (D-432).
 - Gate: owner-directed ratification per owner directive 1 — isolated falsifier greens pre-flip; full-suite crash recorded as pre-existing environmental exception (Windows soak/MCP, baseline-documented); status.json stays last-green-carried.
+- Landed in `9e45326` (PROPOSED commit; ratified on owner directive 1).
 
 ## Index
 
