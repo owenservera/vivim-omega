@@ -102,162 +102,162 @@
     {
       "id": "Ω-1",
       "name": "Substrate: watch (namespaced process/signal watch)",
-      "status": "external-assumed",
-      "treeId": null,
+      "status": "implemented",
+      "treeId": 431,
       "specId": "D-425",
       "falsifier": "F-WATCH",
       "dependsOn": ["CORE"],
-      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; no tree evidence — the verify queue owns the porting"
+      "note": "ported in tree D-431 (tooling/gates/watch.ts + f-watch.test.ts, F-WATCH.1-6 green); paper D-425 lineage kept distinct per the two-numbering rule"
     },
     {
       "id": "Ω-2",
       "name": "Substrate: governance",
-      "status": "external-assumed",
-      "treeId": null,
+      "status": "implemented",
+      "treeId": 432,
       "specId": "D-426",
       "falsifier": "F-GOV",
       "dependsOn": ["CORE"],
-      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; no tree evidence — the verify queue owns the porting"
+      "note": "ported in tree D-432 (tooling/gates/gov.ts + f-gov.test.ts, F-GOV.1-8 green); paper D-426 lineage kept distinct per the two-numbering rule"
     },
     {
       "id": "Ω-3",
       "name": "Substrate: context",
-      "status": "external-assumed",
-      "treeId": null,
+      "status": "implemented",
+      "treeId": 433,
       "specId": "D-427",
       "falsifier": "F-CTX",
       "dependsOn": ["Ω-1", "Ω-2", "Ω-4"],
-      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; no tree evidence — the verify queue owns the porting"
+      "note": "ported in tree D-433 (tooling/gates/ctx.ts + f-ctx.test.ts, F-CTX.1-8 green); paper D-427 lineage kept distinct; tree D-433 collides with paper Ω-9 specId D-433, recorded not hidden"
     },
     {
       "id": "Ω-4",
       "name": "Substrate: trust",
-      "status": "external-assumed",
-      "treeId": null,
+      "status": "implemented",
+      "treeId": 434,
       "specId": "D-428",
       "falsifier": "F-TRUST",
       "dependsOn": ["CORE"],
-      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; key rotation folded here per the resequencing; no tree evidence — the verify queue owns the porting"
+      "note": "ported in tree D-434 (tooling/gates/trust.ts + f-trust.test.ts, F-TRUST.1-5 green); paper D-428 lineage kept distinct; tree D-434 collides with paper builder-gap D-434 (Ω-2.5), recorded not hidden"
     },
     {
       "id": "Ω-5",
       "name": "Substrate: analytics",
-      "status": "external-assumed",
-      "treeId": null,
+      "status": "implemented",
+      "treeId": 435,
       "specId": "D-429",
       "falsifier": "F-ANALYTICS",
       "dependsOn": ["CORE"],
-      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; no tree evidence — the verify queue owns the porting"
+      "note": "ported in tree D-435 (tooling/gates/analytics.ts + f-analytics.test.ts, F-ANALYTICS.1-5 green); paper D-429 lineage kept distinct; tree D-435 collides with paper builder-gap D-435 (Ω-2.6), recorded not hidden"
     },
     {
       "id": "Ω-6",
       "name": "Substrate: layout",
-      "status": "external-assumed",
-      "treeId": null,
+      "status": "implemented",
+      "treeId": 436,
       "specId": "D-430",
       "falsifier": "F-LAYOUT",
       "dependsOn": ["Ω-5"],
-      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; no tree evidence — the verify queue owns the porting"
+      "note": "ported in tree D-436 (tooling/gates/layout.ts + f-layout.test.ts, F-LAYOUT.1-8 green); paper D-430 lineage kept distinct; tree D-436 collides with paper builder-gap D-436 (Ω-3.5), recorded not hidden"
     },
     {
       "id": "Ω-7",
       "name": "Substrate: badge",
-      "status": "external-assumed",
-      "treeId": null,
+      "status": "implemented",
+      "treeId": 437,
       "specId": "D-431",
       "falsifier": "F-BADGE",
       "dependsOn": ["Ω-6"],
-      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; no tree evidence — the verify queue owns the porting"
+      "note": "ported in tree D-437 (tooling/gates/badge.ts + f-badge.test.ts, F-BADGE.1-6 green); paper D-431 lineage kept distinct; tree D-437 collides with paper builder-gap D-437 (Ω-4.5), recorded not hidden"
     },
     {
       "id": "Ω-8",
       "name": "Substrate: simulation (the rehearsal engine)",
-      "status": "external-assumed",
-      "treeId": null,
+      "status": "implemented",
+      "treeId": 438,
       "specId": "D-432",
       "falsifier": "F-SIM",
       "dependsOn": ["Ω-7"],
-      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; Ω-DEV.5's runtime-behavioral half lands here when this layer ports; no tree evidence — the verify queue owns the porting"
+      "note": "ported in tree D-438 (tooling/gates/rehearse.ts + f-sim.test.ts, F-SIM.1-6 green; module named rehearse.ts — simulate.ts belongs to Ω-DEV.5); paper D-432 lineage kept distinct; tree D-438 collides with paper builder-gap D-438 (Ω-5.5), recorded not hidden"
     },
     {
       "id": "Ω-9",
       "name": "The aperture (progressive disclosure)",
-      "status": "external-assumed",
-      "treeId": null,
+      "status": "implemented",
+      "treeId": 439,
       "specId": "D-433",
       "falsifier": "F-DISCLOSURE",
       "dependsOn": ["Ω-2", "Ω-3", "Ω-5"],
-      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; no tree evidence — the verify queue owns the porting"
+      "note": "ported in tree D-439 (tooling/gates/aperture.ts + f-disclosure.test.ts, F-DISCLOSURE.1-8 green); paper D-433 lineage kept distinct; tree D-439 collides with paper builder-gap D-439 (Ω-6.5), recorded not hidden"
     },
     {
       "id": "Ω-10",
       "name": "Boundary: partial evaluation",
-      "status": "external-assumed",
-      "treeId": null,
+      "status": "implemented",
+      "treeId": 440,
       "specId": "D-442",
       "falsifier": "F-PARTIAL",
       "dependsOn": ["Ω-9"],
-      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; no tree evidence — the verify queue owns the porting"
+      "note": "ported in tree D-440 (tooling/gates/partial.ts + f-partial.test.ts, F-PARTIAL.1-4 green); paper D-442 lineage kept distinct; tree D-440 collides with paper builder-gap D-440 (Ω-7.5), recorded not hidden"
     },
     {
       "id": "Ω-11",
       "name": "Boundary: aperture privacy",
-      "status": "external-assumed",
-      "treeId": null,
+      "status": "implemented",
+      "treeId": 441,
       "specId": "D-443",
       "falsifier": "F-APERTURE-PRIVACY",
       "dependsOn": ["Ω-10"],
-      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; no tree evidence — the verify queue owns the porting"
+      "note": "ported in tree D-441 (tooling/gates/priv.ts + f-aperture-privacy.test.ts, F-APERTURE-PRIVACY.1-4 green); paper D-443 lineage kept distinct; tree D-441 collides with paper unassigned reserve D-441, recorded not hidden"
     },
     {
       "id": "Ω-12",
       "name": "Boundary: invocation",
-      "status": "external-assumed",
-      "treeId": null,
+      "status": "implemented",
+      "treeId": 442,
       "specId": "D-444",
       "falsifier": "F-INVOKE",
       "dependsOn": ["Ω-11"],
-      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; no tree evidence — the verify queue owns the porting"
+      "note": "ported in tree D-442 (tooling/gates/invoke.ts + f-invoke.test.ts, F-INVOKE.1-4 green); paper D-444 lineage kept distinct; tree D-442 collides with paper Ω-10 specId D-442, recorded not hidden"
     },
     {
       "id": "Ω-13",
       "name": "Boundary: standing",
-      "status": "external-assumed",
-      "treeId": null,
+      "status": "implemented",
+      "treeId": 443,
       "specId": "D-445",
       "falsifier": "F-STANDING",
       "dependsOn": ["Ω-12"],
-      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; no tree evidence — the verify queue owns the porting"
+      "note": "ported in tree D-443 (tooling/gates/standing.ts + f-standing.test.ts, F-STANDING.1-4 green); paper D-445 lineage kept distinct; tree D-443 collides with paper Ω-11 specId D-443, recorded not hidden"
     },
     {
       "id": "Ω-14",
       "name": "Boundary: liveness",
-      "status": "external-assumed",
-      "treeId": null,
+      "status": "implemented",
+      "treeId": 444,
       "specId": "D-446",
       "falsifier": "F-LIVENESS",
       "dependsOn": ["Ω-13"],
-      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; no tree evidence — the verify queue owns the porting"
+      "note": "ported in tree D-444 (tooling/gates/live.ts + f-liveness.test.ts, F-LIVENESS.1-5 green); paper D-446 lineage kept distinct; tree D-444 collides with paper Ω-12 specId D-444, recorded not hidden"
     },
     {
       "id": "Ω-15",
       "name": "Boundary: delegation",
-      "status": "external-assumed",
-      "treeId": null,
+      "status": "implemented",
+      "treeId": 445,
       "specId": "D-447",
       "falsifier": "F-DELEGATE",
       "dependsOn": ["Ω-14"],
-      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; no tree evidence — the verify queue owns the porting"
+      "note": "ported in tree D-445 (tooling/gates/delegate.ts + f-delegate.test.ts, F-DELEGATE.1-5 green); paper D-447 lineage kept distinct; tree D-445 collides with paper Ω-13 specId D-445, recorded not hidden"
     },
     {
       "id": "Ω-16",
       "name": "Boundary: adaptation governance",
-      "status": "external-assumed",
-      "treeId": null,
+      "status": "implemented",
+      "treeId": 446,
       "specId": "D-448",
       "falsifier": "F-ADAPT",
       "dependsOn": ["Ω-15"],
-      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; no tree evidence — the verify queue owns the porting"
+      "note": "ported in tree D-446 (tooling/gates/adapt.ts + f-adapt.test.ts, F-ADAPT.1-4 green); paper D-448 lineage kept distinct; tree D-446 collides with paper Ω-14 specId D-446, recorded not hidden"
     },
     {
       "id": "Ω-2.5",

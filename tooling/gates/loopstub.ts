@@ -26,7 +26,7 @@
 // convention (D-423/D-424 era) is deliberately out of scope — two
 // conventions, one regex, no conflation.
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, sep } from "node:path";
 import { parseRecord } from "./decisions.ts";
 import { extractNamedFalsifiers, resolveFalsifierFile, type FalsifierClause } from "./genome.ts";
 
@@ -138,7 +138,7 @@ function walkTests(root: string): Array<{ path: string; text: string }> {
       const p = join(dir, f);
       if (statSync(p).isDirectory()) { rec(p); continue; }
       if (!/\.(test\.ts|test\.mjs)$/.test(f)) continue;
-      out.push({ path: p.slice(root.length + 1), text: readFileSync(p, "utf-8") });
+      out.push({ path: p.slice(root.length + 1).split(sep).join("/"), text: readFileSync(p, "utf-8") });
     }
   };
   rec(root);

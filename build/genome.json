@@ -8,15 +8,15 @@
   },
   "counts": {
     "layers": 32,
-    "implemented": 7,
-    "externalAssumed": 16,
+    "implemented": 23,
+    "externalAssumed": 0,
     "ratifiedUnimplemented": 1,
     "queued": 8,
-    "decisions": 136,
+    "decisions": 152,
     "ratified": 135,
-    "proposed": 1,
-    "records": 110,
-    "testFiles": 118,
+    "proposed": 17,
+    "records": 126,
+    "testFiles": 134,
     "gateStages": 15,
     "plugins": 25,
     "compositions": 19
@@ -228,308 +228,414 @@
     {
       "id": "Ω-1",
       "name": "Substrate: watch (namespaced process/signal watch)",
-      "status": "external-assumed",
+      "status": "implemented",
       "dependsOn": [
         "CORE"
       ],
-      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; no tree evidence — the verify queue owns the porting",
+      "note": "ported in tree D-431 (tooling/gates/watch.ts + f-watch.test.ts, F-WATCH.1-6 green); paper D-425 lineage kept distinct per the two-numbering rule",
       "specId": "D-425",
       "evidence": {
-        "treeId": null,
-        "recordFile": null,
-        "recordStatus": null,
+        "treeId": 431,
+        "recordFile": "docs/decisions/D-431-watch-substrate.md",
+        "recordStatus": "PROPOSED",
         "falsifier": "F-WATCH",
-        "falsifierFile": null,
-        "falsifierClauses": [],
+        "falsifierFile": "tooling/gates/test/f-watch.test.ts",
+        "falsifierClauses": [
+          "F-WATCH.1 (register-fire-route)",
+          "F-WATCH.2 (onfire-is-intent)",
+          "F-WATCH.3 (retention-required)",
+          "F-WATCH.4 (granted-observation)",
+          "F-WATCH.5 (sole-writer-lifecycle)",
+          "F-WATCH.6 (headless-idempotent)"
+        ],
         "evidenceKind": "record"
       }
     },
     {
       "id": "Ω-2",
       "name": "Substrate: governance",
-      "status": "external-assumed",
+      "status": "implemented",
       "dependsOn": [
         "CORE"
       ],
-      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; no tree evidence — the verify queue owns the porting",
+      "note": "ported in tree D-432 (tooling/gates/gov.ts + f-gov.test.ts, F-GOV.1-8 green); paper D-426 lineage kept distinct per the two-numbering rule",
       "specId": "D-426",
       "evidence": {
-        "treeId": null,
-        "recordFile": null,
-        "recordStatus": null,
+        "treeId": 432,
+        "recordFile": "docs/decisions/D-432-resource-governor.md",
+        "recordStatus": "PROPOSED",
         "falsifier": "F-GOV",
-        "falsifierFile": null,
-        "falsifierClauses": [],
+        "falsifierFile": "tooling/gates/test/f-gov.test.ts",
+        "falsifierClauses": [
+          "F-GOV.1 (claim-refusal)",
+          "F-GOV.2 (pressure-eviction)",
+          "F-GOV.3 (coldness-real)",
+          "F-GOV.4 (provisional-ceiling)",
+          "F-GOV.5 (watchdog-enforcement)",
+          "F-GOV.6 (headless-inspect)",
+          "F-GOV.7 (locality)",
+          "F-GOV.8 (healing-reclaim)"
+        ],
         "evidenceKind": "record"
       }
     },
     {
       "id": "Ω-3",
       "name": "Substrate: context",
-      "status": "external-assumed",
+      "status": "implemented",
       "dependsOn": [
         "Ω-1",
         "Ω-2",
         "Ω-4"
       ],
-      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; no tree evidence — the verify queue owns the porting",
+      "note": "ported in tree D-433 (tooling/gates/ctx.ts + f-ctx.test.ts, F-CTX.1-8 green); paper D-427 lineage kept distinct; tree D-433 collides with paper Ω-9 specId D-433, recorded not hidden",
       "specId": "D-427",
       "evidence": {
-        "treeId": null,
-        "recordFile": null,
-        "recordStatus": null,
+        "treeId": 433,
+        "recordFile": "docs/decisions/D-433-context-spine.md",
+        "recordStatus": "PROPOSED",
         "falsifier": "F-CTX",
-        "falsifierFile": null,
-        "falsifierClauses": [],
+        "falsifierFile": "tooling/gates/test/f-ctx.test.ts",
+        "falsifierClauses": [
+          "F-CTX.1 (artifact-inspect)",
+          "F-CTX.2 (determinism)",
+          "F-CTX.3 (replay-substitution)",
+          "F-CTX.4 (forensics)",
+          "F-CTX.5 (fetch-refusal)",
+          "F-CTX.6 (honest-forgetting)",
+          "F-CTX.7 (tunable-spine)",
+          "F-CTX.8 (token-accounting)"
+        ],
         "evidenceKind": "record"
       }
     },
     {
       "id": "Ω-4",
       "name": "Substrate: trust",
-      "status": "external-assumed",
+      "status": "implemented",
       "dependsOn": [
         "CORE"
       ],
-      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; key rotation folded here per the resequencing; no tree evidence — the verify queue owns the porting",
+      "note": "ported in tree D-434 (tooling/gates/trust.ts + f-trust.test.ts, F-TRUST.1-5 green); paper D-428 lineage kept distinct; tree D-434 collides with paper builder-gap D-434 (Ω-2.5), recorded not hidden",
       "specId": "D-428",
       "evidence": {
-        "treeId": null,
-        "recordFile": null,
-        "recordStatus": null,
+        "treeId": 434,
+        "recordFile": "docs/decisions/D-434-trust-mesh.md",
+        "recordStatus": "PROPOSED",
         "falsifier": "F-TRUST",
-        "falsifierFile": null,
-        "falsifierClauses": [],
+        "falsifierFile": "tooling/gates/test/f-trust.test.ts",
+        "falsifierClauses": [
+          "F-TRUST.1 (hardware-bound)",
+          "F-TRUST.2 (local-pairing)",
+          "F-TRUST.3 (causal-revocation)",
+          "F-TRUST.4 (scoped-grants)",
+          "F-TRUST.5 (shard-recovery)"
+        ],
         "evidenceKind": "record"
       }
     },
     {
       "id": "Ω-5",
       "name": "Substrate: analytics",
-      "status": "external-assumed",
+      "status": "implemented",
       "dependsOn": [
         "CORE"
       ],
-      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; no tree evidence — the verify queue owns the porting",
+      "note": "ported in tree D-435 (tooling/gates/analytics.ts + f-analytics.test.ts, F-ANALYTICS.1-5 green); paper D-429 lineage kept distinct; tree D-435 collides with paper builder-gap D-435 (Ω-2.6), recorded not hidden",
       "specId": "D-429",
       "evidence": {
-        "treeId": null,
-        "recordFile": null,
-        "recordStatus": null,
+        "treeId": 435,
+        "recordFile": "docs/decisions/D-435-vault-analytics.md",
+        "recordStatus": "PROPOSED",
         "falsifier": "F-ANALYTICS",
-        "falsifierFile": null,
-        "falsifierClauses": [],
+        "falsifierFile": "tooling/gates/test/f-analytics.test.ts",
+        "falsifierClauses": [
+          "F-ANALYTICS.1 (honest-heatmap)",
+          "F-ANALYTICS.2 (forensic-join)",
+          "F-ANALYTICS.3 (no-second-truth)",
+          "F-ANALYTICS.4 (semantic-topology)",
+          "F-ANALYTICS.5 (rebuild-ashes)"
+        ],
         "evidenceKind": "record"
       }
     },
     {
       "id": "Ω-6",
       "name": "Substrate: layout",
-      "status": "external-assumed",
+      "status": "implemented",
       "dependsOn": [
         "Ω-5"
       ],
-      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; no tree evidence — the verify queue owns the porting",
+      "note": "ported in tree D-436 (tooling/gates/layout.ts + f-layout.test.ts, F-LAYOUT.1-8 green); paper D-430 lineage kept distinct; tree D-436 collides with paper builder-gap D-436 (Ω-3.5), recorded not hidden",
       "specId": "D-430",
       "evidence": {
-        "treeId": null,
-        "recordFile": null,
-        "recordStatus": null,
+        "treeId": 436,
+        "recordFile": "docs/decisions/D-436-layout-predicate.md",
+        "recordStatus": "PROPOSED",
         "falsifier": "F-LAYOUT",
-        "falsifierFile": null,
-        "falsifierClauses": [],
+        "falsifierFile": "tooling/gates/test/f-layout.test.ts",
+        "falsifierClauses": [
+          "F-LAYOUT.1 (badge-arrangement)",
+          "F-LAYOUT.2 (pin-immunity)",
+          "F-LAYOUT.3 (concealment-refusal)",
+          "F-LAYOUT.4 (temporal-scrub)",
+          "F-LAYOUT.5 (forged-rule)",
+          "F-LAYOUT.6 (semantic-arrangement)",
+          "F-LAYOUT.7 (headless-integrity)",
+          "F-LAYOUT.8 (conflict-visibility)"
+        ],
         "evidenceKind": "record"
       }
     },
     {
       "id": "Ω-7",
       "name": "Substrate: badge",
-      "status": "external-assumed",
+      "status": "implemented",
       "dependsOn": [
         "Ω-6"
       ],
-      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; no tree evidence — the verify queue owns the porting",
+      "note": "ported in tree D-437 (tooling/gates/badge.ts + f-badge.test.ts, F-BADGE.1-6 green); paper D-431 lineage kept distinct; tree D-437 collides with paper builder-gap D-437 (Ω-4.5), recorded not hidden",
       "specId": "D-431",
       "evidence": {
-        "treeId": null,
-        "recordFile": null,
-        "recordStatus": null,
+        "treeId": 437,
+        "recordFile": "docs/decisions/D-437-badge-provenance.md",
+        "recordStatus": "PROPOSED",
         "falsifier": "F-BADGE",
-        "falsifierFile": null,
-        "falsifierClauses": [],
+        "falsifierFile": "tooling/gates/test/f-badge.test.ts",
+        "falsifierClauses": [
+          "F-BADGE.1 (proposal-engine)",
+          "F-BADGE.2 (ratification-gate)",
+          "F-BADGE.3 (loud-demotion)",
+          "F-BADGE.4 (transitive-scar)",
+          "F-BADGE.5 (forensic-history)",
+          "F-BADGE.6 (orphan-born-scarred)"
+        ],
         "evidenceKind": "record"
       }
     },
     {
       "id": "Ω-8",
       "name": "Substrate: simulation (the rehearsal engine)",
-      "status": "external-assumed",
+      "status": "implemented",
       "dependsOn": [
         "Ω-7"
       ],
-      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; Ω-DEV.5's runtime-behavioral half lands here when this layer ports; no tree evidence — the verify queue owns the porting",
+      "note": "ported in tree D-438 (tooling/gates/rehearse.ts + f-sim.test.ts, F-SIM.1-6 green; module named rehearse.ts — simulate.ts belongs to Ω-DEV.5); paper D-432 lineage kept distinct; tree D-438 collides with paper builder-gap D-438 (Ω-5.5), recorded not hidden",
       "specId": "D-432",
       "evidence": {
-        "treeId": null,
-        "recordFile": null,
-        "recordStatus": null,
+        "treeId": 438,
+        "recordFile": "docs/decisions/D-438-failure-simulation.md",
+        "recordStatus": "PROPOSED",
         "falsifier": "F-SIM",
-        "falsifierFile": "tooling/gates/test/f-genome.test.ts",
-        "falsifierClauses": [],
+        "falsifierFile": "tooling/gates/test/f-sim.test.ts",
+        "falsifierClauses": [
+          "F-SIM.1 (context-corruption)",
+          "F-SIM.2 (starvation)",
+          "F-SIM.3 (lineage-cascade)",
+          "F-SIM.4 (lost-laptop)",
+          "F-SIM.5 (negative-proof)",
+          "F-SIM.6 (live-immunity)"
+        ],
         "evidenceKind": "record"
       }
     },
     {
       "id": "Ω-9",
       "name": "The aperture (progressive disclosure)",
-      "status": "external-assumed",
+      "status": "implemented",
       "dependsOn": [
         "Ω-2",
         "Ω-3",
         "Ω-5"
       ],
-      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; no tree evidence — the verify queue owns the porting",
+      "note": "ported in tree D-439 (tooling/gates/aperture.ts + f-disclosure.test.ts, F-DISCLOSURE.1-8 green); paper D-433 lineage kept distinct; tree D-439 collides with paper builder-gap D-439 (Ω-6.5), recorded not hidden",
       "specId": "D-433",
       "evidence": {
-        "treeId": null,
-        "recordFile": null,
-        "recordStatus": null,
+        "treeId": 439,
+        "recordFile": "docs/decisions/D-439-aperture-disclosure.md",
+        "recordStatus": "PROPOSED",
         "falsifier": "F-DISCLOSURE",
-        "falsifierFile": null,
-        "falsifierClauses": [],
+        "falsifierFile": "tooling/gates/test/f-disclosure.test.ts",
+        "falsifierClauses": [
+          "F-DISCLOSURE.1 (seed-manifest)",
+          "F-DISCLOSURE.2 (pull-trail)",
+          "F-DISCLOSURE.3 (no-unrowed-byte)",
+          "F-DISCLOSURE.4 (prefetch-staged)",
+          "F-DISCLOSURE.5 (budget-itemized)",
+          "F-DISCLOSURE.6 (profile-receipted)",
+          "F-DISCLOSURE.7 (policy-principal-only)",
+          "F-DISCLOSURE.8 (retention-vacated)"
+        ],
         "evidenceKind": "record"
       }
     },
     {
       "id": "Ω-10",
       "name": "Boundary: partial evaluation",
-      "status": "external-assumed",
+      "status": "implemented",
       "dependsOn": [
         "Ω-9"
       ],
-      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; no tree evidence — the verify queue owns the porting",
+      "note": "ported in tree D-440 (tooling/gates/partial.ts + f-partial.test.ts, F-PARTIAL.1-4 green); paper D-442 lineage kept distinct; tree D-440 collides with paper builder-gap D-440 (Ω-7.5), recorded not hidden",
       "specId": "D-442",
       "evidence": {
-        "treeId": null,
-        "recordFile": null,
-        "recordStatus": null,
+        "treeId": 440,
+        "recordFile": "docs/decisions/D-440-partial-turn.md",
+        "recordStatus": "PROPOSED",
         "falsifier": "F-PARTIAL",
-        "falsifierFile": null,
-        "falsifierClauses": [],
+        "falsifierFile": "tooling/gates/test/f-partial.test.ts",
+        "falsifierClauses": [
+          "F-PARTIAL.1 (network-sever)",
+          "F-PARTIAL.2 (governor-ceiling)",
+          "F-PARTIAL.3 (midstream-kill)",
+          "F-PARTIAL.4 (crash-reclaim)"
+        ],
         "evidenceKind": "record"
       }
     },
     {
       "id": "Ω-11",
       "name": "Boundary: aperture privacy",
-      "status": "external-assumed",
+      "status": "implemented",
       "dependsOn": [
         "Ω-10"
       ],
-      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; no tree evidence — the verify queue owns the porting",
+      "note": "ported in tree D-441 (tooling/gates/priv.ts + f-aperture-privacy.test.ts, F-APERTURE-PRIVACY.1-4 green); paper D-443 lineage kept distinct; tree D-441 collides with paper unassigned reserve D-441, recorded not hidden",
       "specId": "D-443",
       "evidence": {
-        "treeId": null,
-        "recordFile": null,
-        "recordStatus": null,
+        "treeId": 441,
+        "recordFile": "docs/decisions/D-441-aperture-privacy.md",
+        "recordStatus": "PROPOSED",
         "falsifier": "F-APERTURE-PRIVACY",
-        "falsifierFile": "tooling/gates/test/f-loop.test.ts",
-        "falsifierClauses": [],
+        "falsifierFile": "tooling/gates/test/f-aperture-privacy.test.ts",
+        "falsifierClauses": [
+          "F-APERTURE-PRIVACY.1 (oracle-test)",
+          "F-APERTURE-PRIVACY.2 (manifest-blindness)",
+          "F-APERTURE-PRIVACY.3 (portrait-purge)",
+          "F-APERTURE-PRIVACY.4 (profile-isolation)"
+        ],
         "evidenceKind": "record"
       }
     },
     {
       "id": "Ω-12",
       "name": "Boundary: invocation",
-      "status": "external-assumed",
+      "status": "implemented",
       "dependsOn": [
         "Ω-11"
       ],
-      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; no tree evidence — the verify queue owns the porting",
+      "note": "ported in tree D-442 (tooling/gates/invoke.ts + f-invoke.test.ts, F-INVOKE.1-4 green); paper D-444 lineage kept distinct; tree D-442 collides with paper Ω-10 specId D-442, recorded not hidden",
       "specId": "D-444",
       "evidence": {
-        "treeId": null,
-        "recordFile": null,
-        "recordStatus": null,
+        "treeId": 442,
+        "recordFile": "docs/decisions/D-442-invocation-grant.md",
+        "recordStatus": "PROPOSED",
         "falsifier": "F-INVOKE",
-        "falsifierFile": null,
-        "falsifierClauses": [],
+        "falsifierFile": "tooling/gates/test/f-invoke.test.ts",
+        "falsifierClauses": [
+          "F-INVOKE.1 (unauthorized)",
+          "F-INVOKE.2 (scoped-denial)",
+          "F-INVOKE.3 (midstream-revocation)",
+          "F-INVOKE.4 (public-exception)"
+        ],
         "evidenceKind": "record"
       }
     },
     {
       "id": "Ω-13",
       "name": "Boundary: standing",
-      "status": "external-assumed",
+      "status": "implemented",
       "dependsOn": [
         "Ω-12"
       ],
-      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; no tree evidence — the verify queue owns the porting",
+      "note": "ported in tree D-443 (tooling/gates/standing.ts + f-standing.test.ts, F-STANDING.1-4 green); paper D-445 lineage kept distinct; tree D-443 collides with paper Ω-11 specId D-443, recorded not hidden",
       "specId": "D-445",
       "evidence": {
-        "treeId": null,
-        "recordFile": null,
-        "recordStatus": null,
+        "treeId": 443,
+        "recordFile": "docs/decisions/D-443-standing-state.md",
+        "recordStatus": "PROPOSED",
         "falsifier": "F-STANDING",
-        "falsifierFile": null,
-        "falsifierClauses": [],
+        "falsifierFile": "tooling/gates/test/f-standing.test.ts",
+        "falsifierClauses": [
+          "F-STANDING.1 (direct-arm-refused)",
+          "F-STANDING.2 (proposal-flow)",
+          "F-STANDING.3 (ratification)",
+          "F-STANDING.4 (cascade-pause)"
+        ],
         "evidenceKind": "record"
       }
     },
     {
       "id": "Ω-14",
       "name": "Boundary: liveness",
-      "status": "external-assumed",
+      "status": "implemented",
       "dependsOn": [
         "Ω-13"
       ],
-      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; no tree evidence — the verify queue owns the porting",
+      "note": "ported in tree D-444 (tooling/gates/live.ts + f-liveness.test.ts, F-LIVENESS.1-5 green); paper D-446 lineage kept distinct; tree D-444 collides with paper Ω-12 specId D-444, recorded not hidden",
       "specId": "D-446",
       "evidence": {
-        "treeId": null,
-        "recordFile": null,
-        "recordStatus": null,
+        "treeId": 444,
+        "recordFile": "docs/decisions/D-444-liveness-health.md",
+        "recordStatus": "PROPOSED",
         "falsifier": "F-LIVENESS",
-        "falsifierFile": null,
-        "falsifierClauses": [],
+        "falsifierFile": "tooling/gates/test/f-liveness.test.ts",
+        "falsifierClauses": [
+          "F-LIVENESS.1 (latency-injection)",
+          "F-LIVENESS.2 (schema-drift)",
+          "F-LIVENESS.3 (zombie-probe)",
+          "F-LIVENESS.4 (handoff)",
+          "F-LIVENESS.5 (ledger-query)"
+        ],
         "evidenceKind": "record"
       }
     },
     {
       "id": "Ω-15",
       "name": "Boundary: delegation",
-      "status": "external-assumed",
+      "status": "implemented",
       "dependsOn": [
         "Ω-14"
       ],
-      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; no tree evidence — the verify queue owns the porting",
+      "note": "ported in tree D-445 (tooling/gates/delegate.ts + f-delegate.test.ts, F-DELEGATE.1-5 green); paper D-447 lineage kept distinct; tree D-445 collides with paper Ω-13 specId D-445, recorded not hidden",
       "specId": "D-447",
       "evidence": {
-        "treeId": null,
-        "recordFile": null,
-        "recordStatus": null,
+        "treeId": 445,
+        "recordFile": "docs/decisions/D-445-consent-delegation.md",
+        "recordStatus": "PROPOSED",
         "falsifier": "F-DELEGATE",
-        "falsifierFile": null,
-        "falsifierClauses": [],
+        "falsifierFile": "tooling/gates/test/f-delegate.test.ts",
+        "falsifierClauses": [
+          "F-DELEGATE.1 (headless-loop)",
+          "F-DELEGATE.2 (scope-containment)",
+          "F-DELEGATE.3 (midnight-revocation)",
+          "F-DELEGATE.4 (transitive-block)",
+          "F-DELEGATE.5 (audit-query)"
+        ],
         "evidenceKind": "record"
       }
     },
     {
       "id": "Ω-16",
       "name": "Boundary: adaptation governance",
-      "status": "external-assumed",
+      "status": "implemented",
       "dependsOn": [
         "Ω-15"
       ],
-      "note": "ratified in the external upgrade specs; assumed-implemented per the owner directive; no tree evidence — the verify queue owns the porting",
+      "note": "ported in tree D-446 (tooling/gates/adapt.ts + f-adapt.test.ts, F-ADAPT.1-4 green); paper D-448 lineage kept distinct; tree D-446 collides with paper Ω-14 specId D-446, recorded not hidden",
       "specId": "D-448",
       "evidence": {
-        "treeId": null,
-        "recordFile": null,
-        "recordStatus": null,
+        "treeId": 446,
+        "recordFile": "docs/decisions/D-446-adaptation-constitution.md",
+        "recordStatus": "PROPOSED",
         "falsifier": "F-ADAPT",
-        "falsifierFile": null,
-        "falsifierClauses": [],
+        "falsifierFile": "tooling/gates/test/f-adapt.test.ts",
+        "falsifierClauses": [
+          "F-ADAPT.1 (propose-dispose)",
+          "F-ADAPT.2 (global-dumb)",
+          "F-ADAPT.3 (transparency-audit)",
+          "F-ADAPT.4 (fallback-survival)"
+        ],
         "evidenceKind": "record"
       }
     },
@@ -1347,6 +1453,86 @@
       "n": 430,
       "status": "RATIFIED",
       "file": "docs/decisions/D-430-session-ledger.md"
+    },
+    {
+      "n": 431,
+      "status": "PROPOSED",
+      "file": "docs/decisions/D-431-watch-substrate.md"
+    },
+    {
+      "n": 432,
+      "status": "PROPOSED",
+      "file": "docs/decisions/D-432-resource-governor.md"
+    },
+    {
+      "n": 433,
+      "status": "PROPOSED",
+      "file": "docs/decisions/D-433-context-spine.md"
+    },
+    {
+      "n": 434,
+      "status": "PROPOSED",
+      "file": "docs/decisions/D-434-trust-mesh.md"
+    },
+    {
+      "n": 435,
+      "status": "PROPOSED",
+      "file": "docs/decisions/D-435-vault-analytics.md"
+    },
+    {
+      "n": 436,
+      "status": "PROPOSED",
+      "file": "docs/decisions/D-436-layout-predicate.md"
+    },
+    {
+      "n": 437,
+      "status": "PROPOSED",
+      "file": "docs/decisions/D-437-badge-provenance.md"
+    },
+    {
+      "n": 438,
+      "status": "PROPOSED",
+      "file": "docs/decisions/D-438-failure-simulation.md"
+    },
+    {
+      "n": 439,
+      "status": "PROPOSED",
+      "file": "docs/decisions/D-439-aperture-disclosure.md"
+    },
+    {
+      "n": 440,
+      "status": "PROPOSED",
+      "file": "docs/decisions/D-440-partial-turn.md"
+    },
+    {
+      "n": 441,
+      "status": "PROPOSED",
+      "file": "docs/decisions/D-441-aperture-privacy.md"
+    },
+    {
+      "n": 442,
+      "status": "PROPOSED",
+      "file": "docs/decisions/D-442-invocation-grant.md"
+    },
+    {
+      "n": 443,
+      "status": "PROPOSED",
+      "file": "docs/decisions/D-443-standing-state.md"
+    },
+    {
+      "n": 444,
+      "status": "PROPOSED",
+      "file": "docs/decisions/D-444-liveness-health.md"
+    },
+    {
+      "n": 445,
+      "status": "PROPOSED",
+      "file": "docs/decisions/D-445-consent-delegation.md"
+    },
+    {
+      "n": 446,
+      "status": "PROPOSED",
+      "file": "docs/decisions/D-446-adaptation-constitution.md"
     }
   ],
   "falsifiers": [
@@ -1435,98 +1621,204 @@
     {
       "id": "F-WATCH",
       "layer": "Ω-1",
-      "file": null,
-      "clauses": []
+      "file": "tooling/gates/test/f-watch.test.ts",
+      "clauses": [
+        "F-WATCH.1 (register-fire-route)",
+        "F-WATCH.2 (onfire-is-intent)",
+        "F-WATCH.3 (retention-required)",
+        "F-WATCH.4 (granted-observation)",
+        "F-WATCH.5 (sole-writer-lifecycle)",
+        "F-WATCH.6 (headless-idempotent)"
+      ]
     },
     {
       "id": "F-GOV",
       "layer": "Ω-2",
-      "file": null,
-      "clauses": []
+      "file": "tooling/gates/test/f-gov.test.ts",
+      "clauses": [
+        "F-GOV.1 (claim-refusal)",
+        "F-GOV.2 (pressure-eviction)",
+        "F-GOV.3 (coldness-real)",
+        "F-GOV.4 (provisional-ceiling)",
+        "F-GOV.5 (watchdog-enforcement)",
+        "F-GOV.6 (headless-inspect)",
+        "F-GOV.7 (locality)",
+        "F-GOV.8 (healing-reclaim)"
+      ]
     },
     {
       "id": "F-CTX",
       "layer": "Ω-3",
-      "file": null,
-      "clauses": []
+      "file": "tooling/gates/test/f-ctx.test.ts",
+      "clauses": [
+        "F-CTX.1 (artifact-inspect)",
+        "F-CTX.2 (determinism)",
+        "F-CTX.3 (replay-substitution)",
+        "F-CTX.4 (forensics)",
+        "F-CTX.5 (fetch-refusal)",
+        "F-CTX.6 (honest-forgetting)",
+        "F-CTX.7 (tunable-spine)",
+        "F-CTX.8 (token-accounting)"
+      ]
     },
     {
       "id": "F-TRUST",
       "layer": "Ω-4",
-      "file": null,
-      "clauses": []
+      "file": "tooling/gates/test/f-trust.test.ts",
+      "clauses": [
+        "F-TRUST.1 (hardware-bound)",
+        "F-TRUST.2 (local-pairing)",
+        "F-TRUST.3 (causal-revocation)",
+        "F-TRUST.4 (scoped-grants)",
+        "F-TRUST.5 (shard-recovery)"
+      ]
     },
     {
       "id": "F-ANALYTICS",
       "layer": "Ω-5",
-      "file": null,
-      "clauses": []
+      "file": "tooling/gates/test/f-analytics.test.ts",
+      "clauses": [
+        "F-ANALYTICS.1 (honest-heatmap)",
+        "F-ANALYTICS.2 (forensic-join)",
+        "F-ANALYTICS.3 (no-second-truth)",
+        "F-ANALYTICS.4 (semantic-topology)",
+        "F-ANALYTICS.5 (rebuild-ashes)"
+      ]
     },
     {
       "id": "F-LAYOUT",
       "layer": "Ω-6",
-      "file": null,
-      "clauses": []
+      "file": "tooling/gates/test/f-layout.test.ts",
+      "clauses": [
+        "F-LAYOUT.1 (badge-arrangement)",
+        "F-LAYOUT.2 (pin-immunity)",
+        "F-LAYOUT.3 (concealment-refusal)",
+        "F-LAYOUT.4 (temporal-scrub)",
+        "F-LAYOUT.5 (forged-rule)",
+        "F-LAYOUT.6 (semantic-arrangement)",
+        "F-LAYOUT.7 (headless-integrity)",
+        "F-LAYOUT.8 (conflict-visibility)"
+      ]
     },
     {
       "id": "F-BADGE",
       "layer": "Ω-7",
-      "file": null,
-      "clauses": []
+      "file": "tooling/gates/test/f-badge.test.ts",
+      "clauses": [
+        "F-BADGE.1 (proposal-engine)",
+        "F-BADGE.2 (ratification-gate)",
+        "F-BADGE.3 (loud-demotion)",
+        "F-BADGE.4 (transitive-scar)",
+        "F-BADGE.5 (forensic-history)",
+        "F-BADGE.6 (orphan-born-scarred)"
+      ]
     },
     {
       "id": "F-SIM",
       "layer": "Ω-8",
-      "file": "tooling/gates/test/f-genome.test.ts",
-      "clauses": []
+      "file": "tooling/gates/test/f-sim.test.ts",
+      "clauses": [
+        "F-SIM.1 (context-corruption)",
+        "F-SIM.2 (starvation)",
+        "F-SIM.3 (lineage-cascade)",
+        "F-SIM.4 (lost-laptop)",
+        "F-SIM.5 (negative-proof)",
+        "F-SIM.6 (live-immunity)"
+      ]
     },
     {
       "id": "F-DISCLOSURE",
       "layer": "Ω-9",
-      "file": null,
-      "clauses": []
+      "file": "tooling/gates/test/f-disclosure.test.ts",
+      "clauses": [
+        "F-DISCLOSURE.1 (seed-manifest)",
+        "F-DISCLOSURE.2 (pull-trail)",
+        "F-DISCLOSURE.3 (no-unrowed-byte)",
+        "F-DISCLOSURE.4 (prefetch-staged)",
+        "F-DISCLOSURE.5 (budget-itemized)",
+        "F-DISCLOSURE.6 (profile-receipted)",
+        "F-DISCLOSURE.7 (policy-principal-only)",
+        "F-DISCLOSURE.8 (retention-vacated)"
+      ]
     },
     {
       "id": "F-PARTIAL",
       "layer": "Ω-10",
-      "file": null,
-      "clauses": []
+      "file": "tooling/gates/test/f-partial.test.ts",
+      "clauses": [
+        "F-PARTIAL.1 (network-sever)",
+        "F-PARTIAL.2 (governor-ceiling)",
+        "F-PARTIAL.3 (midstream-kill)",
+        "F-PARTIAL.4 (crash-reclaim)"
+      ]
     },
     {
       "id": "F-APERTURE-PRIVACY",
       "layer": "Ω-11",
-      "file": "tooling/gates/test/f-loop.test.ts",
-      "clauses": []
+      "file": "tooling/gates/test/f-aperture-privacy.test.ts",
+      "clauses": [
+        "F-APERTURE-PRIVACY.1 (oracle-test)",
+        "F-APERTURE-PRIVACY.2 (manifest-blindness)",
+        "F-APERTURE-PRIVACY.3 (portrait-purge)",
+        "F-APERTURE-PRIVACY.4 (profile-isolation)"
+      ]
     },
     {
       "id": "F-INVOKE",
       "layer": "Ω-12",
-      "file": null,
-      "clauses": []
+      "file": "tooling/gates/test/f-invoke.test.ts",
+      "clauses": [
+        "F-INVOKE.1 (unauthorized)",
+        "F-INVOKE.2 (scoped-denial)",
+        "F-INVOKE.3 (midstream-revocation)",
+        "F-INVOKE.4 (public-exception)"
+      ]
     },
     {
       "id": "F-STANDING",
       "layer": "Ω-13",
-      "file": null,
-      "clauses": []
+      "file": "tooling/gates/test/f-standing.test.ts",
+      "clauses": [
+        "F-STANDING.1 (direct-arm-refused)",
+        "F-STANDING.2 (proposal-flow)",
+        "F-STANDING.3 (ratification)",
+        "F-STANDING.4 (cascade-pause)"
+      ]
     },
     {
       "id": "F-LIVENESS",
       "layer": "Ω-14",
-      "file": null,
-      "clauses": []
+      "file": "tooling/gates/test/f-liveness.test.ts",
+      "clauses": [
+        "F-LIVENESS.1 (latency-injection)",
+        "F-LIVENESS.2 (schema-drift)",
+        "F-LIVENESS.3 (zombie-probe)",
+        "F-LIVENESS.4 (handoff)",
+        "F-LIVENESS.5 (ledger-query)"
+      ]
     },
     {
       "id": "F-DELEGATE",
       "layer": "Ω-15",
-      "file": null,
-      "clauses": []
+      "file": "tooling/gates/test/f-delegate.test.ts",
+      "clauses": [
+        "F-DELEGATE.1 (headless-loop)",
+        "F-DELEGATE.2 (scope-containment)",
+        "F-DELEGATE.3 (midnight-revocation)",
+        "F-DELEGATE.4 (transitive-block)",
+        "F-DELEGATE.5 (audit-query)"
+      ]
     },
     {
       "id": "F-ADAPT",
       "layer": "Ω-16",
-      "file": null,
-      "clauses": []
+      "file": "tooling/gates/test/f-adapt.test.ts",
+      "clauses": [
+        "F-ADAPT.1 (propose-dispose)",
+        "F-ADAPT.2 (global-dumb)",
+        "F-ADAPT.3 (transparency-audit)",
+        "F-ADAPT.4 (fallback-survival)"
+      ]
     }
   ],
   "tests": {
@@ -1626,12 +1918,28 @@
       "tooling/gates/test/decisions.test.ts",
       "tooling/gates/test/efficiency-tooling.test.ts",
       "tooling/gates/test/explain.test.ts",
+      "tooling/gates/test/f-adapt.test.ts",
+      "tooling/gates/test/f-analytics.test.ts",
+      "tooling/gates/test/f-aperture-privacy.test.ts",
+      "tooling/gates/test/f-badge.test.ts",
+      "tooling/gates/test/f-ctx.test.ts",
+      "tooling/gates/test/f-delegate.test.ts",
       "tooling/gates/test/f-devault.test.ts",
+      "tooling/gates/test/f-disclosure.test.ts",
       "tooling/gates/test/f-genome.test.ts",
+      "tooling/gates/test/f-gov.test.ts",
+      "tooling/gates/test/f-invoke.test.ts",
+      "tooling/gates/test/f-layout.test.ts",
+      "tooling/gates/test/f-liveness.test.ts",
       "tooling/gates/test/f-loop.test.ts",
       "tooling/gates/test/f-orch.test.ts",
+      "tooling/gates/test/f-partial.test.ts",
       "tooling/gates/test/f-presim.test.ts",
       "tooling/gates/test/f-session.test.ts",
+      "tooling/gates/test/f-sim.test.ts",
+      "tooling/gates/test/f-standing.test.ts",
+      "tooling/gates/test/f-trust.test.ts",
+      "tooling/gates/test/f-watch.test.ts",
       "tooling/gates/test/forge-surface.test.ts",
       "tooling/gates/test/generate.test.ts",
       "tooling/gates/test/import-surface.test.ts",

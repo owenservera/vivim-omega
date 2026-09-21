@@ -1,0 +1,58 @@
+{
+  "layer": "Ω-14",
+  "inputHash": "1cdbc11854d4dc9e736d274fb9748d268ae809fcc900e0a758d1ac2b8aaf9ba4",
+  "verdict": "advisory",
+  "mutations": [
+    {
+      "mutation": "orphan-record",
+      "applicable": false,
+      "caught": false,
+      "caughtBy": null,
+      "expectedCode": "GENOME_ORPHAN"
+    },
+    {
+      "mutation": "status-lie-implemented-no-record",
+      "applicable": false,
+      "caught": false,
+      "caughtBy": null,
+      "expectedCode": "GENOME_STATUS_LIE"
+    },
+    {
+      "mutation": "status-lie-assumed-with-record",
+      "applicable": true,
+      "caught": true,
+      "caughtBy": "GENOME_STATUS_LIE: layer Ω-14 claims external-assumed but names a tree record — external-assumed means no tree evidence",
+      "expectedCode": "GENOME_STATUS_LIE"
+    },
+    {
+      "mutation": "dep-unknown",
+      "applicable": true,
+      "caught": true,
+      "caughtBy": "GENOME_CYCLE/GENOME_DEP_UNKNOWN: layer Ω-14 depends on unknown layer \"Ω-NONEXISTENT\"",
+      "expectedCode": "GENOME_DEP_UNKNOWN"
+    },
+    {
+      "mutation": "dep-cycle",
+      "applicable": true,
+      "caught": true,
+      "caughtBy": "GENOME_CYCLE/GENOME_DEP_UNKNOWN: layer dependency cycle involving: Ω-14, Ω-15, Ω-16",
+      "expectedCode": "GENOME_CYCLE"
+    },
+    {
+      "mutation": "falsifier-unresolved",
+      "applicable": false,
+      "caught": false,
+      "caughtBy": null,
+      "expectedCode": "GENOME_FALSIFIER_UNRESOLVED"
+    },
+    {
+      "mutation": "budget-blow",
+      "applicable": true,
+      "caught": true,
+      "caughtBy": "GENOME_BUDGET_EXCEEDED: the genome is 364870 bytes (budget 262144) — one context window is the point; fold less or split the artifact",
+      "expectedCode": "GENOME_BUDGET_EXCEEDED"
+    }
+  ],
+  "uncaughtCount": 0,
+  "scope": "design simulation only (D-429): falsifier red-case rehearsal over the genome verifier — which clauses bite when the registry is attacked. NOT runtime behavioral simulation (load, latency, attack paths): that half lands with the rehearsal engine (Ω-8, paper `D-432`). Advisory, never blocking: an uncaught mutation is a finding to fix, not a gate failure."
+}

@@ -30,7 +30,7 @@
 // layers (the owner's assume-implemented directive, recorded as data in the
 // registry — a claim about paper, never about this tree).
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, sep } from "node:path";
 import { parseIndexRows, parseRecord } from "./decisions.ts";
 import { STAGE_DOCS } from "./explain.ts";
 
@@ -416,7 +416,7 @@ function walkTestFiles(root: string): Array<{ path: string; text: string }> {
       const p = join(dir, f);
       if (statSync(p).isDirectory()) { rec(p); continue; }
       if (!/\.(test\.ts|test\.mjs)$/.test(f)) continue;
-      out.push({ path: p.slice(root.length + 1), text: readFileSync(p, "utf-8") });
+      out.push({ path: p.slice(root.length + 1).split(sep).join("/"), text: readFileSync(p, "utf-8") });
     }
   };
   rec(root);
