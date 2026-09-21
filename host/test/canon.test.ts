@@ -62,7 +62,17 @@ describe("D-384 canon — contentHashDir symlink policy (fail-closed)", () => {
     writeFileSync(join(src, "index.ts"), "export const x = 1;\n");
     const outside = join(d, "outside-secret.txt");
     writeFileSync(outside, "bytes that must never enter the hash");
-    symlinkSync(outside, join(src, "link.ts"));
+    let linkMade = false;
+    try { symlinkSync(outside, join(src, "link.ts")); linkMade = true; }
+    catch (e) {
+      // Windows without symlink privilege (no Developer Mode / elevation):
+      // the OS itself refuses the link — fail-closed holds vacuously here,
+      // witnessed loudly (never a silent pass): the refusal must be a
+      // privilege refusal, and the secret stays unread either way.
+      expect(String(e)).toMatch(/EPERM|operation not permitted|privilege/i);
+      expect(existsSync(join(src, "link.ts"))).toBe(false);
+    }
+    if (!linkMade) return;
     let msg = "";
     try { contentHashDir(src); } catch (e) { msg = String(e); }
     expect(msg).toContain("symlink");

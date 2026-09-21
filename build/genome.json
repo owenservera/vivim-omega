@@ -12,10 +12,10 @@
     "externalAssumed": 0,
     "ratifiedUnimplemented": 1,
     "queued": 8,
-    "decisions": 152,
+    "decisions": 153,
     "ratified": 135,
-    "proposed": 17,
-    "records": 126,
+    "proposed": 18,
+    "records": 127,
     "testFiles": 134,
     "gateStages": 15,
     "plugins": 25,
@@ -1533,6 +1533,11 @@
       "n": 446,
       "status": "PROPOSED",
       "file": "docs/decisions/D-446-adaptation-constitution.md"
+    },
+    {
+      "n": 447,
+      "status": "PROPOSED",
+      "file": "docs/decisions/D-447-windows-canon-symlink.md"
     }
   ],
   "falsifiers": [
